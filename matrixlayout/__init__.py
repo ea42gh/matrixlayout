@@ -17,6 +17,7 @@ from .render import render_svg
 from .shortcascade import BackSubStep, BackSubTrace, mk_shortcascade_lines
 from .backsubst import backsubst_tex, backsubst_svg
 from .eigproblem import eigproblem_tex, eigproblem_svg
+from .ge import ge_tex, ge_svg
 
 __all__ = [
     "JinjaConfig",
@@ -32,4 +33,6 @@ __all__ = [
     "backsubst_svg",
     "eigproblem_tex",
     "eigproblem_svg",
+    "ge_tex",
+    "ge_svg",
 ]
