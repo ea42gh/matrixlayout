@@ -1,0 +1,63 @@
+\documentclass[fleqn,notitlepage,table,svgnames]{article}
+\setlength{\mathindent}{0pt}
+\pagestyle{empty}
+
+% Make the canvas very large; jupyter_tikz will crop the final SVG.
+\usepackage[margin=0cm,paperwidth=90in,paperheight=90in,
+            textwidth=25in,textheight=25in]{geometry}
+
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{cascade}
+\usepackage{systeme}
+\usepackage{nicematrix}
+
+\begin{document}
+
+{%% if fig_scale and fig_scale != 1 %%}
+\scalebox{ {{ fig_scale }} }{%
+{%% endif %%}
+
+\begin{minipage}[t]{\textwidth}\vspace*{0pt}
+
+% ----------------------------------------------------------------------------------------
+{{preamble}}%
+%====================================================================
+
+{%% if show_system %%}
+{{system_txt}}
+{%% endif %%}
+
+%====================================================================
+
+{%% if show_cascade %%}
+{%% if show_system %%}
+\vspace{1cm}
+
+{%% endif %%}
+{%% for line in cascade_txt -%%}
+{{line}}
+{%% endfor -%%}
+{%% endif %%}
+
+%====================================================================
+
+{%% if show_solution %%}
+{%% if show_system or show_cascade %%}
+\vspace{1cm}
+
+{%% endif %%}
+{{solution_txt}}
+{%% endif %%}
+
+%====================================================================
+
+\end{minipage}
+
+{%% if fig_scale and fig_scale != 1 %%}
+}
+{%% endif %%}
+
+\end{document}
+
