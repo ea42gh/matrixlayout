@@ -48,7 +48,7 @@ def _as_scale(value: Optional[Union[str, float, int]]) -> Optional[str]:
         return None
     if isinstance(value, str):
         return value
-    return r'\scalebox{' + format(value, 'g') + r'}{%'
+    return r'\\scalebox{' + format(value, 'g') + r'}{%'
 
 
 _SINGLE_BS_WS_RE = re.compile(r"(?<!\\)\\(\s)")
@@ -68,6 +68,83 @@ def _normalize_mat_rep(mat_rep: str) -> str:
 
     return _SINGLE_BS_WS_RE.sub(r"\\\\\1", mat_rep)
 
+
+
+_SUBMATRIX_PARENS_RE = re.compile(r"^\(?(.*?)\)?$")
+
+_SUBMATRIX_COORDS_RE = re.compile(r"\(\s*([^)]+?)\s*\)")
+
+def _strip_parens(token: str) -> str:
+    """Strip a single pair of outer parentheses from a coordinate token.
+
+    Examples
+    --------
+    - "(1-1)" -> "1-1"
+    - "1-1"   -> "1-1"
+
+    This is used to normalize legacy inputs for nicematrix coordinates.
+    """
+    token = token.strip()
+    if token.startswith("(") and token.endswith(")"):
+        return token[1:-1].strip()
+    return token
+
+
+def _normalize_submatrix_locs(
+    locs: Sequence[object],
+) -> Sequence[Tuple[str, str, str]]:
+    r"""Normalize submatrix location descriptors to (options, first, last) triples.
+
+    The legacy code frequently represented a submatrix as a pair:
+        (options, "(1-1)(2-2)")
+
+    Nicematrix expects:
+        \SubMatrix[<options>](<first>)(<last>)
+
+    This helper accepts several convenient input shapes and emits a uniform
+    representation consumed by the Jinja2 template.
+    """
+    out: list[Tuple[str, str, str]] = []
+    for loc in locs:
+        if isinstance(loc, dict):
+            opts = str(loc.get("options") or loc.get("style") or "")
+            first = _strip_parens(str(loc.get("first", "")))
+            last = _strip_parens(str(loc.get("last", "")))
+            if not (first and last):
+                raise ValueError(f"Invalid submatrix loc dict: {loc!r}")
+            out.append((opts, first, last))
+            continue
+
+        if not isinstance(loc, (tuple, list)):
+            raise TypeError(f"Submatrix loc must be tuple/list/dict, got {type(loc)}")
+
+        if len(loc) == 2:
+            opts, coords = loc
+            opts = str(opts)
+            if isinstance(coords, (tuple, list)) and len(coords) == 2:
+                first, last = coords
+                out.append((opts, _strip_parens(str(first)), _strip_parens(str(last))))
+                continue
+            coords_s = str(coords)
+            parts = _SUBMATRIX_COORDS_RE.findall(coords_s)
+            if len(parts) == 2:
+                out.append((opts, _strip_parens(parts[0]), _strip_parens(parts[1])))
+                continue
+            # Fallback: attempt to split on ")(" pattern without outer parens
+            if ")(" in coords_s:
+                a, b = coords_s.split(")(", 1)
+                out.append((opts, _strip_parens(a + ")"), _strip_parens("(" + b)))
+                continue
+            raise ValueError(f"Unrecognized submatrix coords: {coords!r}")
+
+        if len(loc) == 3:
+            opts, first, last = loc
+            out.append((str(opts), _strip_parens(str(first)), _strip_parens(str(last))))
+            continue
+
+        raise ValueError(f"Submatrix loc must have length 2 or 3, got {loc!r}")
+
+    return tuple(out)
 
 
 @dataclass(frozen=True)
@@ -94,9 +171,16 @@ class GEContext:
     # Optional CodeBefore entries (strings inserted verbatim).
     codebefore: Sequence[str] = ()
 
-    # Submatrix delimiter declarations: each entry is (style, fit_target).
-    # Used by: \SubMatrix(<fit_target>)[<style>]
-    submatrix_locs: Sequence[Tuple[str, str]] = ()
+    # Submatrix delimiter declarations.
+    #
+    # User input is accepted in a few legacy-compatible forms:
+    # - (options, "(1-1)(2-2)")
+    # - (options, "(1-1)", "(2-2)")
+    # - {"options": "name=SM", "first": "1-1", "last": "2-2"}
+    #
+    # The template receives normalized triples: (options, first, last) where
+    # ``first`` and ``last`` are coordinate tokens like "1-1" (no parens).
+    submatrix_locs: Sequence[Tuple[str, str, str]] = ()
     # Extra TeX lines to label submatrices (inserted verbatim).
     submatrix_names: Sequence[str] = ()
 
@@ -165,7 +249,7 @@ def ge_tex(
         mat_options=mat_options,
         mat_rep=_normalize_mat_rep(mat_rep),
         codebefore=codebefore,
-        submatrix_locs=submatrix_locs,
+        submatrix_locs=_normalize_submatrix_locs(submatrix_locs),
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
         txt_with_locs=txt_with_locs,
@@ -201,7 +285,7 @@ def ge_svg(
         preamble=preamble,
         extension=extension,
         codebefore=codebefore,
-        submatrix_locs=submatrix_locs,
+        submatrix_locs=_normalize_submatrix_locs(submatrix_locs),
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
         txt_with_locs=txt_with_locs,
