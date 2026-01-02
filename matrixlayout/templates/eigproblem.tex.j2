@@ -1,0 +1,44 @@
+\documentclass[notitlepage,table,svgnames]{article}
+\pagestyle{empty}
+\usepackage{booktabs}
+\usepackage{mathtools}
+\usepackage{nicematrix}
+\usepackage{xcolor}
+
+\begin{document}\begin{minipage}{\textwidth}
+{%% if fig_scale %%}
+{{fig_scale}}
+{%% endif %%}
+% ----------------------------------------------------------------------------------------
+{{preamble}}%
+%=========================================================================================
+\begin{tabular}{{table_format}} \toprule
+{%% if sigmas %%}% sigma -----------------------------------------------------------------
+$\color{{color}}{\sigma}$ & {{sigmas}}  {{rule_format}}
+{%% endif %%}% lambda --------------------------------------------------------------------
+$\color{{color}}{\lambda}$ & {{lambdas}} {{rule_format}}
+$\color{{color}}{m_a}$ & {{algebraic_multiplicities}}  {{rule_format}} \addlinespace[1mm]
+%  eigenvectors --------------------------------------------------------------------------
+{\parbox{2cm}{\textcolor{{color}}{basis for $\color{{color}}{E_\lambda}$}}} &
+{{eigenbasis}} {%% if orthonormal_basis %%}
+%  orthonormal eigenvectors --------------------------------------------------------------
+ {{rule_format}} \addlinespace[2mm]
+{\parbox{2cm}{\textcolor{{color}}{orthonormal basis for $E_\lambda$}}} &
+{{orthonormal_basis}}
+{%% endif -%%}
+ \addlinespace[2mm] \midrule \addlinespace[2mm]
+% ------------------------------------------------------------- lambda
+$\color{{color}}{ {{matrix_names[0]}} =}$ & {{lambda_matrix}} \\ \addlinespace[2mm]
+% ------------------------------------------------------------- E or Q
+{%% if evecs_matrix %%}%
+$\color{{color}}{ {{matrix_names[1]}} = }$ & {{evecs_matrix}} \\  \addlinespace[2mm] %\bottomrule
+{%% endif -%%}
+% ------------------------------------------------------------- U
+{%% if left_singular_matrix %%}%
+$\color{{color}}{ {{matrix_names[2]}} = }$ & {{left_singular_matrix}} \\  \addlinespace[2mm] \bottomrule
+{%% endif -%%}
+\end{tabular}
+{%% if fig_scale %%}
+}
+{%% endif %%}
+\end{minipage}\end{document}

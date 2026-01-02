@@ -1,7 +1,8 @@
 """matrixlayout: matrix-based layout and presentation library.
 
-This snapshot contains the shared Jinja2 template environment used during migration
-from nicematrix.py templates.
+matrixlayout is a *layout-only* library. It generates TeX (typically TikZ /
+nicematrix-based) from explicit description objects, and may optionally render
+SVG through the strict rendering boundary provided by :func:`jupyter_tikz.render_svg`.
 """
 
 from .jinja_env import (
@@ -11,10 +12,11 @@ from .jinja_env import (
     render_template,
     render_string,
 )
-
-from .backsubst import backsubst_svg, backsubst_tex
 from .render import render_svg
-from .shortcascade import BackSubTrace, BackSubStep, mk_shortcascade_lines
+
+from .shortcascade import BackSubStep, BackSubTrace, mk_shortcascade_lines
+from .backsubst import backsubst_tex, backsubst_svg
+from .eigproblem import eigproblem_tex, eigproblem_svg
 
 __all__ = [
     "JinjaConfig",
@@ -23,9 +25,11 @@ __all__ = [
     "render_template",
     "render_string",
     "render_svg",
+    "BackSubStep",
+    "BackSubTrace",
+    "mk_shortcascade_lines",
     "backsubst_tex",
     "backsubst_svg",
-    "BackSubTrace",
-    "BackSubStep",
-    "mk_shortcascade_lines",
+    "eigproblem_tex",
+    "eigproblem_svg",
 ]
