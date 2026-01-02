@@ -15,3 +15,7 @@ testpaths = ["tests"]
 markers = [
     "render: end-to-end TeX->SVG smoke tests (opt-in via MATRIXLAYOUT_RUN_RENDER_TESTS=1)",
 ]
+
+[tool.setuptools.package-data]
+matrixlayout = ["templates/*.tex.j2"]
+
