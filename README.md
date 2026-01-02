@@ -1,48 +1,32 @@
-matrixlayout (prototype)
-=======================
+# matrixlayout
 
-This snapshot contains the shared Jinja2 template environment used during migration
-from nicematrix.py templates.
+`matrixlayout` is a small, composable Python library for **matrix-based layout and presentation**. It builds **LaTeX/TikZ** that describes matrix and grid visuals (blocks, partitions, spacing, braces, arrows, highlights) and renders them to **SVG** via a single backend boundary.
 
-Included template
------------------
+This project is **layout-only** by design: it does not implement linear algebra algorithms or symbolic manipulation.
 
-The first migrated template is **BACKSUBST_TEMPLATE** (back-substitution / cascade)
-as a package template: `matrixlayout/templates/backsubst.tex.j2`.
+## Scope
 
-Public entry points:
+### What `matrixlayout` *does*
+- Construct matrix/grid layouts (rows, columns, blocks, partitions, spacing)
+- Construct tables for eigenproblems and SVD
+- Place annotations (arrows, braces, highlights, labels)
+- Convert symbolic objects to LaTeX strings for display (e.g. `sympy.latex`)
+- Generate LaTeX/TikZ that describes the layout
+- Render to SVG by calling `jupyter_tikz.render_svg(tex: str) -> str`
 
-- `matrixlayout.backsubst_tex(...) -> str` produces TeX source.
-- `matrixlayout.backsubst_svg(...) -> str` compiles TeX and returns SVG text via
-  `jupyter_tikz.render_svg` (opt-in smoke test only).
+### What `matrixlayout` *does not* do
+- Compute matrix factorizations or decompositions (QR/LU/SVD/eigen, etc.)
+- Perform Gaussian elimination / RREF / back-substitution or any solver logic
+- Modify or simplify symbolic expressions
+- Manage rendering toolchains, subprocesses, cropping, or SVG normalization
+- Choose between rendering backends
 
-Back-substitution cascade formatting
------------------------------------
+Algorithmic work lives in a separate package (`la_figures`) that produces **layout descriptions** consumed by `matrixlayout`.
 
-To keep matrixlayout layout-only, the back-substitution *equations* should be
-computed by an algorithmic package and passed in as a **trace**.
+## Rendering boundary
 
-`backsubst_tex` / `backsubst_svg` accept `cascade_trace=...` (Option A), and
-matrixlayout will format it into nested `\\ShortCascade` lines using:
+`matrixlayout` depends on `jupyter_tikz` and **always** renders through:
 
-- `matrixlayout.mk_shortcascade_lines(trace) -> list[str]`
-
-The trace format is intentionally Julia-friendly: a mapping with `base` and
-`steps`, where each step is a `(raw, substituted)` pair or a dict with keys
-`raw`/`substituted`.
-
-Run tests
----------
-
-From this directory:
-
-  python -m pytest
-
-Optional: run end-to-end TeX→SVG smoke tests
---------------------------------------------
-
-Rendering tests are skipped by default (to avoid requiring a TeX toolchain on
-every machine). To enable them:
-
-  MATRIXLAYOUT_RUN_RENDER_TESTS=1 python -m pytest
+```python
+from jupyter_tikz import render_svg
 
