@@ -35,6 +35,7 @@ def _as_lines(value: Union[str, Sequence[str], None]) -> list[str]:
 
 
 def _as_scale(value: Optional[Union[str, float, int]]) -> Optional[str]:
+    """Normalize ``fig_scale`` to a TeX-friendly string (or None)."""
     if value is None:
         return None
     if isinstance(value, str):

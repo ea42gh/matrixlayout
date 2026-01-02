@@ -27,6 +27,11 @@ class JinjaConfig:
 
 
 def _make_loader(template_dirs: Optional[Sequence[Union[str, Path]]]) -> jinja2.BaseLoader:
+    """Construct a Jinja2 template loader.
+
+    If explicit ``template_dirs`` are provided, load templates from the
+    filesystem; otherwise, load package templates from ``matrixlayout/templates``.
+    """
     if template_dirs:
         dirs = [str(Path(p)) for p in template_dirs]
         return jinja2.FileSystemLoader(dirs)

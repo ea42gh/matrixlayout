@@ -26,6 +26,23 @@ from .render import render_svg
 LatexFormatter = Callable[[Any], str]
 
 
+def _default_formater(x: Any) -> str:
+    """Default scalar formatter for TeX.
+
+    Behavior:
+    - If ``x`` is already a string, it is assumed to be TeX-ready and returned unchanged.
+    - Otherwise, if SymPy is available, uses ``sympy.latex(x)``.
+    - Falls back to ``str(x)``.
+    """
+    if isinstance(x, str):
+        return x
+    try:
+        import sympy as sym  # type: ignore
+        return sym.latex(x)
+    except Exception:
+        return str(x)
+
+
 def _is_zero_like(x: Any) -> bool:
     """Best-effort check for whether x represents numeric zero."""
     if x is None:
@@ -182,7 +199,7 @@ def eigproblem_tex(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = str,
+    formater: LatexFormatter = _default_formater,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,
@@ -224,6 +241,12 @@ def eigproblem_tex(
     lambdas_distinct = list(eig["lambda"])
     multiplicities = list(eig["ma"])
     n = int(sum(multiplicities))
+    if sz is None and "sz" in eig:
+        # Algorithmic packages may attach the original matrix size for SVD tables.
+        try:
+            sz = tuple(eig["sz"])  # type: ignore[arg-type]
+        except Exception:
+            sz = None
     sz = (n, n) if sz is None else tuple(sz)
 
     # Values rows
@@ -300,7 +323,7 @@ def eigproblem_svg(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = str,
+    formater: LatexFormatter = _default_formater,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,
