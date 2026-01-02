@@ -1,0 +1,78 @@
+# -----------------------------------------------------------------------------
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# -----------------------------------------------------------------------------
+# Packaging / build outputs
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+wheelhouse/
+MANIFEST
+
+# -----------------------------------------------------------------------------
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# -----------------------------------------------------------------------------
+# Test / coverage / type-check caches
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.pytype/
+.pyre/
+.ruff_cache/
+.cache/
+
+# -----------------------------------------------------------------------------
+# Jupyter
+.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# -----------------------------------------------------------------------------
+# Local render/debug artifacts (created by notebook/debug helpers or tests)
+_ge_debug/
+_render_debug/
+*_debug/
+render_artifacts/
+.render_artifacts/
+
+# If you create a local scratch output directory
+_out/
+_tmp/
+
+# -----------------------------------------------------------------------------
+# TeX auxiliary outputs (common when running render toolchains locally)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# PDFs are typically build artifacts in this project (SVG is returned as a string)
+*.pdf
+
