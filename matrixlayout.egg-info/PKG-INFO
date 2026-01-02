@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: matrixlayout
-Version: 0.0.0
-Summary: Matrix-based layout and presentation library (template environment prototype)
-Requires-Python: >=3.9
-License-File: LICENSE.txt
-Requires-Dist: jinja2>=2.11
-Dynamic: license-file
