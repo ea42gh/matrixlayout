@@ -1,24 +1,27 @@
+{## ----------------------------------------------------------------------------- GE_TEMPLATE (migrated)
+   Layout-only: this template expects fully-populated context from matrixlayout.ge.ge_tex.
+##}
 \documentclass[notitlepage]{article}
 \pagestyle{empty}
 \usepackage[margin=0cm,paperwidth=90in]{geometry}
 
 \usepackage{mathtools}
-{%% if landscape %%}
-\usepackage{pdflscape}
-{%% endif %%}
 \usepackage{graphicx}
 \usepackage[table,svgnames]{xcolor}
+
 \usepackage{nicematrix,tikz}
 \usetikzlibrary{calc,fit,decorations.markings}
 
+{%% if landscape %%}
+\usepackage{pdflscape}
+{%% endif %%}
+
+% ----------------------------------------------------------------------------- utility
 \newcommand*{\colorboxed}{}
 \def\colorboxed#1#{%
   \colorboxedAux{#1}%
 }
 \newcommand*{\colorboxedAux}[3]{%
-  % #1: optional argument for color model
-  % #2: color specification
-  % #3: formula
   \begingroup
     \colorlet{cb@saved}{.}%
     \color#1{#2}%
@@ -29,53 +32,64 @@
   \endgroup
 }
 
-% ---------------------------------------------------------------------------- extension
-{{extension}}
+% ----------------------------------------------------------------------------- caller preamble hook
+{{ preamble }}
+
 \begin{document}\begin{minipage}{\textwidth}
-{%% if landscape %%}\begin{landscape}{%% endif %%}
-{%% if fig_scale %%}
-{{fig_scale}}
+
+{%% if landscape %%}
+\begin{landscape}
 {%% endif %%}
-% ---------------------------------------------------------------------------- preamble
-{{preamble}}%
+
 % ============================================================================ NiceArray
-$\begin{NiceArray}[vlines-in-sub-matrix = I]{{mat_format}}{{mat_options}}%
-{%% if codebefore != [] -%%}
-\CodeBefore [create-cell-nodes]
-    {%% for entry in codebefore: -%%}
-    {{entry}}
-    {%% endfor -%%}%
-\Body
-{%% endif -%%}
-{{mat_rep}}
-\CodeAfter %[ sub-matrix / extra-height=2mm, sub-matrix / xshift=2mm ]
-% --------------------------------------------------------------------------- submatrix delimiters
-    {%% for loc in submatrix_locs: -%%}
-          {%% if loc[0] %%}\SubMatrix[{{loc[0]}}]({{loc[1]}})({{loc[2]}}){%% else %%}\SubMatrix({{loc[1]}})({{loc[2]}}){%% endif %%}
-    {%% endfor -%%}
-    {%% for txt in submatrix_names: -%%}
-          {{txt}}
-    {%% endfor -%%}
-% --------------------------------------------------------------------------- pivot outlines
+{{ scale_open }}$%
+\begin{ {{- array_env -}} }[vlines-in-sub-matrix = I]{ {{- mat_format -}} }%
+{# --------------------------------------------------------------------------- CodeBefore hook #}
+{%% for line in codebefore %%}
+{{ line }}
+{%% endfor %%}
+
+{{ mat_rep }}
+\CodeAfter
+{# --------------------------------------------------------------------------- CodeAfter hook #}
+{%% for line in codeafter %%}
+{{ line }}
+{%% endfor %%}
+
+{# --------------------------------------------------------------------------- submatrix delimiters #}
+{%% for opts, first, last in submatrix_triples %%}
+\SubMatrix{%% if opts %%}[{{ opts }}]{%% endif %%}({{ first }})({{ last }})
+{%% endfor %%}
+
+{# --------------------------------------------------------------------------- submatrix names / labels #}
+{%% for line in submatrix_names %%}
+{{ line }}
+{%% endfor %%}
+
+{# --------------------------------------------------------------------------- pivot outlines + extra annotations #}
 \begin{tikzpicture}
     \begin{scope}[every node/.style = draw]
-    {%% for loc in pivot_locs: -%%}
-        \node [draw,{{loc[1]}},fit = {{loc[0]}}]  {} ;
-    {%% endfor -%%}
+{%% for fit_target, extra_style in pivot_locs %%}
+        \node[fit={{ fit_target }}{%% if extra_style %%},{{ extra_style }}{%% endif %%}] {};
+{%% endfor %%}
     \end{scope}
-%
-% --------------------------------------------------------------------------- explanatory text
-    {%% for loc,txt,c in txt_with_locs: -%%}
-        \node [right,align=left,color={{c}}] at {{loc}}  {\qquad {{txt}} } ;
-    {%% endfor -%%}
-%
-% --------------------------------------------------------------------------- row echelon form path
-    {%% for t in rowechelon_paths %%} {{t}}
-    {%% endfor -%%}
+
+{# --------------------------------------------------------------------------- explanatory text #}
+{%% for coord, txt, style in txt_with_locs %%}
+    \node[{%% if style %%}{{ style }}{%% endif %%}] at {{ coord }} { {{ txt }} };
+{%% endfor %%}
+
+{# --------------------------------------------------------------------------- row echelon form path #}
+{%% for p in rowechelon_paths %%}
+{{ p }}
+{%% endfor %%}
 \end{tikzpicture}
-\end{NiceArray}$
-{%% if fig_scale %%}
-}
+
+\end{ {{- array_env -}} }$% 
+{{ scale_close }}
+
+{%% if landscape %%}
+\end{landscape}
 {%% endif %%}
-{%% if landscape %%}\end{landscape}{%% endif %%}
+
 \end{minipage}\end{document}
