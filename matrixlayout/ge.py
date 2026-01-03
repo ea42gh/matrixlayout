@@ -1,37 +1,31 @@
-"""
-Gaussian-elimination (GE) figure template helpers.
+r"""
+GE (Gaussian Elimination) template helpers.
 
-This module is intentionally *layout-only*: it populates the GE Jinja2 template and
-(optionally) renders via the strict boundary call in :func:`matrixlayout.render.render_svg`.
+This module generates TeX for the GE "matrix-of-matrices" layout. In this layout,
+outer delimiters (and block delimiters) are drawn with `nicematrix`'s `\SubMatrix`
+inside `\CodeAfter`.
 
-The GE template uses nicematrix (NiceArray family) for matrix typesetting and TikZ
-for annotations.
+Target: current `nicematrix`
+----------------------------
+The `\SubMatrix` command syntax (as of current nicematrix releases) uses a single
+mandatory argument of the form `({i-j}{k-l})` followed by an *optional* key-value
+list *after* the argument: `\SubMatrix({1-1}{3-3})[name=...]`.
+
+Therefore, this module normalizes submatrix locations into `(options, span)` where
+`span` is a string like `"{1-1}{2-2}"`, and the template emits:
+    `\SubMatrix({span})[options]`
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple, Union, Any
+from typing import List, Optional, Sequence, Tuple, Union
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
 
 
-_ALLOWED_ARRAY_ENVS = {
-    "NiceArray",
-    "pNiceArray",
-    "bNiceArray",
-    "BNiceArray",
-    "vNiceArray",
-    "VNiceArray",
-}
-
-
 def _normalize_mat_format(mat_format: str) -> str:
-    """Normalize a LaTeX array preamble.
-
-    Accepts either ``"cc"`` or ``"{cc}"`` and returns the bare preamble (``"cc"``).
-    """
+    """Normalize a LaTeX array preamble (accepts ``"cc"`` or ``"{cc}"``)."""
     s = (mat_format or "").strip()
     if s.startswith("{") and s.endswith("}"):
         s = s[1:-1].strip()
@@ -39,70 +33,72 @@ def _normalize_mat_format(mat_format: str) -> str:
 
 
 def _normalize_mat_rep(mat_rep: str) -> str:
-    r"""Normalize a matrix body string.
+    r"""Normalize the matrix body.
 
-    Jupyter users occasionally write Python strings like ``"1 & 0 \ 0 & 1"``
-    (a single backslash followed by whitespace). TeX expects a row separator ``\\``.
-    This normalizer converts ``\`` followed by whitespace into ``\\`` + that whitespace,
-    while leaving already-correct ``\\`` sequences intact.
+    If a user accidentally writes a single backslash followed by whitespace
+    instead of TeX's row separator ``\\``, convert it to ``\\``.
     """
     if mat_rep is None:
         return ""
     s = str(mat_rep)
-    # Replace a single backslash not already doubled, followed by whitespace, with a doubled backslash.
-    # Pattern: backslash not preceded by backslash, not followed by backslash, followed by whitespace.
     import re
-    return re.sub(r'(?<!\\)\\(?!\\)(\s+)', r'\\\\\1', s)
+    return re.sub(r"(?<!\\)\\(?!\\)(\s+)", r"\\\\\1", s)
 
 
-def _normalize_fig_scale(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
-    r"""Normalize ``fig_scale`` to a legacy TeX wrapper pair (open, close).
-
-    - ``None`` or ``1`` => ("", "")
-    - number => (r"\scalebox{<v>}{%", "}")
-    - string => used verbatim as open wrapper; close is "" (advanced use)
-    """
-    if fig_scale is None:
-        return "", ""
-    if isinstance(fig_scale, (int, float)):
-        if float(fig_scale) == 1.0:
-            return "", ""
-        return rf"\scalebox{{{fig_scale}}}{{%", "}"
-    # advanced: caller provides their own TeX wrapper
-    s = str(fig_scale)
-    return s, ""
+def _guess_shape_from_mat_rep(mat_rep: str) -> Tuple[int, int]:
+    """Best-effort (nrows, ncols) inferred from a TeX body like ``a & b \\\\ c & d``."""
+    body = _normalize_mat_rep(mat_rep)
+    rows = [r.strip() for r in body.split(r"\\") if r.strip()]
+    nrows = len(rows) if rows else 0
+    ncols = 0
+    for r in rows:
+        ncols = max(ncols, r.count("&") + 1)
+    return nrows, ncols
 
 
 def _normalize_submatrix_locs(
-    submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]]
-) -> List[Tuple[str, str, str]]:
-    r"""Normalize submatrix location descriptors to ``(options, first, last)`` triples.
+    submatrix_locs: Optional[
+        Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]
+    ]
+) -> List[Tuple[str, str]]:
+    r"""Normalize submatrix descriptors to ``(options, span)``.
 
-    Supported input shapes:
-    - ``[(opts, "(1-1)(2-2)"), ...]``
-    - ``[(opts, "(1-1)", "(2-2)"), ...]``
-    - ``[("", "(1-1)(2-2)"), ...]``
+    Accepted input forms:
+    - ``(opts, "{1-1}{2-2}")`` (legacy span encoding)
+    - ``(opts, "(1-1)(2-2)")`` (two parenthesized tokens)
+    - ``(opts, "(1-1)", "(2-2)")`` (explicit first/last, with parentheses)
+    - ``(opts, "1-1", "2-2")`` (explicit first/last)
 
-    Output ``first``/``last`` are returned *without* parentheses (e.g., ``"1-1"``),
-    ready for emission as: ``\SubMatrix[<options>](<first>)(<last>)``.
+    Output span is always ``"{first}{last}"`` (including braces) and is meant to be
+    used inside ``\SubMatrix({span})``.
     """
     if not submatrix_locs:
         return []
-    out: List[Tuple[str, str, str]] = []
+    out: List[Tuple[str, str]] = []
     import re
 
     for item in submatrix_locs:
         if len(item) == 2:
             opts, loc = item
-            m = re.findall(r"\(\s*([^)]+?)\s*\)", str(loc))
-            if len(m) != 2:
-                raise ValueError(f"submatrix_locs entry must contain two '(r-c)' tokens: {item!r}")
-            first, last = m[0], m[1]
+            loc_s = str(loc).strip()
+
+            if "{" in loc_s and "}" in loc_s:
+                # legacy "{r1-c1}{r2-c2}"
+                parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
+                if len(parts) != 2:
+                    raise ValueError(f"Bad legacy span for submatrix_locs: {item!r}")
+                first, last = parts[0], parts[1]
+            else:
+                # "(r1-c1)(r2-c2)"
+                parts = re.findall(r"\(\s*([^)]+?)\s*\)", loc_s)
+                if len(parts) != 2:
+                    raise ValueError(f"Bad span for submatrix_locs: {item!r}")
+                first, last = parts[0], parts[1]
+
         elif len(item) == 3:
             opts, first, last = item
             first = str(first).strip()
             last = str(last).strip()
-            # Strip optional parentheses
             if first.startswith("(") and first.endswith(")"):
                 first = first[1:-1].strip()
             if last.startswith("(") and last.endswith(")"):
@@ -110,45 +106,20 @@ def _normalize_submatrix_locs(
         else:
             raise ValueError(f"submatrix_locs entry must be a 2- or 3-tuple, got: {item!r}")
 
-        out.append((str(opts).strip(), first, last))
+        span = f"{{{first}}}{{{last}}}"
+        out.append((str(opts).strip(), span))
+
     return out
-
-
-@dataclass(frozen=True)
-class GEContext:
-    """Context for populating ``ge.tex.j2``."""
-
-    mat_rep: str
-    mat_format: str
-
-    # Display environment (nicematrix). Default is parentheses.
-    array_env: str = "pNiceArray"
-
-    # Optional TeX fragments/hooks
-    preamble: str = ""
-    codebefore: Sequence[str] = ()
-    codeafter: Sequence[str] = ()
-
-    # nicematrix / TikZ annotation hooks
-    submatrix_locs: Sequence[Union[Tuple[str, str], Tuple[str, str, str]]] = ()
-    submatrix_names: Sequence[str] = ()
-    pivot_locs: Sequence[Tuple[str, str]] = ()  # (fit_target, extra_style)
-    txt_with_locs: Sequence[Tuple[str, str, str]] = ()  # (coord, text, style)
-    rowechelon_paths: Sequence[str] = ()
-
-    # Outer wrapper options
-    fig_scale: Optional[Union[float, int, str]] = None
-    landscape: bool = False
 
 
 def ge_tex(
     *,
     mat_rep: str,
     mat_format: str,
-    array_env: str = "pNiceArray",
     preamble: str = "",
+    extension: str = "",
+    nice_options: str = "vlines-in-sub-matrix = I",
     codebefore: Optional[Sequence[str]] = None,
-    codeafter: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
@@ -156,43 +127,51 @@ def ge_tex(
     rowechelon_paths: Optional[Sequence[str]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
+    create_cell_nodes: bool = True,
+    outer_delims: bool = False,
+    outer_delims_name: str = "A0x0",
+    outer_delims_span: Optional[Tuple[int, int]] = None,
 ) -> str:
-    """Populate the GE template and return TeX.
-
-    Parameters
-    ----------
-    mat_rep:
-        The NiceArray body (rows separated by ``\\``; columns separated by ``&``).
-    mat_format:
-        The array preamble (e.g., ``"cc|c"``). Braces are optional (``"{cc}"`` OK).
-    array_env:
-        nicematrix environment name. Default is ``"pNiceArray"`` for parentheses.
-        Common alternatives: ``"bNiceArray"`` (brackets), ``"NiceArray"`` (no delimiters).
-    """
-    env = (array_env or "").strip()
-    if env not in _ALLOWED_ARRAY_ENVS:
-        raise ValueError(f"array_env must be one of {sorted(_ALLOWED_ARRAY_ENVS)}, got {array_env!r}")
-
+    r"""Populate the GE template and return TeX."""
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
-    scale_open, scale_close = _normalize_fig_scale(fig_scale)
-    subm_triples = _normalize_submatrix_locs(submatrix_locs)
+
+    # figure scale: the GE template currently supports TeX wrappers in the template itself
+    fig_scale_open = fig_scale_close = ""
+    if fig_scale is not None:
+        if isinstance(fig_scale, (int, float)) and float(fig_scale) != 1.0:
+            fig_scale_open = rf"\scalebox{{{fig_scale}}}{{%"
+            fig_scale_close = "}"
+        elif isinstance(fig_scale, str) and fig_scale.strip():
+            fig_scale_open = fig_scale
+            fig_scale_close = ""
+
+    sub_spans = _normalize_submatrix_locs(submatrix_locs)
+
+    if outer_delims and not sub_spans:
+        if outer_delims_span is None:
+            outer_delims_span = _guess_shape_from_mat_rep(mat_rep_norm)
+        nrows, ncols = outer_delims_span
+        if nrows <= 0 or ncols <= 0:
+            raise ValueError("Could not infer outer_delims_span; pass outer_delims_span=(nrows,ncols).")
+        sub_spans.append((f"name={outer_delims_name}", f"{{1-1}}{{{nrows}-{ncols}}}"))
 
     ctx = dict(
-        array_env=env,
-        mat_format=mat_format_norm,
-        mat_rep=mat_rep_norm,
+        extension=extension or "",
         preamble=preamble or "",
+        fig_scale_open=fig_scale_open,
+        fig_scale_close=fig_scale_close,
+        landscape=bool(landscape),
+        nice_options=(nice_options or "").strip(),
+        mat_format=mat_format_norm,
+        create_cell_nodes=bool(create_cell_nodes),
         codebefore=list(codebefore or []),
-        codeafter=list(codeafter or []),
-        submatrix_triples=subm_triples,
+        mat_rep=mat_rep_norm,
+        submatrix_spans=sub_spans,   # list[(opts, "{i-j}{k-l}")]
         submatrix_names=list(submatrix_names or []),
         pivot_locs=list(pivot_locs or []),
         txt_with_locs=list(txt_with_locs or []),
         rowechelon_paths=list(rowechelon_paths or []),
-        scale_open=scale_open,
-        scale_close=scale_close,
-        landscape=bool(landscape),
     )
     return render_template("ge.tex.j2", ctx)
 
@@ -201,10 +180,10 @@ def ge_svg(
     *,
     mat_rep: str,
     mat_format: str,
-    array_env: str = "pNiceArray",
     preamble: str = "",
+    extension: str = "",
+    nice_options: str = "vlines-in-sub-matrix = I",
     codebefore: Optional[Sequence[str]] = None,
-    codeafter: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
@@ -212,16 +191,20 @@ def ge_svg(
     rowechelon_paths: Optional[Sequence[str]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
+    create_cell_nodes: bool = True,
+    outer_delims: bool = False,
+    outer_delims_name: str = "A0x0",
+    outer_delims_span: Optional[Tuple[int, int]] = None,
     toolchain_name: Optional[str] = None,
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
     tex = ge_tex(
         mat_rep=mat_rep,
         mat_format=mat_format,
-        array_env=array_env,
         preamble=preamble,
+        extension=extension,
+        nice_options=nice_options,
         codebefore=codebefore,
-        codeafter=codeafter,
         submatrix_locs=submatrix_locs,
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
@@ -229,6 +212,10 @@ def ge_svg(
         rowechelon_paths=rowechelon_paths,
         fig_scale=fig_scale,
         landscape=landscape,
+        create_cell_nodes=create_cell_nodes,
+        outer_delims=outer_delims,
+        outer_delims_name=outer_delims_name,
+        outer_delims_span=outer_delims_span,
     )
     if toolchain_name:
         return _render_svg(tex, toolchain_name=toolchain_name)

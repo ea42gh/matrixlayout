@@ -1,10 +1,7 @@
-{## ----------------------------------------------------------------------------- GE_TEMPLATE (migrated)
-   Layout-only: this template expects fully-populated context from matrixlayout.ge.ge_tex.
-   Jinja2 delimiter scheme matches legacy nicematrix.py:
-     - blocks:   {%% ... %%}
-     - comments: {## ... ##}
-     - vars:     {{ ... }}
-##}
+% -----------------------------------------------------------------------------
+% GE template (layout-only)
+% Target: current nicematrix (CodeBefore/Body/CodeAfter + \SubMatrix syntax)
+% -----------------------------------------------------------------------------
 \documentclass[notitlepage]{article}
 \pagestyle{empty}
 \usepackage[margin=0cm,paperwidth=90in]{geometry}
@@ -20,7 +17,6 @@
 \usepackage{pdflscape}
 {%% endif %%}
 
-% ----------------------------------------------------------------------------- utility
 \newcommand*{\colorboxed}{}
 \def\colorboxed#1#{%
   \colorboxedAux{#1}%
@@ -36,59 +32,51 @@
   \endgroup
 }
 
-% ----------------------------------------------------------------------------- caller preamble hook
-{{ preamble }}
+{{ extension }}
 
-\begin{document}\begin{minipage}{\textwidth}
+\begin{document}\begin{minipage}{\textwidth}%
+{%% if landscape %%}\begin{landscape}%{%% endif %%}%
+{%% if fig_scale_open %%}{{ fig_scale_open }}%{%% endif %%}%
+{{ preamble }}%
+$% begin math
+\begin{NiceArray}{%% if nice_options %%}[{{- nice_options -}}]{%% endif %%}{ {{- mat_format -}} }% begin NiceArray
+\CodeBefore{%% if create_cell_nodes %%}[create-cell-nodes]{%% endif %%}% 
+{%%- for entry in codebefore -%%}{{ entry }}%{%%- endfor -%%}%
+\Body%
+{{ mat_rep }}%
+{%%- set has_after = (submatrix_spans|length > 0) or (submatrix_names|length > 0) or (pivot_locs|length > 0) or (txt_with_locs|length > 0) or (rowechelon_paths|length > 0) -%%}%
+{%% if has_after %%}%
+\CodeAfter%
+% ----- \SubMatrix delimiters%
+{%%- for opts, span in submatrix_spans -%%}%
+% \SubMatrix[{%% if opts %%}{{ opts }}{%% endif %%}]{{ span|replace('{','(')|replace('}',')') }}%
+\SubMatrix({{ span }}){%% if opts %%}[{{ opts }}]{%% endif %%}%
+{%%- endfor -%%}%
+% ----- Labels / names%
+{%%- for txt in submatrix_names -%%}%
+{{ txt }}%
+{%%- endfor -%%}%
+% ----- TikZ decorations%
+{%%- if (pivot_locs|length > 0) or (txt_with_locs|length > 0) or (rowechelon_paths|length > 0) -%%}%
+\begin{tikzpicture}%
+\begin{scope}[every node/.style = draw]%
+{%%- for fit_target, extra_style in pivot_locs -%%}%
+\node[draw{%% if extra_style %%},{{ extra_style }}{%% endif %%},fit={{ fit_target }}] {};%
+{%%- endfor -%%}%
+\end{scope}%
+{%%- for coord, txt, style in txt_with_locs -%%}%
+\node[{%% if style %%}{{ style }}{%% endif %%}] at {{ coord }} { {{ txt }} };%
+{%%- endfor -%%}%
+{%%- for p in rowechelon_paths -%%}%
+{{ p }}%
+{%%- endfor -%%}%
+\end{tikzpicture}%
+{%%- endif -%%}%
+{%% endif %%}%
 
-{%% if landscape %%}
-\begin{landscape}
-{%% endif %%}
+\end{NiceArray}% end NiceArray
+$% end math
 
-% ============================================================================ NiceArray
-{{ scale_open }}$%
-\begin{ {{- array_env -}} }[vlines-in-sub-matrix = I]{ {{- mat_format -}} }%
-
-{%% for line in codebefore %%}
-{{ line }}
-{%% endfor %%}
-
-{{ mat_rep }}
-\CodeAfter
-
-{%% for line in codeafter %%}
-{{ line }}
-{%% endfor %%}
-
-{%% for opts, first, last in submatrix_triples %%}
-\SubMatrix{%% if opts %%}[{{ opts }}]{%% endif %%}({{ first }})({{ last }})
-{%% endfor %%}
-
-{%% for line in submatrix_names %%}
-{{ line }}
-{%% endfor %%}
-
-\begin{tikzpicture}
-    \begin{scope}[every node/.style = draw]
-{%% for fit_target, extra_style in pivot_locs %%}
-        \node[fit={{ fit_target }}{%% if extra_style %%},{{ extra_style }}{%% endif %%}] {};
-{%% endfor %%}
-    \end{scope}
-
-{%% for coord, txt, style in txt_with_locs %%}
-    \node[{%% if style %%}{{ style }}{%% endif %%}] at {{ coord }} { {{ txt }} };
-{%% endfor %%}
-
-{%% for p in rowechelon_paths %%}
-{{ p }}
-{%% endfor %%}
-\end{tikzpicture}
-
-\end{ {{- array_env -}} }$%
-{{ scale_close }}
-
-{%% if landscape %%}
-\end{landscape}
-{%% endif %%}
-
+{%% if fig_scale_close %%}{{ fig_scale_close }}%{%% endif %%}%
+{%% if landscape %%}\end{landscape}%{%% endif %%}%
 \end{minipage}\end{document}
