@@ -13,51 +13,36 @@
 \usepackage{systeme}
 \usepackage{nicematrix}
 
-\begin{document}
-
-{%% if fig_scale and fig_scale != 1 %%}
+\begin{document}%
+{%% if fig_scale and fig_scale != 1 %%}%
 \scalebox{ {{ fig_scale }} }{%
-{%% endif %%}
-
+{%% endif %%}%
 \begin{minipage}[t]{\textwidth}\vspace*{0pt}
-
 % ----------------------------------------------------------------------------------------
 {{preamble}}%
 %====================================================================
-
-{%% if show_system %%}
+{%% if show_system %%}%
 {{system_txt}}
-{%% endif %%}
-
+{%% endif %%}%
 %====================================================================
-
-{%% if show_cascade %%}
-{%% if show_system %%}
+{%% if show_cascade %%}%
+{%% if show_system %%}%
 \vspace{1cm}
-
-{%% endif %%}
+{%% endif %%}%
 {%% for line in cascade_txt -%%}
 {{line}}
-{%% endfor -%%}
-{%% endif %%}
-
+{%% endfor -%%}%
+{%% endif %%}%
 %====================================================================
-
-{%% if show_solution %%}
-{%% if show_system or show_cascade %%}
+{%% if show_solution %%}%
+{%% if show_system or show_cascade %%}%
 \vspace{1cm}
-
-{%% endif %%}
+{%% endif %%}%
 {{solution_txt}}
-{%% endif %%}
-
+{%% endif %%}%
 %====================================================================
-
-\end{minipage}
-
-{%% if fig_scale and fig_scale != 1 %%}
-}
-{%% endif %%}
-
+\end{minipage}%
+{%% if fig_scale and fig_scale != 1 %%}%
+}%
+{%% endif %%}%
 \end{document}
-
