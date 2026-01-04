@@ -35,8 +35,19 @@ def _make_loader(template_dirs: Optional[Sequence[Union[str, Path]]]) -> jinja2.
     if template_dirs:
         dirs = [str(Path(p)) for p in template_dirs]
         return jinja2.FileSystemLoader(dirs)
-    # PackageLoader expects templates under matrixlayout/templates/
-    return jinja2.PackageLoader("matrixlayout", "templates")
+    # Prefer PackageLoader for installed distributions.
+    #
+    # In some dev/interop setups (editable installs, PYTHONPATH hacks, Julia bridges),
+    # Jinja's PackageLoader can fail to locate package data even when templates are
+    # present on disk. Fall back to a FileSystemLoader rooted at the on-disk
+    # `templates/` directory next to this module.
+    try:
+        return jinja2.PackageLoader("matrixlayout", "templates")
+    except Exception:
+        fallback = Path(__file__).resolve().parent / "templates"
+        if fallback.is_dir():
+            return jinja2.FileSystemLoader(str(fallback))
+        raise
 
 
 def make_environment(config: Optional[JinjaConfig] = None) -> jinja2.Environment:
