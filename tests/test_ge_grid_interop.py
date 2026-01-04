@@ -1,0 +1,29 @@
+from matrixlayout.ge import ge_grid_tex, ge_tex
+
+
+def test_ge_grid_tex_inserts_rhs_partition_bar():
+    # One GE layer with an augmented matrix [A|b] (2x3, Nrhs=1).
+    matrices = [[None, [[1, 0, 3], [0, 2, 4]]]]
+    tex = ge_grid_tex(matrices, Nrhs=1)
+    assert r"\begin{pNiceArray}{rr|r}" in tex
+
+
+def test_ge_tex_normalizes_julia_style_inputs():
+    class SymLike:
+        def __init__(self, s: str):
+            self.s = s
+
+        def __str__(self) -> str:
+            return self.s
+
+    tex = ge_tex(
+        mat_rep="1",
+        mat_format="c",
+        submatrix_locs=[(SymLike(":name=Z"), (1, 1), (1, 1))],
+        pivot_locs=[(((1, 1), (1, 1)), SymLike(":thick"))],
+        txt_with_locs=[((1, 1), "x", SymLike(":red"))],
+    )
+
+    assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex
+    assert r"fit=(1-1)(1-1)" in tex
+    assert r"\node[red] at (1-1)" in tex
