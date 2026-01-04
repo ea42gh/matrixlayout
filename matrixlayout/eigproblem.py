@@ -118,6 +118,7 @@ def _mk_diag_matrix(
     formater: LatexFormatter,
     sz: Tuple[int, int],
     mm: int = 8,
+    span_cols: Optional[int] = None,
     extra_space: str = "",
     add_height_mm: int = 0,
 ) -> str:
@@ -128,7 +129,8 @@ def _mk_diag_matrix(
     n = len(diag)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
-    pre = rf"\multicolumn{{{len(multiplicities)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * n) + "}"
+    n_value_cols = max(1, 2 * len(multiplicities) - 1) if span_cols is None else int(span_cols)
+    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * n) + "}"
     post = r"\end{pNiceArray}$}"
 
     # Build an n x n string matrix
@@ -154,6 +156,7 @@ def _mk_vecs_matrix(
     formater: LatexFormatter,
     sz: int,
     mm: int = 8,
+    span_cols: int = 1,
     extra_space: str = "",
     add_height_mm: int = 0,
 ) -> Optional[str]:
@@ -187,7 +190,7 @@ def _mk_vecs_matrix(
             mat[i][sz - 1] = mat[i][sz - 1] + extra_space
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
-    pre = rf"\multicolumn{{{len(vec_groups)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
+    pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
     post = r"\end{pNiceArray}$}"
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
@@ -249,6 +252,9 @@ def eigproblem_tex(
             sz = None
     sz = (n, n) if sz is None else tuple(sz)
 
+    # Number of value columns in the legacy interleaved tabular scheme
+    value_cols = max(1, 2 * len(lambdas_distinct) - 1)
+
     # Values rows
     sigmas_row = None
     if case.upper() == "SVD" and "sigma" in eig:
@@ -271,21 +277,21 @@ def eigproblem_tex(
         # Left singular vectors are shown as a matrix (U) below, if provided.
         if "uvecs" in eig:
             left_singular_matrix = _mk_vecs_matrix(
-                eig["uvecs"], formater=formater, sz=sz[0], mm=mmS
+                eig["uvecs"], formater=formater, sz=sz[0], mm=mmS, span_cols=value_cols
             )
 
     # Matrices (diagonal + eigen/singular vector matrix)
     if case.upper() == "SVD" and "sigma" in eig:
         diag_values = list(eig["sigma"])
-        lambda_matrix = _mk_diag_matrix(diag_values, multiplicities, formater=formater, sz=sz, mm=mmLambda)
+        lambda_matrix = _mk_diag_matrix(diag_values, multiplicities, formater=formater, sz=sz, mm=mmLambda, span_cols=value_cols)
     else:
-        lambda_matrix = _mk_diag_matrix(lambdas_distinct, multiplicities, formater=formater, sz=sz, mm=mmLambda)
+        lambda_matrix = _mk_diag_matrix(lambdas_distinct, multiplicities, formater=formater, sz=sz, mm=mmLambda, span_cols=value_cols)
 
     if case.upper() == "S":
-        evecs_matrix = _mk_vecs_matrix(eig["evecs"], formater=formater, sz=sz[1], mm=mmS)
+        evecs_matrix = _mk_vecs_matrix(eig["evecs"], formater=formater, sz=sz[1], mm=mmS, span_cols=value_cols)
     else:
         qvecs = eig.get("qvecs")
-        evecs_matrix = _mk_vecs_matrix(qvecs, formater=formater, sz=sz[1], mm=mmS) if qvecs else None
+        evecs_matrix = _mk_vecs_matrix(qvecs, formater=formater, sz=sz[1], mm=mmS, span_cols=value_cols) if qvecs else None
 
     # Matrix name labels
     if case.upper() == "S":
