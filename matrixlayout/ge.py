@@ -18,7 +18,7 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union, Any
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
@@ -196,6 +196,8 @@ def ge_svg(
     outer_delims_name: str = "A0x0",
     outer_delims_span: Optional[Tuple[int, int]] = None,
     toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
+    padding: Any = None,
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
     tex = ge_tex(
@@ -218,5 +220,5 @@ def ge_svg(
         outer_delims_span=outer_delims_span,
     )
     if toolchain_name:
-        return _render_svg(tex, toolchain_name=toolchain_name)
-    return _render_svg(tex)
+        return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
+    return _render_svg(tex, crop=crop, padding=padding)

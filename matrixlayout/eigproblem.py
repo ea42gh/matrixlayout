@@ -331,6 +331,8 @@ def eigproblem_svg(
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
     toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
+    padding: Any = None,
 ) -> str:
     """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
     tex = eigproblem_tex(
@@ -344,4 +346,4 @@ def eigproblem_svg(
         preamble=preamble,
         sz=sz,
     )
-    return render_svg(tex, toolchain_name=toolchain_name)
+    return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)

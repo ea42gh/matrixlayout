@@ -9,10 +9,16 @@ jupyter_tikz directly.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 
 
-def render_svg(tex_source: str, *, toolchain_name: Optional[str] = None) -> str:
+def render_svg(
+    tex_source: str,
+    *,
+    toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
+    padding: Any = None,
+) -> str:
     """Compile TeX and return SVG text.
 
     Parameters
@@ -29,6 +35,6 @@ def render_svg(tex_source: str, *, toolchain_name: Optional[str] = None) -> str:
     import jupyter_tikz
 
     if toolchain_name is None:
-        return jupyter_tikz.render_svg(tex_source)
+        return jupyter_tikz.render_svg(tex_source, crop=crop, padding=padding)
 
-    return jupyter_tikz.render_svg(tex_source, toolchain_name=toolchain_name)
+    return jupyter_tikz.render_svg(tex_source, toolchain_name=toolchain_name, crop=crop, padding=padding)

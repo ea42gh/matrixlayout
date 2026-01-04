@@ -123,6 +123,8 @@ def backsubst_svg(
     show_solution: bool = True,
     fig_scale: Optional[Union[str, float, int]] = None,
     toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
+    padding: Any = None,
 ) -> str:
     """Render the back-substitution document to SVG using jupyter_tikz."""
 
@@ -137,4 +139,4 @@ def backsubst_svg(
         show_solution=show_solution,
         fig_scale=fig_scale,
     )
-    return render_svg(tex, toolchain_name=toolchain_name)
+    return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
