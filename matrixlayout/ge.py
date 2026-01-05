@@ -24,110 +24,83 @@ from .jinja_env import render_template
 from .render import render_svg as _render_svg
 
 
-def _normalize_symbol_like(x: Any) -> str:
-    """Normalize Julia/Python "symbol-like" values to a plain string.
+def _julia_str(x: Any) -> str:
+    """Normalize Julia/PythonCall/PyCall "string-like" values to plain strings.
 
-    Julia interop note
-    ------------------
-    When calling Python from Julia, PyCall and PythonCall can represent
-    ``Symbol`` values differently. Some arrive as native Python strings; others
-    arrive as wrapper objects whose ``str(x)`` renders with a leading colon
-    (e.g. ``":tight"``). This helper normalizes both cases.
+    Julia Symbols frequently stringify to ``":name"`` (e.g. ``:tight``).
+    For interop, strip a single leading colon.
     """
-
     if x is None:
         return ""
     s = str(x).strip()
     if s.startswith(":"):
-        s = s[1:].strip()
+        s = s[1:]
     return s
 
 
-def _normalize_cell_coord(coord: Any) -> str:
-    """Normalize a cell coordinate into TeX form ``"(i-j)"``.
+def _coord_token(x: Any) -> str:
+    """Convert a coordinate into an ``i-j`` token (1-based indices).
 
-    Accepted input forms:
+    Accepted forms:
     - ``"(i-j)"`` or ``"i-j"``
     - ``(i, j)`` / ``[i, j]``
     """
-
-    if coord is None:
-        return ""
-    if isinstance(coord, (tuple, list)) and len(coord) == 2:
-        i, j = coord
-        return f"({int(i)}-{int(j)})"
-    s = str(coord).strip()
-    if not s:
-        return ""
+    if isinstance(x, (tuple, list)) and len(x) == 2:
+        i, j = x
+        return f"{int(i)}-{int(j)}"
+    s = str(x).strip()
     if s.startswith("(") and s.endswith(")"):
-        return s
-    # "i-j" -> "(i-j)"
-    if "-" in s and any(ch.isdigit() for ch in s):
-        return f"({s})"
+        s = s[1:-1].strip()
     return s
 
 
-def _normalize_fit_span(span: Any) -> str:
-    r"""Normalize a TikZ ``fit`` target to ``"(i-j)(k-l)"``.
+def _coord_paren(x: Any) -> str:
+    """Convert a coordinate into a parenthesized form ``(i-j)``."""
+    tok = _coord_token(x)
+    if tok.startswith("(") and tok.endswith(")"):
+        return tok
+    return f"({tok})"
 
-    Accepted input forms:
+
+def _fit_target(x: Any) -> str:
+    """Normalize a fit target into the TeX form ``(i-j)(k-l)``.
+
+    Accepted forms:
     - ``"(i-j)(k-l)"``
     - ``"{i-j}{k-l}"``
-    - ``((i, j), (k, l))``
+    - ``((i, j), (k, l))`` or ``[(i, j), (k, l)]``
     """
+    if isinstance(x, (tuple, list)) and len(x) == 2 and all(isinstance(t, (tuple, list, str, int)) for t in x):
+        first, last = x
+        return f"{_coord_paren(first)}{_coord_paren(last)}"
 
-    if span is None:
-        return ""
-    if isinstance(span, (tuple, list)) and len(span) == 2 and all(
-        isinstance(x, (tuple, list)) and len(x) == 2 for x in span
-    ):
-        (i, j), (k, l) = span
-        return f"({int(i)}-{int(j)})({int(k)}-{int(l)})"
+    s = str(x).strip()
+    if s.startswith("{") and "}{" in s and s.endswith("}"):
+        # "{i-j}{k-l}" -> "(i-j)(k-l)"
+        import re
+        parts = re.findall(r"\{\s*([^}]+?)\s*\}", s)
+        if len(parts) == 2:
+            return f"({_coord_token(parts[0])})({_coord_token(parts[1])})"
+    return s
 
-    s = str(span).strip()
-    if not s:
-        return ""
 
+def _fit_span(x: Any) -> str:
+    """Convert a span-like input into a fit target ``(i-j)(k-l)``."""
+    if isinstance(x, str):
+        s = x.strip()
+        # Already the desired form
+        if "(" in s and ")" in s and "{" not in s:
+            return s
+    if isinstance(x, (tuple, list)) and len(x) == 2:
+        a, b = x
+        return _coord_paren(a) + _coord_paren(b)
+    # Fallback: try to parse braces ``{i-j}{k-l}``
+    s = str(x).strip()
     import re
-
-    # legacy brace form: "{i-j}{k-l}"
     parts = re.findall(r"\{\s*([^}]+?)\s*\}", s)
     if len(parts) == 2:
         return f"({parts[0]})({parts[1]})"
-
-    # parenthesis form: "(i-j)(k-l)" or "(i-j) (k-l)"
-    parts = re.findall(r"\(\s*([^)]+?)\s*\)", s)
-    if len(parts) == 2:
-        return f"({parts[0]})({parts[1]})"
-
     return s
-
-
-def _normalize_pivot_locs(pivot_locs: Optional[Sequence[Tuple[Any, Any]]]) -> List[Tuple[str, str]]:
-    """Normalize pivot boxes to ``[(fit_target, extra_style), ...]``.
-
-    Each ``fit_target`` becomes ``"(i-j)(k-l)"`` and style is symbol-normalized.
-    """
-
-    if not pivot_locs:
-        return []
-    out: List[Tuple[str, str]] = []
-    for fit_target, extra_style in pivot_locs:
-        out.append((_normalize_fit_span(fit_target), _normalize_symbol_like(extra_style)))
-    return out
-
-
-def _normalize_txt_with_locs(
-    txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]]
-) -> List[Tuple[str, str, str]]:
-    """Normalize text labels to ``[(coord, txt, style), ...]``."""
-
-    if not txt_with_locs:
-        return []
-    out: List[Tuple[str, str, str]] = []
-    for coord, txt, style in txt_with_locs:
-        out.append((_normalize_cell_coord(coord), str(txt), _normalize_symbol_like(style)))
-    return out
 
 
 def _normalize_mat_format(mat_format: str) -> str:
@@ -164,7 +137,7 @@ def _guess_shape_from_mat_rep(mat_rep: str) -> Tuple[int, int]:
 
 def _normalize_submatrix_locs(
     submatrix_locs: Optional[
-        Sequence[Union[Tuple[Any, Any], Tuple[Any, Any, Any]]]
+        Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]
     ]
 ) -> List[Tuple[str, str]]:
     r"""Normalize submatrix descriptors to ``(options, span)``.
@@ -174,8 +147,6 @@ def _normalize_submatrix_locs(
     - ``(opts, "(1-1)(2-2)")`` (two parenthesized tokens)
     - ``(opts, "(1-1)", "(2-2)")`` (explicit first/last, with parentheses)
     - ``(opts, "1-1", "2-2")`` (explicit first/last)
-    - ``(opts, (i, j), (k, l))`` (explicit first/last as integer pairs)
-    - ``(opts, ((i, j), (k, l)))`` (2-tuple of integer pairs)
 
     Output span is always ``"{first}{last}"`` (including braces) and is meant to be
     used inside ``\SubMatrix({span})``.
@@ -188,14 +159,15 @@ def _normalize_submatrix_locs(
     for item in submatrix_locs:
         if len(item) == 2:
             opts, loc = item
-            # Allow ((i,j),(k,l)) as a span.
-            if isinstance(loc, (tuple, list)) and len(loc) == 2 and all(
-                isinstance(x, (tuple, list)) and len(x) == 2 for x in loc
-            ):
-                (i, j), (k, l) = loc
-                first, last = f"{int(i)}-{int(j)}", f"{int(k)}-{int(l)}"
-                span = f"{{{first}}}{{{last}}}"
-                out.append((_normalize_symbol_like(opts), span))
+            opts = _julia_str(opts)
+
+            # Accept a coord-pair span: ((i,j),(k,l))
+            if isinstance(loc, (tuple, list)) and len(loc) == 2 and all(isinstance(t, (tuple, list)) for t in loc):
+                first, last = loc
+                first_tok = _coord_token(first)
+                last_tok = _coord_token(last)
+                span = f"{{{first_tok}}}{{{last_tok}}}"
+                out.append((opts, span))
                 continue
 
             loc_s = str(loc).strip()
@@ -215,25 +187,53 @@ def _normalize_submatrix_locs(
 
         elif len(item) == 3:
             opts, first, last = item
-            # Allow integer-pair coordinates.
+            opts = _julia_str(opts)
+
+            # Coordinates may be tuples/lists.
             if isinstance(first, (tuple, list)) and len(first) == 2:
-                first = f"{int(first[0])}-{int(first[1])}"
+                first = _coord_token(first)
             else:
                 first = str(first).strip()
+                if first.startswith("(") and first.endswith(")"):
+                    first = first[1:-1].strip()
+
             if isinstance(last, (tuple, list)) and len(last) == 2:
-                last = f"{int(last[0])}-{int(last[1])}"
+                last = _coord_token(last)
             else:
                 last = str(last).strip()
-            if first.startswith("(") and first.endswith(")"):
-                first = first[1:-1].strip()
-            if last.startswith("(") and last.endswith(")"):
-                last = last[1:-1].strip()
+                if last.startswith("(") and last.endswith(")"):
+                    last = last[1:-1].strip()
         else:
             raise ValueError(f"submatrix_locs entry must be a 2- or 3-tuple, got: {item!r}")
 
         span = f"{{{first}}}{{{last}}}"
-        out.append((_normalize_symbol_like(opts), span))
+        out.append((opts, span))
 
+    return out
+
+
+def _normalize_pivot_locs(pivot_locs: Optional[Sequence[Tuple[Any, Any]]]) -> List[Tuple[str, str]]:
+    """Normalize pivot box descriptors for tikz ``fit``.
+
+    Accepts entries of the form:
+    - ``(fit_target, style)`` where ``fit_target`` is either a string
+      like ``"(1-1)(1-1)"`` or a pair ``((i,j),(k,l))``.
+    """
+    if not pivot_locs:
+        return []
+    out: List[Tuple[str, str]] = []
+    for fit_target, style in pivot_locs:
+        out.append((_fit_target(fit_target), _julia_str(style)))
+    return out
+
+
+def _normalize_txt_with_locs(txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]]) -> List[Tuple[str, str, str]]:
+    """Normalize label descriptors (coord, text, style)."""
+    if not txt_with_locs:
+        return []
+    out: List[Tuple[str, str, str]] = []
+    for coord, txt, style in txt_with_locs:
+        out.append((_coord_paren(coord), str(txt), _julia_str(style)))
     return out
 
 
@@ -245,10 +245,10 @@ def ge_tex(
     extension: str = "",
     nice_options: str = "vlines-in-sub-matrix = I",
     codebefore: Optional[Sequence[str]] = None,
-    submatrix_locs: Optional[Sequence[Union[Tuple[Any, Any], Tuple[Any, Any, Any]]]] = None,
+    submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
-    pivot_locs: Optional[Sequence[Tuple[Any, Any]]] = None,
-    txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]] = None,
+    pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
+    txt_with_locs: Optional[Sequence[Tuple[str, str, str]]] = None,
     rowechelon_paths: Optional[Sequence[str]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
@@ -272,8 +272,6 @@ def ge_tex(
             fig_scale_close = ""
 
     sub_spans = _normalize_submatrix_locs(submatrix_locs)
-    pivot_locs_norm = _normalize_pivot_locs(pivot_locs)
-    txt_with_locs_norm = _normalize_txt_with_locs(txt_with_locs)
 
     if outer_delims and not sub_spans:
         if outer_delims_span is None:
@@ -295,10 +293,10 @@ def ge_tex(
         codebefore=list(codebefore or []),
         mat_rep=mat_rep_norm,
         submatrix_spans=sub_spans,   # list[(opts, "{i-j}{k-l}")]
-        submatrix_names=[str(x) for x in (submatrix_names or [])],
-        pivot_locs=pivot_locs_norm,
-        txt_with_locs=txt_with_locs_norm,
-        rowechelon_paths=[str(x) for x in (rowechelon_paths or [])],
+        submatrix_names=list(submatrix_names or []),
+        pivot_locs=_normalize_pivot_locs(pivot_locs),
+        txt_with_locs=_normalize_txt_with_locs(txt_with_locs),
+        rowechelon_paths=list(rowechelon_paths or []),
     )
     return render_template("ge.tex.j2", ctx)
 
@@ -311,10 +309,10 @@ def ge_svg(
     extension: str = "",
     nice_options: str = "vlines-in-sub-matrix = I",
     codebefore: Optional[Sequence[str]] = None,
-    submatrix_locs: Optional[Sequence[Union[Tuple[Any, Any], Tuple[Any, Any, Any]]]] = None,
+    submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
-    pivot_locs: Optional[Sequence[Tuple[Any, Any]]] = None,
-    txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]] = None,
+    pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
+    txt_with_locs: Optional[Sequence[Tuple[str, str, str]]] = None,
     rowechelon_paths: Optional[Sequence[str]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
@@ -351,232 +349,191 @@ def ge_svg(
     return _render_svg(tex, crop=crop, padding=padding)
 
 
-def _matrix_shape(M: Any) -> Tuple[int, int]:
-    """Best-effort (nrows, ncols) for common matrix containers.
+# -----------------------------------------------------------------------------
+# Grid helpers: build GE mat_rep/mat_format from a "matrix-of-matrices" stack.
+# -----------------------------------------------------------------------------
 
-    Supports:
-    - objects with ``shape`` (NumPy/SymPy)
-    - objects with ``rows`` / ``cols`` (SymPy)
-    - nested sequences (list-of-lists)
+
+def _default_formater(x: Any) -> str:
+    """Default scalar formatter for TeX.
+
+    - If ``x`` is a string, it is assumed TeX-ready.
+    - Otherwise, if SymPy is available, uses ``sympy.latex``.
+    - Falls back to ``str(x)``.
     """
+    if isinstance(x, str):
+        return x
+    try:
+        import sympy as sym  # type: ignore
+        return sym.latex(x)
+    except Exception:
+        return str(x)
 
+
+def _as_2d_list(M: Any) -> Tuple[List[List[Any]], int, int]:
+    """Return (rows, nrows, ncols) from common matrix-like inputs."""
     if M is None:
-        return (0, 0)
-    if hasattr(M, "shape"):
-        sh = getattr(M, "shape")
+        return [], 0, 0
+
+    # SymPy / numpy / etc.
+    if hasattr(M, 'tolist'):
+        rows = M.tolist()
+    elif isinstance(M, (list, tuple)):
+        rows = list(M)
+    else:
         try:
-            return int(sh[0]), int(sh[1])
-        except Exception:
-            pass
-    if hasattr(M, "rows") and hasattr(M, "cols"):
-        return int(getattr(M, "rows")), int(getattr(M, "cols"))
-    # list-of-lists
-    try:
-        r = len(M)
-        c = len(M[0]) if r else 0
-        return int(r), int(c)
-    except Exception:
-        return (0, 0)
+            rows = list(M)
+        except Exception as e:
+            raise TypeError(f"Unsupported matrix-like object: {type(M)!r}") from e
+
+    rows2: List[List[Any]] = []
+    for r in rows:
+        if isinstance(r, (list, tuple)):
+            rows2.append(list(r))
+        else:
+            # 1D vector treated as a column
+            rows2.append([r])
+
+    nrows = len(rows2)
+    ncols = max((len(r) for r in rows2), default=0)
+
+    # Pad ragged rows with blanks.
+    for r in rows2:
+        if len(r) < ncols:
+            r.extend([""] * (ncols - len(r)))
+
+    return rows2, nrows, ncols
 
 
-def _matrix_entry(M: Any, i: int, j: int) -> Any:
-    """Best-effort ``M[i,j]`` for common containers."""
+def _matrix_body_tex(M: Any, *, formater: LatexFormatter) -> str:
+    """Format a matrix-like object into a TeX body: ``a & b \\ c & d``."""
+    rows, nrows, ncols = _as_2d_list(M)
+    if nrows == 0 or ncols == 0:
+        return ""
 
-    try:
-        return M[i, j]
-    except Exception:
-        return M[i][j]
+    body_rows: List[str] = []
+    for r in rows:
+        cells = [formater(v) for v in r]
+        body_rows.append(" & ".join(cells) + r" \\")
+    return "\n".join(body_rows)
 
 
-def _pnicearray_cell(
+def _pnicearray_tex(
     M: Any,
     *,
-    formater: Any = str,
-    vline_cuts: Optional[Sequence[int]] = None,
+    Nrhs: int = 0,
+    formater: LatexFormatter,
+    align: str = "r",
 ) -> str:
-    r"""Render a matrix cell as a ``pNiceArray`` fragment (no surrounding ``$``).
+    """Wrap a matrix body into a ``pNiceArray`` environment."""
+    rows, nrows, ncols = _as_2d_list(M)
+    if nrows == 0 or ncols == 0:
+        return r"\;"
 
-    Parameters
-    ----------
-    M:
-        Matrix-like object.
-    formater:
-        Entry -> TeX formatter.
-    vline_cuts:
-        Optional cut positions (after these coefficient column counts) where a
-        vertical bar should be inserted in the array format string.
+    # Column format, optionally with an augmented separator.
+    if Nrhs and 0 < Nrhs < ncols:
+        left = ncols - Nrhs
+        fmt = (align * left) + "|" + (align * Nrhs)
+    else:
+        fmt = align * ncols
 
-    Notes
-    -----
-    This produces a fragment intended to be embedded inside an outer
-    ``NiceArray`` that is already in math mode.
-    """
-
-    if M is None:
-        return ""
-
-    nrows, ncols = _matrix_shape(M)
-    if nrows <= 0 or ncols <= 0:
-        return ""
-
-    cuts = sorted(set(int(c) for c in (vline_cuts or []) if int(c) > 0 and int(c) < ncols))
-    # Build array preamble such as "rr|r|rr".
-    preamble_parts: List[str] = []
-    for j in range(1, ncols + 1):
-        preamble_parts.append("r")
-        if j in cuts:
-            preamble_parts.append("|")
-    mat_format = "".join(preamble_parts)
-
-    rows: List[str] = []
-    for i in range(nrows):
-        entries: List[str] = []
-        for j in range(ncols):
-            v = _matrix_entry(M, i, j)
-            try:
-                tex = formater(v)
-            except Exception:
-                tex = str(v)
-            entries.append(str(tex))
-        rows.append(" & ".join(entries))
-
-    body = " \\\\ ".join(rows)
-    return rf"\begin{{pNiceArray}}{{{mat_format}}}{body}\end{{pNiceArray}}"
-
-
-def _rhs_cuts_from_Nrhs(total_cols: int, Nrhs: Union[int, Sequence[int]]) -> List[int]:
-    """Compute vertical cut positions for an augmented matrix.
-
-    Parameters
-    ----------
-    total_cols:
-        Total columns in the augmented matrix.
-    Nrhs:
-        Either an integer RHS width, or a list of segment widths.
-
-    Returns
-    -------
-    list[int]
-        Cut positions in 1-based column counts (i.e., insert a bar after these).
-    """
-
-    if Nrhs is None:
-        return []
-    if isinstance(Nrhs, (int, float)):
-        nrhs = int(Nrhs)
-        if nrhs <= 0 or nrhs >= total_cols:
-            return []
-        return [total_cols - nrhs]
-
-    segs = [int(x) for x in Nrhs]
-    if not segs or any(x <= 0 for x in segs):
-        return []
-    rhs_total = sum(segs)
-    if rhs_total <= 0 or rhs_total >= total_cols:
-        return []
-    coef = total_cols - rhs_total
-    cuts: List[int] = [coef]
-    acc = coef
-    for w in segs[:-1]:
-        acc += w
-        if 0 < acc < total_cols:
-            cuts.append(acc)
-    return cuts
+    body = _matrix_body_tex(rows, formater=formater)
+    return rf"\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\end{{pNiceArray}}"
 
 
 def ge_grid_tex(
     matrices: Sequence[Sequence[Any]],
-    *,
-    Nrhs: Union[int, Sequence[int]] = 0,
-    formater: Any = str,
-    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
-    nice_options: str = "vlines-in-sub-matrix = I",
-    col_gap: str = "8mm",
-    partition_col: int = 1,
+    Nrhs: int = 0,
+    formater: LatexFormatter = _default_formater,
+    outer_hspace_mm: int = 6,
+    cell_align: str = "r",
     **kwargs: Any,
 ) -> str:
-    r"""Build a GE TeX document from a legacy-style matrix stack.
+    r"""Populate the GE template from a matrix stack.
 
     Parameters
     ----------
     matrices:
-        Nested list structure such as ``[[None, A0], [E1, A1], ...]``.
+        A nested list representing the "matrix-of-matrices" layout, typically
+        ``[[None, A0], [E1, A1], [E2, A2], ...]``.
     Nrhs:
-        RHS width (or segment widths) used to insert partition bars in the
-        augmented matrix column.
-    partition_col:
-        Grid column index (0-based) that should receive RHS partition bars.
-        For the canonical GE layout this is the *second* column (index 1).
+        Number of RHS columns in the *A-block* matrices (used to insert a vertical
+        bar in their internal ``pNiceArray`` preamble).
+    formater:
+        Scalar formatter for TeX.
+    outer_hspace_mm:
+        Horizontal spacing between the E and A blocks (only used for 2-column grids).
 
-    Notes
-    -----
-    This is a layout-only helper: it does not perform elimination.
+    Returns
+    -------
+    str
+        TeX document (via :func:`ge_tex`).
     """
+    grid = list(matrices or [])
+    nrows = len(grid)
+    ncols = max((len(r) for r in grid), default=0)
+    if ncols == 0:
+        raise ValueError("matrices must be a non-empty nested list")
 
-    if not matrices:
-        raise ValueError("matrices must be a non-empty nested sequence")
-
-    ngrid_cols = max(len(r) for r in matrices)
-    if ngrid_cols <= 0:
-        raise ValueError("matrices rows must contain at least one column")
-
-    gap = (col_gap or "").strip()
-    if gap:
-        mat_format = ("c" + rf"@{{\hspace{{{gap}}}}}") * (ngrid_cols - 1) + "c"
+    if ncols == 2:
+        mat_format = rf"c@{{\hspace{{{outer_hspace_mm}mm}}}}c"
     else:
-        mat_format = "c" * ngrid_cols
+        mat_format = "c" * ncols
 
-    rep_rows: List[str] = []
-    for r in matrices:
+    lines: List[str] = []
+    for r in range(nrows):
+        row = list(grid[r])
+        if len(row) < ncols:
+            row += [None] * (ncols - len(row))
+
         cells: List[str] = []
-        for c in range(ngrid_cols):
-            M = r[c] if c < len(r) else None
-            vcuts: Optional[List[int]] = None
-            if c == partition_col and Nrhs:
-                _, ncols = _matrix_shape(M)
-                vcuts = _rhs_cuts_from_Nrhs(ncols, Nrhs)
-            cells.append(_pnicearray_cell(M, formater=formater, vline_cuts=vcuts))
-        rep_rows.append(" & ".join(cells))
+        for c, cell in enumerate(row):
+            if cell is None:
+                cells.append(r"\;")
+                continue
+            # Apply Nrhs only to the last column, which is the augmented A-block in the legacy layout.
+            nrhs_cell = Nrhs if (Nrhs and c == ncols - 1) else 0
+            cells.append(_pnicearray_tex(cell, Nrhs=nrhs_cell, formater=formater, align=cell_align))
 
-    mat_rep = " \\\\ ".join(rep_rows)
-    return ge_tex(
-        mat_rep=mat_rep,
-        mat_format=mat_format,
-        preamble=preamble,
-        nice_options=nice_options,
-        **kwargs,
-    )
+        lines.append(" & ".join(cells) + r" \\")
 
+    mat_rep = "\n".join(lines)
 
+    return ge_tex(mat_rep=mat_rep, mat_format=mat_format, **kwargs)
 def ge_grid_svg(
     matrices: Sequence[Sequence[Any]],
-    *,
-    Nrhs: Union[int, Sequence[int]] = 0,
-    formater: Any = str,
-    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
-    nice_options: str = "vlines-in-sub-matrix = I",
-    col_gap: str = "8mm",
-    partition_col: int = 1,
-    toolchain_name: Optional[Any] = None,
-    crop: Optional[Any] = None,
+    Nrhs: int = 0,
+    formater: LatexFormatter = _default_formater,
+    outer_hspace_mm: int = 6,
+    cell_align: str = "r",
+    toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
     padding: Any = None,
     **kwargs: Any,
 ) -> str:
-    """Render a GE matrix stack to SVG via the strict rendering boundary."""
+    r"""Render the GE matrix stack to SVG.
 
+    This is a convenience wrapper around :func:`ge_grid_tex` and the strict
+    rendering boundary (:func:`matrixlayout.render.render_svg`).
+
+    Parameters
+    ----------
+    matrices, Nrhs, formater, outer_hspace_mm, cell_align:
+        See :func:`ge_grid_tex`.
+    toolchain_name, crop, padding:
+        Passed through to the renderer.
+
+    Returns
+    -------
+    str
+        SVG text.
+    """
     tex = ge_grid_tex(
-        matrices,
+        matrices=matrices,
         Nrhs=Nrhs,
         formater=formater,
-        preamble=preamble,
-        nice_options=nice_options,
-        col_gap=col_gap,
-        partition_col=partition_col,
+        outer_hspace_mm=outer_hspace_mm,
+        cell_align=cell_align,
         **kwargs,
     )
-
-    tname = _normalize_symbol_like(toolchain_name) or None
-    crop_s = _normalize_symbol_like(crop) or None
-    if tname:
-        return _render_svg(tex, toolchain_name=tname, crop=crop_s, padding=padding)
-    return _render_svg(tex, crop=crop_s, padding=padding)
+    return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
