@@ -15,6 +15,11 @@
 \usepackage{nicematrix,tikz}
 \usetikzlibrary{calc,fit,decorations.markings,arrows.meta}
 
+% nicematrix provides \NotEmpty in modern releases. We use it in generated
+% matrices to ensure cell nodes exist without introducing visible spacing.
+% Provide a harmless fallback for older nicematrix versions.
+\providecommand\NotEmpty{\kern0pt}
+
 {%% if landscape %%}
 \usepackage{pdflscape}
 {%% endif %%}

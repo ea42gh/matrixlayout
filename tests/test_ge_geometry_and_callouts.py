@@ -80,3 +80,24 @@ def test_ge_grid_tex_strict_callouts_reject_unknown_submatrix_name():
             matrices=matrices,
             callouts=[{"name": "NO_SUCH_NAME", "label": "X", "side": "right"}],
         )
+
+
+def test_ge_grid_tex_threads_extension_and_fig_scale():
+    """ge_grid_tex/ge_tex should expose extension+fig_scale end-to-end."""
+
+    from matrixlayout.ge import ge_grid_tex
+
+    matrices = [[None, [[1, 2], [3, 4]]]]
+
+    tex = ge_grid_tex(
+        matrices=matrices,
+        Nrhs=0,
+        extension=r"\usepackage{newtxtext,newtxmath}",
+        fig_scale=0.75,
+    )
+
+    # extension must appear in the pre-document area.
+    assert r"\usepackage{newtxtext,newtxmath}" in tex
+
+    # fig_scale should wrap the figure.
+    assert r"\scalebox{0.75}" in tex

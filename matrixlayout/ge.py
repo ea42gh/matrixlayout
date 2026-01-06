@@ -528,7 +528,9 @@ def _pnicearray_tex(
     """Wrap a matrix body into a ``pNiceArray`` environment."""
     rows, nrows, ncols = _as_2d_list(M)
     if nrows == 0 or ncols == 0:
-        return r"\;"
+        # Use nicematrix's semantic marker for "this cell is not empty" so that
+        # `create-cell-nodes` reliably creates nodes without introducing spacing.
+        return r"\NotEmpty"
 
     # Column format, optionally with an augmented separator.
     if Nrhs and 0 < Nrhs < ncols:
@@ -548,6 +550,8 @@ def ge_grid_tex(
     formater: LatexFormatter = _default_formater,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    extension: str = "",
+    fig_scale: Optional[Union[float, int, str]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -632,7 +636,9 @@ def ge_grid_tex(
 
     mat_format = "".join(fmt_parts)
 
-    blank = r"\;"
+    # Use nicematrix's semantic marker for "this cell is not empty" so that
+    # `create-cell-nodes` reliably creates nodes without introducing spacing.
+    blank = r"\NotEmpty"
 
     def _fmt(v: Any) -> str:
         if v is None:
@@ -709,13 +715,22 @@ def ge_grid_tex(
     if user_sub:
         submatrix_locs.extend(list(user_sub))
 
-    return ge_tex(mat_rep=mat_rep, mat_format=mat_format, submatrix_locs=submatrix_locs, **kwargs)
+    return ge_tex(
+        mat_rep=mat_rep,
+        mat_format=mat_format,
+        extension=extension,
+        fig_scale=fig_scale,
+        submatrix_locs=submatrix_locs,
+        **kwargs,
+    )
 def ge_grid_svg(
     matrices: Sequence[Sequence[Any]],
     Nrhs: int = 0,
     formater: LatexFormatter = _default_formater,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    extension: str = "",
+    fig_scale: Optional[Union[float, int, str]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -744,6 +759,8 @@ def ge_grid_svg(
         formater=formater,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
+        extension=extension,
+        fig_scale=fig_scale,
         **kwargs,
     )
     return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
