@@ -8,6 +8,13 @@ from .jinja_env import get_environment
 from .backsubst import backsubst_tex, backsubst_svg
 from .eigproblem import eigproblem_tex, eigproblem_svg
 from .ge import ge_tex, ge_svg, ge_grid_tex, ge_grid_svg
+from .nicematrix_decor import (
+    DelimCallout,
+    DelimCalloutDict,
+    infer_ge_layer_callouts,
+    render_delim_callout,
+    render_delim_callouts,
+)
 
 __all__ = [
     "get_environment",
@@ -19,4 +26,9 @@ __all__ = [
     "ge_svg",
     "ge_grid_tex",
     "ge_grid_svg",
+    "DelimCallout",
+    "DelimCalloutDict",
+    "infer_ge_layer_callouts",
+    "render_delim_callout",
+    "render_delim_callouts",
 ]

@@ -25,6 +25,6 @@ def test_ge_grid_tex_smoke_builds_tex():
 
     tex = ge_grid_tex(matrices=matrices, Nrhs=1, preamble="")
     assert "\\begin{NiceArray}" in tex
-    assert "\\begin{pNiceArray}" in tex
+    assert "\\SubMatrix" in tex
     # RHS partition should appear in the pNiceArray column spec.
-    assert "\\begin{pNiceArray}{rr|r}" in tex
+    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex

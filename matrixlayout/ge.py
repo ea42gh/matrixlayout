@@ -153,12 +153,15 @@ def _normalize_submatrix_locs(
     """
     if not submatrix_locs:
         return []
-    out: List[Tuple[str, str]] = []
+    # Each normalized entry is either (opts, span) or (opts, span, left, right)
+    # where left/right are optional delimiters passed as _{...}^{...} to \SubMatrix.
+    out: List[Tuple[str, ...]] = []
     import re
 
     for item in submatrix_locs:
         if len(item) == 2:
             opts, loc = item
+            left_delim = right_delim = None
             opts = _julia_str(opts)
 
             # Accept a coord-pair span: ((i,j),(k,l))
@@ -187,6 +190,7 @@ def _normalize_submatrix_locs(
 
         elif len(item) == 3:
             opts, first, last = item
+            left_delim = right_delim = None
             opts = _julia_str(opts)
 
             # Coordinates may be tuples/lists.
@@ -203,8 +207,65 @@ def _normalize_submatrix_locs(
                 last = str(last).strip()
                 if last.startswith("(") and last.endswith(")"):
                     last = last[1:-1].strip()
+        elif len(item) == 4:
+            # (opts, span, left, right)
+            opts, loc, left_delim, right_delim = item
+            opts = _julia_str(opts)
+
+            # Re-use the same span parsing logic as the 2-tuple case.
+            if isinstance(loc, (tuple, list)) and len(loc) == 2 and all(isinstance(t, (tuple, list)) for t in loc):
+                first, last = loc
+                first_tok = _coord_token(first)
+                last_tok = _coord_token(last)
+                span = f"{{{first_tok}}}{{{last_tok}}}"
+            else:
+                loc_s = str(loc).strip()
+                if "{" in loc_s and "}" in loc_s:
+                    parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
+                    if len(parts) != 2:
+                        raise ValueError(f"Bad legacy span for submatrix_locs: {item!r}")
+                    first, last = parts[0], parts[1]
+                else:
+                    parts = re.findall(r"\(\s*([^)]+?)\s*\)", loc_s)
+                    if len(parts) != 2:
+                        raise ValueError(f"Bad span for submatrix_locs: {item!r}")
+                    first, last = parts[0], parts[1]
+                span = f"{{{first}}}{{{last}}}"
+
+            left = _julia_str(left_delim)
+            right = _julia_str(right_delim)
+            out.append((opts, span, left, right))
+            continue
+
+        elif len(item) == 5:
+            # (opts, start, end, left, right)
+            opts, first, last, left_delim, right_delim = item
+            opts = _julia_str(opts)
+
+            if isinstance(first, (tuple, list)) and len(first) == 2:
+                first = _coord_token(first)
+            else:
+                first = str(first).strip()
+                if first.startswith("(") and first.endswith(")"):
+                    first = first[1:-1].strip()
+
+            if isinstance(last, (tuple, list)) and len(last) == 2:
+                last = _coord_token(last)
+            else:
+                last = str(last).strip()
+                if last.startswith("(") and last.endswith(")"):
+                    last = last[1:-1].strip()
+
+            span = f"{{{first}}}{{{last}}}"
+            left = _julia_str(left_delim)
+            right = _julia_str(right_delim)
+            out.append((opts, span, left, right))
+            continue
         else:
-            raise ValueError(f"submatrix_locs entry must be a 2- or 3-tuple, got: {item!r}")
+            raise ValueError(
+                "submatrix_locs entry must be a 2-, 3-, 4-, or 5-tuple, got: "
+                f"{item!r}"
+            )
 
         span = f"{{{first}}}{{{last}}}"
         out.append((opts, span))
@@ -250,6 +311,7 @@ def ge_tex(
     pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
     txt_with_locs: Optional[Sequence[Tuple[str, str, str]]] = None,
     rowechelon_paths: Optional[Sequence[str]] = None,
+    callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
     create_cell_nodes: bool = True,
@@ -281,6 +343,42 @@ def ge_tex(
             raise ValueError("Could not infer outer_delims_span; pass outer_delims_span=(nrows,ncols).")
         sub_spans.append((f"name={outer_delims_name}", f"{{1-1}}{{{nrows}-{ncols}}}"))
 
+    # Descriptor-based callouts (rendered to TikZ draw commands).
+    # We validate against the set of SubMatrix names declared in sub_spans.
+    rendered_callouts: List[str] = []
+    if callouts:
+        try:
+            import re
+
+            def _extract_names(spans: Sequence[Tuple[Any, ...]]) -> List[str]:
+                """Extract declared SubMatrix names from normalized spans.
+
+                ``_normalize_submatrix_locs`` can return tuples of length 2
+                ``(opts, span)`` or length 4 ``(opts, span, left, right)``.
+                We only care about the ``opts`` field.
+                """
+                names: List[str] = []
+                for item in spans:
+                    if not item:
+                        continue
+                    opts = item[0]
+                    if not opts:
+                        continue
+                    m = re.search(r"(?:^|,)\s*name\s*=\s*([A-Za-z0-9_]+)", str(opts))
+                    if m:
+                        names.append(m.group(1))
+                return names
+
+            from .nicematrix_decor import render_delim_callouts
+
+            rendered_callouts = render_delim_callouts(
+                callouts,
+                available_names=_extract_names(sub_spans),
+                strict=True,
+            )
+        except Exception as e:
+            raise ValueError(f"Failed to render callouts: {e}") from e
+
     ctx = dict(
         extension=extension or "",
         preamble=preamble or "",
@@ -296,7 +394,7 @@ def ge_tex(
         submatrix_names=list(submatrix_names or []),
         pivot_locs=_normalize_pivot_locs(pivot_locs),
         txt_with_locs=_normalize_txt_with_locs(txt_with_locs),
-        rowechelon_paths=list(rowechelon_paths or []),
+        rowechelon_paths=list(rowechelon_paths or []) + rendered_callouts,
     )
     return render_template("ge.tex.j2", ctx)
 
@@ -314,6 +412,7 @@ def ge_svg(
     pivot_locs: Optional[Sequence[Tuple[str, str]]] = None,
     txt_with_locs: Optional[Sequence[Tuple[str, str, str]]] = None,
     rowechelon_paths: Optional[Sequence[str]] = None,
+    callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: bool = False,
     create_cell_nodes: bool = True,
@@ -337,6 +436,7 @@ def ge_svg(
         pivot_locs=pivot_locs,
         txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
+        callouts=callouts,
         fig_scale=fig_scale,
         landscape=landscape,
         create_cell_nodes=create_cell_nodes,
@@ -438,7 +538,8 @@ def _pnicearray_tex(
         fmt = align * ncols
 
     body = _matrix_body_tex(rows, formater=formater)
-    return rf"\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\end{{pNiceArray}}"
+    # IMPORTANT: emit real newlines, not a literal "\\n" TeX control sequence.
+    return f"\\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\\end{{pNiceArray}}"
 
 
 def ge_grid_tex(
@@ -451,55 +552,164 @@ def ge_grid_tex(
 ) -> str:
     r"""Populate the GE template from a matrix stack.
 
+    IMPORTANT
+    ---------
+    ``nicematrix`` environments cannot be nested. Therefore this helper must
+    *not* place ``pNiceArray`` environments inside an outer ``NiceArray``.
+    Instead, this routine *flattens* a "grid of matrices" into a single
+    scalar ``NiceArray`` and then uses ``\SubMatrix`` to draw per-block
+    delimiters (parentheses) around each matrix block.
+
     Parameters
     ----------
     matrices:
         A nested list representing the "matrix-of-matrices" layout, typically
         ``[[None, A0], [E1, A1], [E2, A2], ...]``.
     Nrhs:
-        Number of RHS columns in the *A-block* matrices (used to insert a vertical
-        bar in their internal ``pNiceArray`` preamble).
+        Number of RHS columns in the *A-block* matrices. This is used to insert
+        an augmented-matrix partition bar (``|``) in the last block-column's
+        preamble (between coefficient columns and RHS columns).
     formater:
         Scalar formatter for TeX.
     outer_hspace_mm:
-        Horizontal spacing between the E and A blocks (only used for 2-column grids).
+        Horizontal spacing between adjacent matrix blocks.
 
     Returns
     -------
     str
         TeX document (via :func:`ge_tex`).
     """
-    grid = list(matrices or [])
-    nrows = len(grid)
-    ncols = max((len(r) for r in grid), default=0)
-    if ncols == 0:
+    grid: List[List[Any]] = [list(r) for r in (matrices or [])]
+    if not grid:
         raise ValueError("matrices must be a non-empty nested list")
 
-    if ncols == 2:
-        mat_format = rf"c@{{\hspace{{{outer_hspace_mm}mm}}}}c"
-    else:
-        mat_format = "c" * ncols
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+    if n_block_cols == 0:
+        raise ValueError("matrices must contain at least one column")
 
+    # Normalize ragged outer rows.
+    for r in range(n_block_rows):
+        if len(grid[r]) < n_block_cols:
+            grid[r].extend([None] * (n_block_cols - len(grid[r])))
+
+    # Determine per-block-row height and per-block-column width.
+    block_heights: List[int] = [0] * n_block_rows
+    block_widths: List[int] = [0] * n_block_cols
+    cell_cache: List[List[Tuple[List[List[Any]], int, int]]] = [
+        [([], 0, 0) for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            rows, h, w = _as_2d_list(grid[br][bc])
+            cell_cache[br][bc] = (rows, h, w)
+            block_heights[br] = max(block_heights[br], h)
+            block_widths[bc] = max(block_widths[bc], w)
+
+    # Heuristic: if a whole block-column is "missing" (e.g. the E-block is None
+    # in the first layer), infer a square size from the tallest block-row.
+    max_h = max(block_heights) if block_heights else 0
+    for bc in range(n_block_cols):
+        if block_widths[bc] == 0 and max_h > 0:
+            block_widths[bc] = max_h
+
+    if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
+        raise ValueError("Could not infer matrix block sizes from `matrices`.")
+
+    # Build a single NiceArray format string.
+    fmt_parts: List[str] = []
+    for bc, w in enumerate(block_widths):
+        if bc > 0:
+            fmt_parts.append(rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}")
+
+        # Apply Nrhs only to the last block-column (A-block in the legacy layout).
+        if Nrhs and bc == n_block_cols - 1 and 0 < int(Nrhs) < w:
+            left = w - int(Nrhs)
+            fmt_parts.append((cell_align * left) + "|" + (cell_align * int(Nrhs)))
+        else:
+            fmt_parts.append(cell_align * w)
+
+    mat_format = "".join(fmt_parts)
+
+    blank = r"\;"
+
+    def _fmt(v: Any) -> str:
+        if v is None:
+            return blank
+        s = formater(v)
+        return s if (isinstance(s, str) and s.strip()) else blank
+
+    # Flatten all blocks into one scalar matrix representation.
     lines: List[str] = []
-    for r in range(nrows):
-        row = list(grid[r])
-        if len(row) < ncols:
-            row += [None] * (ncols - len(row))
+    for br in range(n_block_rows):
+        H = block_heights[br]
+        for i in range(H):
+            row_cells: List[str] = []
+            for bc in range(n_block_cols):
+                W = block_widths[bc]
+                rows, h, w = cell_cache[br][bc]
+                if h == 0 or w == 0:
+                    row_cells.extend([blank] * W)
+                    continue
 
-        cells: List[str] = []
-        for c, cell in enumerate(row):
-            if cell is None:
-                cells.append(r"\;")
-                continue
-            # Apply Nrhs only to the last column, which is the augmented A-block in the legacy layout.
-            nrhs_cell = Nrhs if (Nrhs and c == ncols - 1) else 0
-            cells.append(_pnicearray_tex(cell, Nrhs=nrhs_cell, formater=formater, align=cell_align))
-
-        lines.append(" & ".join(cells) + r" \\")
+                # Pad to the inferred block dimensions.
+                if i < len(rows):
+                    src = list(rows[i])
+                else:
+                    src = []
+                if len(src) < W:
+                    src.extend([None] * (W - len(src)))
+                row_cells.extend([_fmt(v) for v in src[:W]])
+            lines.append(" & ".join(row_cells) + r" \\")
 
     mat_rep = "\n".join(lines)
 
-    return ge_tex(mat_rep=mat_rep, mat_format=mat_format, **kwargs)
+    # Emit \SubMatrix spans for each non-empty block to draw parentheses.
+    # Merge with any user-provided spans passed via **kwargs.
+    user_sub = kwargs.pop("submatrix_locs", None)
+    submatrix_locs: List[Tuple[str, str, str]] = []
+
+    # Precompute offsets (1-based nicematrix coordinates).
+    row_starts: List[int] = []
+    acc = 1
+    for H in block_heights:
+        row_starts.append(acc)
+        acc += H
+    col_starts: List[int] = []
+    acc = 1
+    for W in block_widths:
+        col_starts.append(acc)
+        acc += W
+
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+            r0 = row_starts[br]
+            c0 = col_starts[bc]
+            r1 = r0 + block_heights[br] - 1
+            c1 = c0 + block_widths[bc] - 1
+            # Name matrices by their column role when in the legacy 2-column layout.
+            if n_block_cols == 2:
+                base = ("E" if bc == 0 else "A")
+            else:
+                base = f"M{bc}"
+            name = f"{base}{br}"
+            # Use \SubMatrix to draw the per-block delimiters.
+            # IMPORTANT: do *not* force explicit delimiter overrides via
+            # _{(}^{)} here. Nicematrix already draws parentheses for SubMatrix
+            # blocks by default, and adding explicit overrides re-introduces the
+            # "spurious extra delimiters" artifact (and breaks tests that
+            # assert the canonical \SubMatrix(...) [name=...] syntax).
+            opts = f"name={name}"
+            submatrix_locs.append((opts, f"{r0}-{c0}", f"{r1}-{c1}"))
+
+    if user_sub:
+        submatrix_locs.extend(list(user_sub))
+
+    return ge_tex(mat_rep=mat_rep, mat_format=mat_format, submatrix_locs=submatrix_locs, **kwargs)
 def ge_grid_svg(
     matrices: Sequence[Sequence[Any]],
     Nrhs: int = 0,

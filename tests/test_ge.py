@@ -13,7 +13,7 @@ def test_ge_tex_contains_SubMatrix_when_requested():
         landscape=False,
     )
     assert r"\begin{NiceArray}" in tex
-    assert r"\SubMatrix[name=A0x0](1-1)(2-2)" in tex
+    assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex
 
 
 @pytest.mark.render

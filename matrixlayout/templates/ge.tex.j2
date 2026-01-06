@@ -4,14 +4,16 @@
 % -----------------------------------------------------------------------------
 \documentclass[notitlepage]{article}
 \pagestyle{empty}
-\usepackage[margin=0cm,paperwidth=90in]{geometry}
+% NOTE: Large page + generous margins prevent TikZ callouts (e.g., delimiter arrows/labels)
+% from being clipped at negative coordinates before tight-cropping.
+\usepackage[left=50mm,right=50mm,top=50mm,bottom=50mm,paperwidth=90in,paperheight=90in]{geometry}
 
 \usepackage{mathtools}
 \usepackage{graphicx}
 \usepackage[table,svgnames]{xcolor}
 
 \usepackage{nicematrix,tikz}
-\usetikzlibrary{calc,fit,decorations.markings}
+\usetikzlibrary{calc,fit,decorations.markings,arrows.meta}
 
 {%% if landscape %%}
 \usepackage{pdflscape}
@@ -48,9 +50,10 @@ $% begin math
 {%% if has_after %%}%
 \CodeAfter%
 % ----- \SubMatrix delimiters%
-{%%- for opts, span in submatrix_spans -%%}%
-% \SubMatrix[{%% if opts %%}{{ opts }}{%% endif %%}]{{ span|replace('{','(')|replace('}',')') }}%
-\SubMatrix({{ span }}){%% if opts %%}[{{ opts }}]{%% endif %%}%
+{%%- for item in submatrix_spans -%%}%
+{%%- set opts = item[0] -%%}%
+{%%- set span = item[1] -%%}%
+\SubMatrix({{ span }}){%% if opts %%}[{{ opts }}]{%% endif %%}{%% if item|length > 2 %%}_{ {{- item[2] -}}}^{ {{- item[3] -}}}{%% endif %%}%
 {%%- endfor -%%}%
 % ----- Labels / names%
 {%%- for txt in submatrix_names -%%}%

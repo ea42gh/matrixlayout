@@ -5,7 +5,7 @@ def test_ge_grid_tex_inserts_rhs_partition_bar():
     # One GE layer with an augmented matrix [A|b] (2x3, Nrhs=1).
     matrices = [[None, [[1, 0, 3], [0, 2, 4]]]]
     tex = ge_grid_tex(matrices, Nrhs=1)
-    assert r"\begin{pNiceArray}{rr|r}" in tex
+    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
 
 
 def test_ge_tex_normalizes_julia_style_inputs():
