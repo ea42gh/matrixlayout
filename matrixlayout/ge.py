@@ -387,9 +387,21 @@ def ge_tex(
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
+    spec = _coerce_layout_spec(layout)
+    # Merge string hooks from layout spec *before* validation, so guardrails
+    # apply consistently regardless of whether the user supplies values via
+    # explicit kwargs or the layout object.
+    if spec is not None:
+        if getattr(spec, "extension", None):
+            # Layout spec is treated as the "base" template configuration.
+            # Explicit kwargs are appended so users can override definitions.
+            extension = (spec.extension or "") + ("\n" if (spec.extension and extension) else "") + (extension or "")
+        if getattr(spec, "preamble", None):
+            preamble = (spec.preamble or "") + ("\n" if (spec.preamble and preamble) else "") + (preamble or "")
+
     _validate_body_preamble(preamble or "")
 
-    spec = _coerce_layout_spec(layout)
+    # Merge remaining layout fields.
     if spec is not None:
         nice_options = _merge_scalar("nice_options", nice_options, spec.nice_options)
         landscape = _merge_scalar("landscape", landscape, spec.landscape)
