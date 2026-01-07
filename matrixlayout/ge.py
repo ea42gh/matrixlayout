@@ -18,7 +18,7 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union, Any
+from typing import List, Optional, Sequence, Tuple, Union, Any, Mapping
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
@@ -305,6 +305,7 @@ def ge_tex(
     preamble: str = "",
     extension: str = "",
     nice_options: str = "vlines-in-sub-matrix = I",
+    layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     codebefore: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
@@ -320,6 +321,79 @@ def ge_tex(
     outer_delims_span: Optional[Tuple[int, int]] = None,
 ) -> str:
     r"""Populate the GE template and return TeX."""
+
+    # ------------------------------------------------------------------
+    # Optional explicit layout spec (Step 13 of the migration plan).
+    # This is intentionally conservative: if both the spec and direct kwargs
+    # provide a value for the same channel and they differ, raise.
+    # ------------------------------------------------------------------
+    if layout is not None:
+        from .specs import GELayoutSpec
+
+        spec = GELayoutSpec.from_dict(layout) if isinstance(layout, Mapping) else layout
+
+        def _merge(name: str, current, spec_value):
+            if spec_value is None:
+                return current
+            if current is None:
+                return spec_value
+            # If both are set and differ, fail fast to avoid silent overrides.
+            if current != spec_value:
+                raise ValueError(
+                    f"Conflicting values for {name}: explicit={current!r} spec={spec_value!r}"
+                )
+            return current
+
+        # Channels/controls that the spec owns.
+        if spec.nice_options is not None and nice_options != spec.nice_options:
+            raise ValueError(
+                f"Conflicting values for nice_options: explicit={nice_options!r} spec={spec.nice_options!r}"
+            )
+        if spec.nice_options is not None:
+            nice_options = spec.nice_options
+
+        codebefore = _merge("codebefore", codebefore, spec.codebefore)
+        submatrix_locs = _merge("submatrix_locs", submatrix_locs, spec.submatrix_locs)
+        submatrix_names = _merge("submatrix_names", submatrix_names, spec.submatrix_names)
+        pivot_locs = _merge("pivot_locs", pivot_locs, spec.pivot_locs)
+        txt_with_locs = _merge("txt_with_locs", txt_with_locs, spec.txt_with_locs)
+        rowechelon_paths = _merge("rowechelon_paths", rowechelon_paths, spec.rowechelon_paths)
+        callouts = _merge("callouts", callouts, spec.callouts)
+
+        if spec.landscape is not None and landscape != bool(spec.landscape):
+            raise ValueError(
+                f"Conflicting values for landscape: explicit={landscape!r} spec={spec.landscape!r}"
+            )
+        if spec.landscape is not None:
+            landscape = bool(spec.landscape)
+
+        if spec.create_cell_nodes is not None and create_cell_nodes != bool(spec.create_cell_nodes):
+            raise ValueError(
+                f"Conflicting values for create_cell_nodes: explicit={create_cell_nodes!r} spec={spec.create_cell_nodes!r}"
+            )
+        if spec.create_cell_nodes is not None:
+            create_cell_nodes = bool(spec.create_cell_nodes)
+
+        if spec.outer_delims is not None and outer_delims != bool(spec.outer_delims):
+            raise ValueError(
+                f"Conflicting values for outer_delims: explicit={outer_delims!r} spec={spec.outer_delims!r}"
+            )
+        if spec.outer_delims is not None:
+            outer_delims = bool(spec.outer_delims)
+
+        if spec.outer_delims_name is not None and outer_delims_name != str(spec.outer_delims_name):
+            raise ValueError(
+                f"Conflicting values for outer_delims_name: explicit={outer_delims_name!r} spec={spec.outer_delims_name!r}"
+            )
+        if spec.outer_delims_name is not None:
+            outer_delims_name = str(spec.outer_delims_name)
+
+        if spec.outer_delims_span is not None and outer_delims_span is not None and outer_delims_span != spec.outer_delims_span:
+            raise ValueError(
+                f"Conflicting values for outer_delims_span: explicit={outer_delims_span!r} spec={spec.outer_delims_span!r}"
+            )
+        if spec.outer_delims_span is not None:
+            outer_delims_span = spec.outer_delims_span
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
@@ -406,6 +480,7 @@ def ge_svg(
     preamble: str = "",
     extension: str = "",
     nice_options: str = "vlines-in-sub-matrix = I",
+    layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     codebefore: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
@@ -430,6 +505,7 @@ def ge_svg(
         preamble=preamble,
         extension=extension,
         nice_options=nice_options,
+        layout=layout,
         codebefore=codebefore,
         submatrix_locs=submatrix_locs,
         submatrix_names=submatrix_names,
@@ -552,6 +628,7 @@ def ge_grid_tex(
     cell_align: str = "r",
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -583,6 +660,19 @@ def ge_grid_tex(
     str
         TeX document (via :func:`ge_tex`).
     """
+    if layout is not None:
+        from .specs import GELayoutSpec
+
+        spec = GELayoutSpec.from_dict(layout) if isinstance(layout, Mapping) else layout
+        spec_kwargs = spec.to_ge_kwargs()
+        # Merge spec-provided channels into **kwargs, failing fast on conflicts.
+        for k, v in spec_kwargs.items():
+            if k in kwargs and kwargs[k] != v:
+                raise ValueError(
+                    f"Conflicting values for {k}: explicit={kwargs[k]!r} spec={v!r}"
+                )
+            kwargs.setdefault(k, v)
+
     grid: List[List[Any]] = [list(r) for r in (matrices or [])]
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
@@ -671,8 +761,21 @@ def ge_grid_tex(
 
     mat_rep = "\n".join(lines)
 
+    # Apply an explicit layout spec, if provided. This is a controlled bridge
+    # away from legacy dict-specs.
+    if layout is not None:
+        from .specs import GELayoutSpec
+
+        spec = GELayoutSpec.from_dict(layout) if isinstance(layout, Mapping) else layout
+        for k, v in spec.to_ge_kwargs().items():
+            if k in kwargs and kwargs[k] != v:
+                raise ValueError(
+                    f"Conflicting values for {k}: explicit={kwargs[k]!r} spec={v!r}"
+                )
+            kwargs.setdefault(k, v)
+
     # Emit \SubMatrix spans for each non-empty block to draw parentheses.
-    # Merge with any user-provided spans passed via **kwargs.
+    # Merge with any user-provided spans passed via **kwargs (or via layout spec).
     user_sub = kwargs.pop("submatrix_locs", None)
     submatrix_locs: List[Tuple[str, str, str]] = []
 
@@ -731,6 +834,7 @@ def ge_grid_svg(
     cell_align: str = "r",
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -761,6 +865,7 @@ def ge_grid_svg(
         cell_align=cell_align,
         extension=extension,
         fig_scale=fig_scale,
+        layout=layout,
         **kwargs,
     )
     return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
