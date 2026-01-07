@@ -1,8 +1,30 @@
-import os
+import shutil
 
 import pytest
 
 from matrixlayout.backsubst import backsubst_tex
+
+
+def _pick_toolchain_name_or_skip() -> str:
+    """Pick a working SVG toolchain.
+
+    Render tests are enabled by default. They are skipped only when the
+    external TeX/converter binaries are unavailable (or if the user opts out via
+    --skip-render-tests / ITIKZ_SKIP_RENDER_TESTS=1, handled in repo conftest).
+    """
+
+    if shutil.which("latexmk") is None:
+        pytest.skip("latexmk not found")
+
+    if shutil.which("dvisvgm") is not None:
+        return "pdftex_dvisvgm"
+    if shutil.which("pdftocairo") is not None:
+        return "pdftex_pdftocairo"
+    if shutil.which("pdf2svg") is not None:
+        return "pdftex_pdf2svg"
+
+    pytest.skip("no SVG converter found (need dvisvgm, pdftocairo, or pdf2svg)")
+    raise AssertionError("unreachable")
 
 
 def test_backsubst_tex_sections_toggle():
@@ -45,19 +67,19 @@ def test_backsubst_tex_scalebox_when_fig_scale_set():
 
 @pytest.mark.render
 def test_backsubst_svg_smoke():
-    """Optional end-to-end test.
+    """End-to-end smoke test: TeX -> SVG."""
 
-    Disabled by default to avoid hard dependency on a working TeX toolchain in
-    every development environment.
-    """
-
-    if os.environ.get("MATRIXLAYOUT_RUN_RENDER_TESTS") != "1":
-        pytest.skip("Set MATRIXLAYOUT_RUN_RENDER_TESTS=1 to enable render tests")
-
-    jupyter_tikz = pytest.importorskip("jupyter_tikz")
+    pytest.importorskip("jupyter_tikz")
 
     from matrixlayout.backsubst import backsubst_svg
 
-    svg = backsubst_svg(system_txt=r"$x=1$", show_cascade=False, show_solution=False)
+    svg = backsubst_svg(
+        system_txt=r"$x=1$",
+        show_cascade=False,
+        show_solution=False,
+        toolchain_name=_pick_toolchain_name_or_skip(),
+        crop="tight",
+        padding=(2, 2, 2, 2),
+    )
     assert isinstance(svg, str)
     assert "<svg" in svg

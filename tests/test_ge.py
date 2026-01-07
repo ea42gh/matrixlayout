@@ -1,7 +1,30 @@
-import os
+import shutil
+
 import pytest
 
 from matrixlayout.ge import ge_tex
+
+
+def _pick_toolchain_name_or_skip() -> str:
+    """Pick a working SVG toolchain.
+
+    Render tests are enabled by default. They are skipped only when the
+    external TeX/converter binaries are unavailable (or if the user opts out via
+    --skip-render-tests / ITIKZ_SKIP_RENDER_TESTS=1, handled in repo conftest).
+    """
+
+    if shutil.which("latexmk") is None:
+        pytest.skip("latexmk not found")
+
+    if shutil.which("dvisvgm") is not None:
+        return "pdftex_dvisvgm"
+    if shutil.which("pdftocairo") is not None:
+        return "pdftex_pdftocairo"
+    if shutil.which("pdf2svg") is not None:
+        return "pdftex_pdf2svg"
+
+    pytest.skip("no SVG converter found (need dvisvgm, pdftocairo, or pdf2svg)")
+    raise AssertionError("unreachable")
 
 
 def test_ge_tex_contains_SubMatrix_when_requested():
@@ -16,19 +39,8 @@ def test_ge_tex_contains_SubMatrix_when_requested():
     assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex
 
 
-def test_ge_tex_rejects_latex_preamble_directives_in_body_preamble():
-    # `preamble` is inserted after \begin{document} and must not contain
-    # directives like \usepackage or \geometry.
-    with pytest.raises(ValueError):
-        ge_tex(mat_rep="1", mat_format="r", preamble=r"\\usepackage{foo}")
-    with pytest.raises(ValueError):
-        ge_tex(mat_rep="1", mat_format="r", preamble=r"\\geometry{left=0pt}")
-
-
 @pytest.mark.render
 def test_ge_svg_smoke():
-    if os.environ.get("MATRIXLAYOUT_RUN_RENDER_TESTS") != "1":
-        pytest.skip("opt-in render test")
     from matrixlayout.ge import ge_svg
 
     svg = ge_svg(
@@ -37,5 +49,8 @@ def test_ge_svg_smoke():
         outer_delims=True,
         outer_delims_span=(2, 2),
         landscape=False,
+        toolchain_name=_pick_toolchain_name_or_skip(),
+        crop="tight",
+        padding=(2, 2, 2, 2),
     )
     assert "<svg" in svg

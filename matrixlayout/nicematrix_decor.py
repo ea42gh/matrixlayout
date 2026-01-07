@@ -27,6 +27,7 @@ This module does not import ``nicematrix``; it only emits TeX strings.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import re
 from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Sequence, Tuple, TypedDict, Union
 
 
@@ -193,7 +194,7 @@ def render_delim_callout(callout: CalloutLike) -> str:
 
 
 def render_delim_callouts(
-    callouts: Sequence[CalloutLike],
+    callouts: Optional[Union[Sequence[CalloutLike], bool]],
     *,
     available_names: Optional[Iterable[str]] = None,
     strict: bool = True,
@@ -201,6 +202,27 @@ def render_delim_callouts(
     """Render multiple callouts, optionally validating submatrix names."""
 
     avail = set(available_names or []) if available_names is not None else None
+    # Backward-compat and notebook ergonomics: allow `callouts=True` to mean
+    # "auto-generate a default callout for every available SubMatrix name".
+    if callouts is True:
+        if available_names is None:
+            raise ValueError("callouts=True requires available_names to be provided")
+
+        def _default_label(n: str) -> str:
+            m = re.fullmatch(r"([A-Za-z]+)(\d+)", n)
+            if not m:
+                return n
+            head, k = m.group(1), m.group(2)
+            return rf"{head}_{{{k}}}"
+
+        auto: List[CalloutLike] = []
+        for n in sorted(str(x) for x in available_names):
+            side = "left" if n.startswith("E") else "right"
+            auto.append({"name": n, "label": _default_label(n), "side": side})
+        callouts = auto
+    elif not callouts:
+        return []
+
 
     out: List[str] = []
     for obj in callouts or []:
