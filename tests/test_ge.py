@@ -16,6 +16,15 @@ def test_ge_tex_contains_SubMatrix_when_requested():
     assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex
 
 
+def test_ge_tex_rejects_latex_preamble_directives_in_body_preamble():
+    # `preamble` is inserted after \begin{document} and must not contain
+    # directives like \usepackage or \geometry.
+    with pytest.raises(ValueError):
+        ge_tex(mat_rep="1", mat_format="r", preamble=r"\\usepackage{foo}")
+    with pytest.raises(ValueError):
+        ge_tex(mat_rep="1", mat_format="r", preamble=r"\\geometry{left=0pt}")
+
+
 @pytest.mark.render
 def test_ge_svg_smoke():
     if os.environ.get("MATRIXLAYOUT_RUN_RENDER_TESTS") != "1":
