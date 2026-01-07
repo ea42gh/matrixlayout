@@ -23,7 +23,15 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .specs import GEGridBundle, GELayoutSpec, SubMatrixSpan
+from .specs import (
+    GEGridBundle,
+    GELayoutSpec,
+    PivotBox,
+    RowEchelonPath,
+    SubMatrixLoc,
+    SubMatrixSpan,
+    TextAt,
+)
 
 
 def _julia_str(x: Any) -> str:
@@ -300,6 +308,81 @@ def _normalize_txt_with_locs(txt_with_locs: Optional[Sequence[Tuple[Any, Any, An
     return out
 
 
+def _coerce_submatrix_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+    if items is None:
+        return None
+    out: List[Any] = []
+    for it in items:
+        if isinstance(it, SubMatrixLoc):
+            out.append(it.to_tuple())
+        elif isinstance(it, dict):
+            out.append(
+                SubMatrixLoc(
+                    opts=str(it.get("opts", "")),
+                    start=str(it.get("start", "")),
+                    end=str(it.get("end", "")),
+                    left_delim=it.get("left_delim"),
+                    right_delim=it.get("right_delim"),
+                ).to_tuple()
+            )
+        else:
+            out.append(it)
+    return out
+
+
+def _coerce_pivot_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+    if items is None:
+        return None
+    out: List[Any] = []
+    for it in items:
+        if isinstance(it, PivotBox):
+            out.append(it.to_tuple())
+        elif isinstance(it, dict):
+            out.append(
+                PivotBox(
+                    fit_target=str(it.get("fit_target", "")),
+                    style=str(it.get("style", "")),
+                ).to_tuple()
+            )
+        else:
+            out.append(it)
+    return out
+
+
+def _coerce_txt_with_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+    if items is None:
+        return None
+    out: List[Any] = []
+    for it in items:
+        if isinstance(it, TextAt):
+            out.append(it.to_tuple())
+        elif isinstance(it, dict):
+            out.append(
+                TextAt(
+                    coord=str(it.get("coord", "")),
+                    text=str(it.get("text", "")),
+                    style=str(it.get("style", "")),
+                ).to_tuple()
+            )
+        else:
+            out.append(it)
+    return out
+
+
+def _coerce_rowechelon_paths(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+    if items is None:
+        return None
+    out: List[Any] = []
+    for it in items:
+        if isinstance(it, RowEchelonPath):
+            out.append(it.to_str())
+        elif isinstance(it, dict):
+            out.append(str(it.get("tikz", "")))
+        else:
+            out.append(str(it))
+    return out
+
+
 
 def _coerce_layout_spec(layout: Any) -> Optional[GELayoutSpec]:
     """Coerce ``layout`` into a :class:`GELayoutSpec` (or None)."""
@@ -370,11 +453,11 @@ def ge_tex(
     nice_options: Optional[str] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     codebefore: Optional[Sequence[str]] = None,
-    submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
+    submatrix_locs: Optional[Sequence[Any]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
-    pivot_locs: Optional[Sequence[Tuple[Any, Any]]] = None,
-    txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]] = None,
-    rowechelon_paths: Optional[Sequence[str]] = None,
+    pivot_locs: Optional[Sequence[Any]] = None,
+    txt_with_locs: Optional[Sequence[Any]] = None,
+    rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,
@@ -417,6 +500,11 @@ def ge_tex(
         txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
         rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
         callouts = _merge_list(callouts, spec.callouts)
+
+    submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
+    pivot_locs = _coerce_pivot_locs(pivot_locs)
+    txt_with_locs = _coerce_txt_with_locs(txt_with_locs)
+    rowechelon_paths = _coerce_rowechelon_paths(rowechelon_paths)
 
     # Apply historical defaults after layout merging.
     if nice_options is None:
@@ -515,11 +603,11 @@ def ge_svg(
     nice_options: Optional[str] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     codebefore: Optional[Sequence[str]] = None,
-    submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
+    submatrix_locs: Optional[Sequence[Any]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
-    pivot_locs: Optional[Sequence[Tuple[Any, Any]]] = None,
-    txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]] = None,
-    rowechelon_paths: Optional[Sequence[str]] = None,
+    pivot_locs: Optional[Sequence[Any]] = None,
+    txt_with_locs: Optional[Sequence[Any]] = None,
+    rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,

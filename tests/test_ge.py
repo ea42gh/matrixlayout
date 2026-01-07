@@ -41,6 +41,8 @@ def test_ge_tex_contains_SubMatrix_when_requested():
 
 @pytest.mark.render
 def test_ge_svg_smoke():
+    pytest.importorskip("jupyter_tikz")
+
     from matrixlayout.ge import ge_svg
 
     svg = ge_svg(

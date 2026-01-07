@@ -1,23 +1,32 @@
 [build-system]
-    requires = ["setuptools>=68", "wheel"]
-    build-backend = "setuptools.build_meta"
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
 
-    [project]
-    name = "matrixlayout"
-    version = "0.0.1"
-    description = "Layout-only TeX generators for matrix-themed figures (no toolchain execution)."
-    readme = "README.md"
-    requires-python = ">=3.9"
-    license = {text = "MIT"}
-    dependencies = [
+[project]
+name = "matrixlayout"
+version = "0.0.1"
+description = "Layout-only TeX generators for matrix-themed figures (no toolchain execution)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
   "jinja2>=3.1",
   "sympy>=1.10",
-  "jupyter-tikz>=0.1.0",
 ]
 
-    [tool.setuptools.packages.find]
-    where = ["."]
-    exclude = ["tests*", "test*"]
+[project.optional-dependencies]
+render = [
+  "jupyter-tikz>=0.5.6",
+]
+
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*", "test*"]
 
 [tool.setuptools]
 include-package-data = true

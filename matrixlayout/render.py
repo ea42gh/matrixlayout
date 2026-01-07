@@ -42,7 +42,13 @@ def render_svg_with_artifacts(
     """
     # Import lazily so unit tests that do not exercise rendering do not require
     # a full TeX toolchain to be installed.
-    import jupyter_tikz
+
+    try:
+        import jupyter_tikz
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            "jupyter_tikz is required for SVG rendering. Install the optional dependency via: pip install 'matrixlayout[render]'"
+        ) from e
 
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)

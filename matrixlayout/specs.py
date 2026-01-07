@@ -1,7 +1,57 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+
+
+@dataclass(frozen=True)
+class SubMatrixLoc:
+    """Typed ``\\SubMatrix`` descriptor."""
+
+    opts: str
+    start: str  # "r-c"
+    end: str  # "r-c"
+    left_delim: Optional[str] = None
+    right_delim: Optional[str] = None
+
+    def to_tuple(self) -> Tuple[Any, ...]:
+        if self.left_delim is None and self.right_delim is None:
+            return (self.opts, self.start, self.end)
+        span = f"{{{self.start}}}{{{self.end}}}"
+        return (self.opts, span, self.left_delim, self.right_delim)
+
+
+@dataclass(frozen=True)
+class PivotBox:
+    """Fit-box around a pivot or span."""
+
+    fit_target: str  # "(r-c)(r-c)"
+    style: str = ""
+
+    def to_tuple(self) -> Tuple[str, str]:
+        return (self.fit_target, self.style)
+
+
+@dataclass(frozen=True)
+class TextAt:
+    """Text label positioned at a cell node."""
+
+    coord: str  # "(r-c)"
+    text: str
+    style: str = ""
+
+    def to_tuple(self) -> Tuple[str, str, str]:
+        return (self.coord, self.text, self.style)
+
+
+@dataclass(frozen=True)
+class RowEchelonPath:
+    """Raw TikZ command inserted in CodeAfter/tikzpicture."""
+
+    tikz: str
+
+    def to_str(self) -> str:
+        return self.tikz
 
 
 @dataclass(frozen=True)
@@ -20,11 +70,11 @@ class GELayoutSpec:
     # TikZ setup that is safe in the document body). Do not put \usepackage here.
     preamble: Optional[str] = None
     codebefore: Optional[Sequence[Any]] = None
-    submatrix_locs: Optional[Sequence[Any]] = None
+    submatrix_locs: Optional[Sequence[Union[SubMatrixLoc, Dict[str, Any], Tuple[Any, ...]]]] = None
     submatrix_names: Optional[Sequence[Any]] = None
-    pivot_locs: Optional[Sequence[Any]] = None
-    txt_with_locs: Optional[Sequence[Any]] = None
-    rowechelon_paths: Optional[Sequence[Any]] = None
+    pivot_locs: Optional[Sequence[Union[PivotBox, Dict[str, Any], Tuple[Any, ...]]]] = None
+    txt_with_locs: Optional[Sequence[Union[TextAt, Dict[str, Any], Tuple[Any, ...]]]] = None
+    rowechelon_paths: Optional[Sequence[Union[RowEchelonPath, str, Dict[str, Any]]]] = None
     callouts: Optional[Sequence[Any]] = None
 
     landscape: Optional[bool] = None
