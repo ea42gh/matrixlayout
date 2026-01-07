@@ -304,7 +304,7 @@ def ge_tex(
     mat_format: str,
     preamble: str = "",
     extension: str = "",
-    nice_options: str = "vlines-in-sub-matrix = I",
+    nice_options: Optional[str] = None,
     layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     codebefore: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
@@ -314,10 +314,10 @@ def ge_tex(
     rowechelon_paths: Optional[Sequence[str]] = None,
     callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
-    landscape: bool = False,
-    create_cell_nodes: bool = True,
-    outer_delims: bool = False,
-    outer_delims_name: str = "A0x0",
+    landscape: Optional[bool] = None,
+    create_cell_nodes: Optional[bool] = None,
+    outer_delims: Optional[bool] = None,
+    outer_delims_name: Optional[str] = None,
     outer_delims_span: Optional[Tuple[int, int]] = None,
 ) -> str:
     r"""Populate the GE template and return TeX."""
@@ -345,11 +345,11 @@ def ge_tex(
             return current
 
         # Channels/controls that the spec owns.
-        if spec.nice_options is not None and nice_options != spec.nice_options:
-            raise ValueError(
-                f"Conflicting values for nice_options: explicit={nice_options!r} spec={spec.nice_options!r}"
-            )
         if spec.nice_options is not None:
+            if nice_options is not None and nice_options != spec.nice_options:
+                raise ValueError(
+                    f"Conflicting values for nice_options: explicit={nice_options!r} spec={spec.nice_options!r}"
+                )
             nice_options = spec.nice_options
 
         codebefore = _merge("codebefore", codebefore, spec.codebefore)
@@ -360,32 +360,32 @@ def ge_tex(
         rowechelon_paths = _merge("rowechelon_paths", rowechelon_paths, spec.rowechelon_paths)
         callouts = _merge("callouts", callouts, spec.callouts)
 
-        if spec.landscape is not None and landscape != bool(spec.landscape):
-            raise ValueError(
-                f"Conflicting values for landscape: explicit={landscape!r} spec={spec.landscape!r}"
-            )
         if spec.landscape is not None:
+            if landscape is not None and landscape != bool(spec.landscape):
+                raise ValueError(
+                    f"Conflicting values for landscape: explicit={landscape!r} spec={spec.landscape!r}"
+                )
             landscape = bool(spec.landscape)
 
-        if spec.create_cell_nodes is not None and create_cell_nodes != bool(spec.create_cell_nodes):
-            raise ValueError(
-                f"Conflicting values for create_cell_nodes: explicit={create_cell_nodes!r} spec={spec.create_cell_nodes!r}"
-            )
         if spec.create_cell_nodes is not None:
+            if create_cell_nodes is not None and create_cell_nodes != bool(spec.create_cell_nodes):
+                raise ValueError(
+                    f"Conflicting values for create_cell_nodes: explicit={create_cell_nodes!r} spec={spec.create_cell_nodes!r}"
+                )
             create_cell_nodes = bool(spec.create_cell_nodes)
 
-        if spec.outer_delims is not None and outer_delims != bool(spec.outer_delims):
-            raise ValueError(
-                f"Conflicting values for outer_delims: explicit={outer_delims!r} spec={spec.outer_delims!r}"
-            )
         if spec.outer_delims is not None:
+            if outer_delims is not None and outer_delims != bool(spec.outer_delims):
+                raise ValueError(
+                    f"Conflicting values for outer_delims: explicit={outer_delims!r} spec={spec.outer_delims!r}"
+                )
             outer_delims = bool(spec.outer_delims)
 
-        if spec.outer_delims_name is not None and outer_delims_name != str(spec.outer_delims_name):
-            raise ValueError(
-                f"Conflicting values for outer_delims_name: explicit={outer_delims_name!r} spec={spec.outer_delims_name!r}"
-            )
         if spec.outer_delims_name is not None:
+            if outer_delims_name is not None and outer_delims_name != str(spec.outer_delims_name):
+                raise ValueError(
+                    f"Conflicting values for outer_delims_name: explicit={outer_delims_name!r} spec={spec.outer_delims_name!r}"
+                )
             outer_delims_name = str(spec.outer_delims_name)
 
         if spec.outer_delims_span is not None and outer_delims_span is not None and outer_delims_span != spec.outer_delims_span:
@@ -394,6 +394,19 @@ def ge_tex(
             )
         if spec.outer_delims_span is not None:
             outer_delims_span = spec.outer_delims_span
+
+    # Apply GE defaults only if the corresponding channel was not explicitly set
+    # (either directly or via the layout spec).
+    if nice_options is None:
+        nice_options = "vlines-in-sub-matrix = I"
+    if landscape is None:
+        landscape = False
+    if create_cell_nodes is None:
+        create_cell_nodes = True
+    if outer_delims is None:
+        outer_delims = False
+    if outer_delims_name is None:
+        outer_delims_name = "A0x0"
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
@@ -479,7 +492,7 @@ def ge_svg(
     mat_format: str,
     preamble: str = "",
     extension: str = "",
-    nice_options: str = "vlines-in-sub-matrix = I",
+    nice_options: Optional[str] = None,
     layout: "GELayoutSpec | Mapping[str, Any] | None" = None,
     codebefore: Optional[Sequence[str]] = None,
     submatrix_locs: Optional[Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]] = None,
@@ -489,10 +502,10 @@ def ge_svg(
     rowechelon_paths: Optional[Sequence[str]] = None,
     callouts: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
-    landscape: bool = False,
-    create_cell_nodes: bool = True,
-    outer_delims: bool = False,
-    outer_delims_name: str = "A0x0",
+    landscape: Optional[bool] = None,
+    create_cell_nodes: Optional[bool] = None,
+    outer_delims: Optional[bool] = None,
+    outer_delims_name: Optional[str] = None,
     outer_delims_span: Optional[Tuple[int, int]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,

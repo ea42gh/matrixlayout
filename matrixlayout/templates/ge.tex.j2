@@ -15,6 +15,20 @@
 \usepackage{nicematrix,tikz}
 \usetikzlibrary{calc,fit,decorations.markings,arrows.meta}
 
+% Convenience shorthands for user-supplied TikZ.
+% Many notebook users naturally write `node[west]` (meaning anchor=west). TikZ
+% does not define these keys by default, so we provide them as styles.
+\tikzset{
+  west/.style={anchor=west},
+  east/.style={anchor=east},
+  north/.style={anchor=north},
+  south/.style={anchor=south},
+  northwest/.style={anchor=north west},
+  northeast/.style={anchor=north east},
+  southwest/.style={anchor=south west},
+  southeast/.style={anchor=south east},
+}
+
 % nicematrix provides \NotEmpty in modern releases. We use it in generated
 % matrices to ensure cell nodes exist without introducing visible spacing.
 % Provide a harmless fallback for older nicematrix versions.

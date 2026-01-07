@@ -43,6 +43,21 @@ def test_ge_grid_tex_merges_layout_spec_callouts():
     assert r"\draw[" in tex
 
 
+
+
+def test_ge_tex_layout_sets_outer_delims_without_conflict_when_not_explicit():
+    # layout sets outer_delims, and ge_tex should treat its own defaults as "unset"
+    tex = ge_tex(
+        mat_rep=r"1 & 2 \\ 3 & 4",
+        mat_format="cc",
+        layout={
+            "outer_delims": True,
+            "outer_delims_span": (2, 2),
+            "outer_delims_name": "Z0",
+        },
+    )
+    assert r"\SubMatrix({1-1}{2-2})[name=Z0]" in tex
+
 def test_ge_tex_layout_conflict_raises():
     layout = GELayoutSpec(landscape=True)
     with pytest.raises(ValueError):

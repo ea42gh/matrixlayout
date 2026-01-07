@@ -24,6 +24,10 @@ def test_ge_template_geometry_has_large_canvas():
     # Arrow callouts rely on arrows.meta for Stealth arrowheads.
     assert "arrows.meta" in tex
 
+    # Template should provide anchor shorthands for user-supplied TikZ (e.g. node[west]).
+    assert "west/.style={anchor=west}" in tex
+    assert "east/.style={anchor=east}" in tex
+
 
 def test_ge_grid_tex_renders_delim_callouts_as_draw_commands():
     """Callouts must render as valid TikZ inside the template's tikzpicture."""
