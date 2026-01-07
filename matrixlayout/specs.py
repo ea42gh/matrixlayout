@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -56,3 +56,58 @@ class GELayoutSpec:
         if drop_none:
             return {k: v for k, v in d.items() if v is not None}
         return d
+
+
+@dataclass(frozen=True)
+class SubMatrixSpan:
+    """A resolved nicematrix ``\\SubMatrix`` span.
+
+    Coordinates are 1-based nicematrix coordinates.
+
+    This is primarily intended for notebooks and higher-level helpers that want
+    to attach TikZ paths (e.g., arrows/callouts) to a known ``\\SubMatrix`` name
+    without re-parsing TeX.
+    """
+
+    name: str
+    row_start: int
+    col_start: int
+    row_end: int
+    col_end: int
+    block_row: int
+    block_col: int
+
+    @property
+    def start_token(self) -> str:
+        return f"{self.row_start}-{self.col_start}"
+
+    @property
+    def end_token(self) -> str:
+        return f"{self.row_end}-{self.col_end}"
+
+    @property
+    def submatrix_loc(self) -> Tuple[str, str, str]:
+        """Return the canonical ``(opts, start, end)`` tuple for templates."""
+
+        return (f"name={self.name}", self.start_token, self.end_token)
+
+    @property
+    def left_delim_node(self) -> str:
+        return f"{self.name}-left"
+
+    @property
+    def right_delim_node(self) -> str:
+        return f"{self.name}-right"
+
+
+@dataclass(frozen=True)
+class GEGridBundle:
+    """A TeX document plus structured metadata for a GE matrix grid.
+
+    This is intended for notebook workflows where users want both the rendered
+    TeX and the resolved ``\\SubMatrix`` spans (for attaching arrows/callouts)
+    without regex-parsing the TeX.
+    """
+
+    tex: str
+    submatrix_spans: List[SubMatrixSpan]

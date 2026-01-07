@@ -23,7 +23,7 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .specs import GELayoutSpec
+from .specs import GEGridBundle, GELayoutSpec, SubMatrixSpan
 
 
 def _julia_str(x: Any) -> str:
@@ -832,6 +832,157 @@ def ge_grid_tex(
         submatrix_locs=submatrix_locs,
         **kwargs,
     )
+
+
+def ge_grid_submatrix_spans(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    Nrhs: int = 0,
+    outer_hspace_mm: int = 6,
+    cell_align: str = "r",
+) -> List[SubMatrixSpan]:
+    """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid.
+
+    This helper exposes the same naming and inferred-block-dimension logic used
+    by :func:`ge_grid_tex`, but returns structured metadata rather than a TeX
+    document. It exists primarily to support notebook workflows that want to
+    attach TikZ paths to delimiter nodes without regex-parsing the generated TeX.
+
+    Notes
+    -----
+    * Coordinates are 1-based nicematrix coordinates.
+    * Blocks that are ``None`` (or empty) are omitted.
+    * The first block-column width is inferred as square when it is entirely
+      missing (common for the top E-block in the legacy 2-column layout).
+    """
+
+    # Keep this logic intentionally aligned with ge_grid_tex.
+    grid: List[List[Any]] = [list(r) for r in (matrices or [])]
+    if not grid:
+        raise ValueError("matrices must be a non-empty nested list")
+
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+    if n_block_cols == 0:
+        raise ValueError("matrices must contain at least one column")
+
+    for r in range(n_block_rows):
+        if len(grid[r]) < n_block_cols:
+            grid[r].extend([None] * (n_block_cols - len(grid[r])))
+
+    block_heights: List[int] = [0] * n_block_rows
+    block_widths: List[int] = [0] * n_block_cols
+    cell_cache: List[List[Tuple[List[List[Any]], int, int]]] = [
+        [([], 0, 0) for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            rows, h, w = _as_2d_list(grid[br][bc])
+            cell_cache[br][bc] = (rows, h, w)
+            block_heights[br] = max(block_heights[br], h)
+            block_widths[bc] = max(block_widths[bc], w)
+
+    max_h = max(block_heights) if block_heights else 0
+    for bc in range(n_block_cols):
+        if block_widths[bc] == 0 and max_h > 0:
+            block_widths[bc] = max_h
+
+    if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
+        raise ValueError("Could not infer matrix block sizes from `matrices`.")
+
+    # Build a single NiceArray format string so we keep the same inferred widths
+    # as ge_grid_tex (including Nrhs behavior). We don't return it here, but the
+    # computation is intentionally mirrored.
+    _ = (Nrhs, outer_hspace_mm, cell_align)  # for signature parity / future use
+
+    row_starts: List[int] = []
+    acc = 1
+    for H in block_heights:
+        row_starts.append(acc)
+        acc += H
+
+    col_starts: List[int] = []
+    acc = 1
+    for W in block_widths:
+        col_starts.append(acc)
+        acc += W
+
+    spans: List[SubMatrixSpan] = []
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+
+            r0 = row_starts[br]
+            c0 = col_starts[bc]
+            r1 = r0 + block_heights[br] - 1
+            c1 = c0 + block_widths[bc] - 1
+
+            if n_block_cols == 2:
+                base = ("E" if bc == 0 else "A")
+            else:
+                base = f"M{bc}"
+            name = f"{base}{br}"
+
+            spans.append(
+                SubMatrixSpan(
+                    name=name,
+                    row_start=r0,
+                    col_start=c0,
+                    row_end=r1,
+                    col_end=c1,
+                    block_row=br,
+                    block_col=bc,
+                )
+            )
+
+    return spans
+
+
+def ge_grid_bundle(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    Nrhs: int = 0,
+    formater: LatexFormatter = _default_formater,
+    outer_hspace_mm: int = 6,
+    cell_align: str = "r",
+    extension: str = "",
+    fig_scale: Optional[Union[float, int, str]] = None,
+    layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
+    **kwargs: Any,
+) -> GEGridBundle:
+    """Return both the GE-grid TeX and the resolved ``\\SubMatrix`` spans.
+
+    This is a notebook-oriented convenience wrapper around :func:`ge_grid_tex`
+    and :func:`ge_grid_submatrix_spans`.
+
+    Unlike :func:`ge_grid_tex`, this function returns structured metadata so
+    callers can attach TikZ paths/callouts to known delimiter nodes without
+    regex-parsing the generated TeX.
+    """
+
+    tex = ge_grid_tex(
+        matrices=matrices,
+        Nrhs=Nrhs,
+        formater=formater,
+        outer_hspace_mm=outer_hspace_mm,
+        cell_align=cell_align,
+        extension=extension,
+        fig_scale=fig_scale,
+        layout=layout,
+        **kwargs,
+    )
+    spans = ge_grid_submatrix_spans(
+        matrices,
+        Nrhs=Nrhs,
+        outer_hspace_mm=outer_hspace_mm,
+        cell_align=cell_align,
+    )
+    return GEGridBundle(tex=tex, submatrix_spans=spans)
+
+
 def ge_grid_svg(
     matrices: Sequence[Sequence[Any]],
     Nrhs: int = 0,
