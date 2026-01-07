@@ -129,7 +129,9 @@ def _mk_diag_matrix(
     n = len(diag)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
-    n_value_cols = max(1, 2 * len(multiplicities) - 1) if span_cols is None else int(span_cols)
+    # Legacy itikz implementation spans *distinct* eigen/singular-value columns
+    # (len(multiplicities)) rather than the interleaved "value+gap" column count.
+    n_value_cols = max(1, len(multiplicities)) if span_cols is None else int(span_cols)
     pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * n) + "}"
     post = r"\end{pNiceArray}$}"
 
@@ -252,8 +254,11 @@ def eigproblem_tex(
             sz = None
     sz = (n, n) if sz is None else tuple(sz)
 
-    # Number of value columns in the legacy interleaved tabular scheme
+    # Value rows in the legacy table use an interleaved "value, gap, value" scheme.
     value_cols = max(1, 2 * len(lambdas_distinct) - 1)
+    # Matrix blocks, however, span only the *distinct* value columns (see legacy
+    # itikz.nicematrix.EigenProblemTable).
+    matrix_span_cols = max(1, len(lambdas_distinct))
 
     # Values rows
     sigmas_row = None
@@ -277,21 +282,51 @@ def eigproblem_tex(
         # Left singular vectors are shown as a matrix (U) below, if provided.
         if "uvecs" in eig:
             left_singular_matrix = _mk_vecs_matrix(
-                eig["uvecs"], formater=formater, sz=sz[0], mm=mmS, span_cols=value_cols
+                eig["uvecs"], formater=formater, sz=sz[0], mm=mmS, span_cols=matrix_span_cols
             )
 
     # Matrices (diagonal + eigen/singular vector matrix)
     if case.upper() == "SVD" and "sigma" in eig:
         diag_values = list(eig["sigma"])
-        lambda_matrix = _mk_diag_matrix(diag_values, multiplicities, formater=formater, sz=sz, mm=mmLambda, span_cols=value_cols)
+        lambda_matrix = _mk_diag_matrix(
+            diag_values,
+            multiplicities,
+            formater=formater,
+            sz=sz,
+            mm=mmLambda,
+            span_cols=matrix_span_cols,
+        )
     else:
-        lambda_matrix = _mk_diag_matrix(lambdas_distinct, multiplicities, formater=formater, sz=sz, mm=mmLambda, span_cols=value_cols)
+        lambda_matrix = _mk_diag_matrix(
+            lambdas_distinct,
+            multiplicities,
+            formater=formater,
+            sz=sz,
+            mm=mmLambda,
+            span_cols=matrix_span_cols,
+        )
 
     if case.upper() == "S":
-        evecs_matrix = _mk_vecs_matrix(eig["evecs"], formater=formater, sz=sz[1], mm=mmS, span_cols=value_cols)
+        evecs_matrix = _mk_vecs_matrix(
+            eig["evecs"],
+            formater=formater,
+            sz=sz[1],
+            mm=mmS,
+            span_cols=matrix_span_cols,
+        )
     else:
         qvecs = eig.get("qvecs")
-        evecs_matrix = _mk_vecs_matrix(qvecs, formater=formater, sz=sz[1], mm=mmS, span_cols=value_cols) if qvecs else None
+        evecs_matrix = (
+            _mk_vecs_matrix(
+                qvecs,
+                formater=formater,
+                sz=sz[1],
+                mm=mmS,
+                span_cols=matrix_span_cols,
+            )
+            if qvecs
+            else None
+        )
 
     # Matrix name labels
     if case.upper() == "S":
