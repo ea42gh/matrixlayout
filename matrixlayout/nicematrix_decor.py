@@ -52,6 +52,12 @@ class DelimCalloutDict(TypedDict, total=False):
     tip: str
     extra_style: str
     math_mode: bool
+    label_shift_mm: float
+    label_shift_y_mm: float
+    label_shift_x_mm: float
+    grid_pos: Tuple[int, int]
+    block_row: int
+    block_col: int
 
 
 @dataclass(frozen=True)
@@ -74,6 +80,10 @@ class DelimCallout:
     tip: str = r"-{Stealth[length=2.4mm]}"
     extra_style: str = ""
     math_mode: bool = True
+    # Deprecated: use label_shift_y_mm instead.
+    label_shift_mm: float = 0.0
+    label_shift_y_mm: float = 0.0
+    label_shift_x_mm: float = 0.0
 
 
 CalloutLike = Union[DelimCallout, DelimCalloutDict, Mapping[str, Any]]
@@ -87,6 +97,7 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
     if isinstance(obj, Mapping):
         d = dict(obj)
         try:
+            label_shift_y_mm = d.get("label_shift_y_mm", d.get("label_shift_mm", 0.0))
             return DelimCallout(
                 name=str(d["name"]),
                 label=str(d["label"]),
@@ -99,6 +110,9 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
                 tip=str(d.get("tip", r"-{Stealth[length=2.4mm]}")),
                 extra_style=str(d.get("extra_style", "")),
                 math_mode=bool(d.get("math_mode", True)),
+                label_shift_mm=float(d.get("label_shift_mm", 0.0)),
+                label_shift_y_mm=float(label_shift_y_mm),
+                label_shift_x_mm=float(d.get("label_shift_x_mm", 0.0)),
             )
         except KeyError as e:
             raise ValueError(f"Callout descriptor missing required key: {e}") from e
@@ -190,13 +204,21 @@ def render_delim_callout(callout: CalloutLike) -> str:
     # TikZ does not recognize bare keys like `east`/`west` in node options.
     # Use explicit anchors so the label text sits outside the matrix while the
     # arrow tail stays at the computed point.
-    return rf"\draw[{opt_str}] {tail} node[anchor={node_anchor}] {{{label}}} -- {head};"
+    node_opts = [f"anchor={node_anchor}"]
+    yshift = float(c.label_shift_y_mm) if float(c.label_shift_y_mm) != 0.0 else float(c.label_shift_mm)
+    if yshift != 0.0:
+        node_opts.append(f"yshift={yshift}mm")
+    if float(c.label_shift_x_mm) != 0.0:
+        node_opts.append(f"xshift={float(c.label_shift_x_mm)}mm")
+    node_opt_str = ", ".join(node_opts)
+    return rf"\draw[{opt_str}] {tail} node[{node_opt_str}] {{{label}}} -- {head};"
 
 
 def render_delim_callouts(
     callouts: Optional[Union[Sequence[CalloutLike], bool]],
     *,
     available_names: Optional[Iterable[str]] = None,
+    name_map: Optional[Mapping[Tuple[int, int], str]] = None,
     strict: bool = True,
 ) -> List[str]:
     """Render multiple callouts, optionally validating submatrix names."""
@@ -224,15 +246,93 @@ def render_delim_callouts(
         return []
 
 
+    def _resolve_name(obj: CalloutLike) -> CalloutLike:
+        if not isinstance(obj, Mapping):
+            return obj
+        if "name" in obj:
+            return obj
+        if name_map is None:
+            raise ValueError("Callout is missing 'name' and no name_map was provided")
+        if "grid_pos" in obj:
+            r, c = obj["grid_pos"]
+        elif "block_row" in obj and "block_col" in obj:
+            r, c = obj["block_row"], obj["block_col"]
+        else:
+            raise ValueError("Callout is missing 'name' (expected grid_pos or block_row/block_col)")
+        key = (int(r), int(c))
+        if key not in name_map:
+            raise ValueError(f"Callout grid_pos {key} not found in name_map")
+        d = dict(obj)
+        d["name"] = name_map[key]
+        return d
+
     out: List[str] = []
     for obj in callouts or []:
-        c = _coerce_callout(obj)
+        resolved = _resolve_name(obj)
+        c = _coerce_callout(resolved)
         if avail is not None and c.name not in avail:
             msg = f"Callout references unknown SubMatrix name {c.name!r}. Available: {sorted(avail)}"
             if strict:
                 raise ValueError(msg)
             continue
         out.append(render_delim_callout(c))
+    return out
+
+
+def infer_ge_matrix_labels(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    include_A: bool = True,
+    include_E: bool = True,
+    label_A: str = r"A_{%d}",
+    label_E: str = r"E_{%d}",
+    **style: Any,
+) -> List[DelimCalloutDict]:
+    """Build matrix-label descriptors for a GE-style 2-column matrix stack.
+
+    Parameters
+    ----------
+    matrices:
+        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.ge_grid_tex`,
+        typically ``[[None, A0], [E1, A1], [E2, A2], ...]``.
+
+    Returns
+    -------
+    list[dict]
+        A list of :class:`DelimCalloutDict` using ``grid_pos`` (block-row,
+        block-col) addressing. Labels are LaTeX by default (math mode).
+
+    Notes
+    -----
+    The returned labels use only primitives and are suitable for Julia interop.
+    Extra style keys are forwarded into each descriptor (e.g. ``angle_deg``,
+    ``length_mm``, ``color``).
+    """
+
+    layers = list(matrices or [])
+    out: List[DelimCalloutDict] = []
+
+    for br, row in enumerate(layers):
+        if include_A:
+            out.append(
+                {
+                    "grid_pos": (br, 1),
+                    "label": (label_A % br) if "%d" in label_A else label_A,
+                    "side": "right",
+                    **style,
+                }
+            )
+
+        if include_E and row and len(row) >= 1 and row[0] is not None:
+            out.append(
+                {
+                    "grid_pos": (br, 0),
+                    "label": (label_E % br) if "%d" in label_E else label_E,
+                    "side": "left",
+                    **style,
+                }
+            )
+
     return out
 
 
@@ -245,50 +345,12 @@ def infer_ge_layer_callouts(
     label_E: str = r"E_{%d}",
     **style: Any,
 ) -> List[DelimCalloutDict]:
-    """Build callout descriptors for a GE-style 2-column matrix stack.
-
-    Parameters
-    ----------
-    matrices:
-        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.ge_grid_tex`,
-        typically ``[[None, A0], [E1, A1], [E2, A2], ...]``.
-
-    Returns
-    -------
-    list[dict]
-        A list of :class:`DelimCalloutDict` with names matching ``ge_grid_tex``'s
-        naming convention (A0, E1, A1, ...).
-
-    Notes
-    -----
-    The returned callouts use only primitives and are suitable for Julia interop.
-    Extra style keys are forwarded into each callout descriptor (e.g. ``angle_deg``,
-    ``length_mm``, ``color``).
-    """
-
-    layers = list(matrices or [])
-    out: List[DelimCalloutDict] = []
-
-    for br, row in enumerate(layers):
-        # Column role naming matches ge_grid_tex when n_block_cols == 2.
-        if include_A:
-            out.append(
-                {
-                    "name": f"A{br}",
-                    "label": (label_A % br) if "%d" in label_A else label_A,
-                    "side": "right",
-                    **style,
-                }
-            )
-
-        if include_E and row and len(row) >= 1 and row[0] is not None:
-            out.append(
-                {
-                    "name": f"E{br}",
-                    "label": (label_E % br) if "%d" in label_E else label_E,
-                    "side": "left",
-                    **style,
-                }
-            )
-
-    return out
+    """Backward-compatible alias for :func:`infer_ge_matrix_labels`."""
+    return infer_ge_matrix_labels(
+        matrices,
+        include_A=include_A,
+        include_E=include_E,
+        label_A=label_A,
+        label_E=label_E,
+        **style,
+    )

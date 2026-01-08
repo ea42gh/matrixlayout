@@ -19,6 +19,7 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 from __future__ import annotations
 
 from typing import List, Optional, Sequence, Tuple, Union, Any, Dict
+import os
 import re
 
 from .jinja_env import render_template
@@ -422,6 +423,15 @@ def _validate_body_preamble(preamble: str) -> None:
             )
 
 
+def _append_nicematrix_option(nice_options: Optional[str], opt: str) -> str:
+    opts = (nice_options or "").strip()
+    if not opts:
+        return opt
+    if opt in opts:
+        return opts
+    return f"{opts}, {opt}"
+
+
 def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
     """Merge a scalar field from explicit kwargs and layout spec."""
     if spec_val is None:
@@ -472,12 +482,16 @@ def ge_tex(
     txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
+    matrix_labels: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,
     create_cell_nodes: Optional[bool] = None,
+    create_extra_nodes: Optional[bool] = None,
+    create_medium_nodes: Optional[bool] = None,
     outer_delims: Optional[bool] = None,
     outer_delims_name: Optional[str] = None,
     outer_delims_span: Optional[Tuple[int, int]] = None,
+    callout_name_map: Optional[Mapping[Tuple[int, int], str]] = None,
 ) -> str:
     r"""Populate the GE template and return TeX."""
     mat_format_norm = _normalize_mat_format(mat_format)
@@ -502,6 +516,8 @@ def ge_tex(
         nice_options = _merge_scalar("nice_options", nice_options, spec.nice_options)
         landscape = _merge_scalar("landscape", landscape, spec.landscape)
         create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec.create_cell_nodes)
+        create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec.create_extra_nodes)
+        create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec.create_medium_nodes)
         outer_delims = _merge_scalar("outer_delims", outer_delims, spec.outer_delims)
         outer_delims_name = _merge_scalar("outer_delims_name", outer_delims_name, spec.outer_delims_name)
         outer_delims_span = _merge_scalar("outer_delims_span", outer_delims_span, spec.outer_delims_span)
@@ -513,6 +529,7 @@ def ge_tex(
         txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
         rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
         callouts = _merge_callouts(callouts, spec.callouts)
+        callouts = _merge_callouts(callouts, spec.matrix_labels)
 
     submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
     pivot_locs = _coerce_pivot_locs(pivot_locs)
@@ -526,10 +543,19 @@ def ge_tex(
         landscape = False
     if create_cell_nodes is None:
         create_cell_nodes = True
+    if create_extra_nodes is None:
+        create_extra_nodes = False
+    if create_medium_nodes is None:
+        create_medium_nodes = False
     if outer_delims is None:
         outer_delims = False
     if outer_delims_name is None:
         outer_delims_name = "A0x0"
+
+    if create_extra_nodes:
+        nice_options = _append_nicematrix_option(nice_options, "create-extra-nodes")
+    if create_medium_nodes:
+        nice_options = _append_nicematrix_option(nice_options, "create-medium-nodes")
 
     # figure scale: the GE template currently supports TeX wrappers in the template itself
     fig_scale_open = fig_scale_close = ""
@@ -554,6 +580,8 @@ def ge_tex(
     # Descriptor-based callouts (rendered to TikZ draw commands).
     # We validate against the set of SubMatrix names declared in sub_spans.
     rendered_callouts: List[str] = []
+    if matrix_labels is not None:
+        callouts = _merge_callouts(callouts, matrix_labels)
     if callouts:
         try:
             import re
@@ -582,6 +610,7 @@ def ge_tex(
             rendered_callouts = render_delim_callouts(
                 callouts,
                 available_names=_extract_names(sub_spans),
+                name_map=callout_name_map,
                 strict=True,
             )
         except Exception as e:
@@ -596,6 +625,8 @@ def ge_tex(
         nice_options=(nice_options or "").strip(),
         mat_format=mat_format_norm,
         create_cell_nodes=bool(create_cell_nodes),
+        create_extra_nodes=bool(create_extra_nodes),
+        create_medium_nodes=bool(create_medium_nodes),
         codebefore=list(codebefore or []),
         mat_rep=mat_rep_norm,
         submatrix_spans=sub_spans,   # list[(opts, "{i-j}{k-l}")]
@@ -622,15 +653,19 @@ def ge_svg(
     txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
+    matrix_labels: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,
     create_cell_nodes: Optional[bool] = None,
+    create_extra_nodes: Optional[bool] = None,
+    create_medium_nodes: Optional[bool] = None,
     outer_delims: Optional[bool] = None,
     outer_delims_name: Optional[str] = None,
     outer_delims_span: Optional[Tuple[int, int]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
     tex = ge_tex(
@@ -647,16 +682,19 @@ def ge_svg(
         txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
+        matrix_labels=matrix_labels,
         fig_scale=fig_scale,
         landscape=landscape,
         create_cell_nodes=create_cell_nodes,
+        create_extra_nodes=create_extra_nodes,
+        create_medium_nodes=create_medium_nodes,
         outer_delims=outer_delims,
         outer_delims_name=outer_delims_name,
         outer_delims_span=outer_delims_span,
     )
     if toolchain_name:
-        return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
-    return _render_svg(tex, crop=crop, padding=padding)
+        return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, output_dir=output_dir)
+    return _render_svg(tex, crop=crop, padding=padding, output_dir=output_dir)
 
 
 # -----------------------------------------------------------------------------
@@ -756,7 +794,7 @@ def _pnicearray_tex(
 
 def ge_grid_tex(
     matrices: Sequence[Sequence[Any]],
-    Nrhs: int = 0,
+    Nrhs: Any = 0,
     formater: LatexFormatter = _default_formater,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
@@ -780,9 +818,9 @@ def ge_grid_tex(
         A nested list representing the "matrix-of-matrices" layout, typically
         ``[[None, A0], [E1, A1], [E2, A2], ...]``.
     Nrhs:
-        Number of RHS columns in the *A-block* matrices. This is used to insert
-        an augmented-matrix partition bar (``|``) in the last block-column's
-        preamble (between coefficient columns and RHS columns).
+        Number of RHS columns in the *A-block* matrices, or a list of RHS block
+        widths (legacy partition style). This is used to insert an
+        augmented-matrix partition bar in the last block-column's preamble.
     formater:
         Scalar formatter for TeX.
     outer_hspace_mm:
@@ -831,16 +869,40 @@ def ge_grid_tex(
     if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
         raise ValueError("Could not infer matrix block sizes from `matrices`.")
 
+    legacy_format = bool(kwargs.pop("legacy_format", False))
+
     # Build a single NiceArray format string.
     fmt_parts: List[str] = []
+    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
+    if legacy_format:
+        fmt_parts.append(spacer)
+
+    sep = "I" if legacy_format else "|"
     for bc, w in enumerate(block_widths):
         if bc > 0:
-            fmt_parts.append(rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}")
+            fmt_parts.append(spacer)
 
         # Apply Nrhs only to the last block-column (A-block in the legacy layout).
-        if Nrhs and bc == n_block_cols - 1 and 0 < int(Nrhs) < w:
-            left = w - int(Nrhs)
-            fmt_parts.append((cell_align * left) + "|" + (cell_align * int(Nrhs)))
+        if Nrhs and bc == n_block_cols - 1:
+            if isinstance(Nrhs, (list, tuple)):
+                rhs = [int(x) for x in Nrhs]
+                left = w - sum(rhs)
+                cuts: List[int] = [left]
+                for cut in rhs[:-1]:
+                    cuts.append(cuts[-1] + cut)
+                cur = 0
+                fmt = ""
+                for cut in cuts:
+                    fmt += (cell_align * (cut - cur)) + sep
+                    cur = cut
+                if cur < w:
+                    fmt += cell_align * (w - cur)
+                fmt_parts.append(fmt)
+            elif 0 < int(Nrhs) < w:
+                left = w - int(Nrhs)
+                fmt_parts.append((cell_align * left) + sep + (cell_align * int(Nrhs)))
+            else:
+                fmt_parts.append(cell_align * w)
         else:
             fmt_parts.append(cell_align * w)
 
@@ -885,6 +947,7 @@ def ge_grid_tex(
     # Merge with any user-provided spans passed via **kwargs.
     user_sub = kwargs.pop("submatrix_locs", None)
     submatrix_locs: List[Tuple[str, str, str]] = []
+    use_legacy_names = bool(kwargs.pop("legacy_submatrix_names", False))
 
     # Precompute offsets (1-based nicematrix coordinates).
     row_starts: List[int] = []
@@ -898,6 +961,7 @@ def ge_grid_tex(
         col_starts.append(acc)
         acc += W
 
+    name_map: Dict[Tuple[int, int], str] = {}
     for br in range(n_block_rows):
         for bc in range(n_block_cols):
             _, h, w = cell_cache[br][bc]
@@ -908,11 +972,15 @@ def ge_grid_tex(
             r1 = r0 + block_heights[br] - 1
             c1 = c0 + block_widths[bc] - 1
             # Name matrices by their column role when in the legacy 2-column layout.
-            if n_block_cols == 2:
-                base = ("E" if bc == 0 else "A")
+            if use_legacy_names:
+                base = "A"
+                name = f"{base}{br}x{bc}"
             else:
-                base = f"M{bc}"
-            name = f"{base}{br}"
+                if n_block_cols == 2:
+                    base = ("E" if bc == 0 else "A")
+                else:
+                    base = f"M{bc}"
+                name = f"{base}{br}"
             # Use \SubMatrix to draw the per-block delimiters.
             # IMPORTANT: do *not* force explicit delimiter overrides via
             # _{(}^{)} here. Nicematrix already draws parentheses for SubMatrix
@@ -921,6 +989,7 @@ def ge_grid_tex(
             # assert the canonical \SubMatrix(...) [name=...] syntax).
             opts = f"name={name}"
             submatrix_locs.append((opts, f"{r0}-{c0}", f"{r1}-{c1}"))
+            name_map[(br, bc)] = name
 
     if user_sub:
         submatrix_locs.extend(list(user_sub))
@@ -931,6 +1000,9 @@ def ge_grid_tex(
         extension=extension,
         fig_scale=fig_scale,
         submatrix_locs=submatrix_locs,
+        callouts=kwargs.pop("callouts", None),
+        matrix_labels=kwargs.pop("matrix_labels", None),
+        callout_name_map=name_map,
         **kwargs,
     )
 
@@ -941,6 +1013,7 @@ def ge_grid_submatrix_spans(
     Nrhs: int = 0,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    legacy_submatrix_names: bool = False,
 ) -> List[SubMatrixSpan]:
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid.
 
@@ -1021,11 +1094,14 @@ def ge_grid_submatrix_spans(
             r1 = r0 + block_heights[br] - 1
             c1 = c0 + block_widths[bc] - 1
 
-            if n_block_cols == 2:
-                base = ("E" if bc == 0 else "A")
+            if legacy_submatrix_names:
+                name = f"A{br}x{bc}"
             else:
-                base = f"M{bc}"
-            name = f"{base}{br}"
+                if n_block_cols == 2:
+                    base = ("E" if bc == 0 else "A")
+                else:
+                    base = f"M{bc}"
+                name = f"{base}{br}"
 
             spans.append(
                 SubMatrixSpan(
@@ -1095,6 +1171,7 @@ def ge_grid_svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Render the GE matrix stack to SVG.
@@ -1124,4 +1201,4 @@ def ge_grid_svg(
         fig_scale=fig_scale,
         **kwargs,
     )
-    return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
+    return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, output_dir=output_dir)
