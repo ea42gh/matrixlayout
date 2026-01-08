@@ -444,6 +444,19 @@ def _merge_list(explicit: Optional[Sequence[Any]], spec_val: Optional[Sequence[A
         out.extend(list(spec_val))
     return out
 
+
+def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optional[Any]:
+    """Merge callouts, preserving boolean auto-callout flags."""
+    if isinstance(explicit, bool) or isinstance(spec_val, bool):
+        if explicit is None:
+            return spec_val
+        if spec_val is None:
+            return explicit
+        if explicit != spec_val:
+            raise ValueError(f"Conflicting values for callouts: explicit={explicit!r} spec={spec_val!r}")
+        return explicit
+    return _merge_list(explicit, spec_val)
+
 def ge_tex(
     *,
     mat_rep: str,
@@ -499,7 +512,7 @@ def ge_tex(
         pivot_locs = _merge_list(pivot_locs, spec.pivot_locs)
         txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
         rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
-        callouts = _merge_list(callouts, spec.callouts)
+        callouts = _merge_callouts(callouts, spec.callouts)
 
     submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
     pivot_locs = _coerce_pivot_locs(pivot_locs)

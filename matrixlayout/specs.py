@@ -75,7 +75,7 @@ class GELayoutSpec:
     pivot_locs: Optional[Sequence[Union[PivotBox, Dict[str, Any], Tuple[Any, ...]]]] = None
     txt_with_locs: Optional[Sequence[Union[TextAt, Dict[str, Any], Tuple[Any, ...]]]] = None
     rowechelon_paths: Optional[Sequence[Union[RowEchelonPath, str, Dict[str, Any]]]] = None
-    callouts: Optional[Sequence[Any]] = None
+    callouts: Optional[Union[Sequence[Any], bool]] = None
 
     landscape: Optional[bool] = None
     create_cell_nodes: Optional[bool] = None

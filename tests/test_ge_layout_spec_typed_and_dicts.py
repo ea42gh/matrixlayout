@@ -89,6 +89,17 @@ def test_ge_tex_dict_rowechelon_paths_with_tikz_key():
     assert r"\draw (1-1) -- (1-1);" in tex
 
 
+def test_ge_tex_accepts_callouts_bool_in_layout():
+    layout = {
+        "submatrix_locs": [
+            {"opts": "name=A0", "start": "1-1", "end": "1-1"},
+        ],
+        "callouts": True,
+    }
+    tex = ge_tex(mat_rep="1", mat_format="r", layout=layout)
+    assert "\\draw[" in tex
+
+
 @pytest.mark.render
 def test_ge_svg_smoke_with_typed_layout_items():
     pytest.importorskip("jupyter_tikz")
