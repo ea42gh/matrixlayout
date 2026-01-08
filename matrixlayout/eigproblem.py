@@ -21,26 +21,10 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, 
 
 from .jinja_env import render_template
 from .render import render_svg
+from .formatting import latexify
 
 
 LatexFormatter = Callable[[Any], str]
-
-
-def _default_formater(x: Any) -> str:
-    """Default scalar formatter for TeX.
-
-    Behavior:
-    - If ``x`` is already a string, it is assumed to be TeX-ready and returned unchanged.
-    - Otherwise, if SymPy is available, uses ``sympy.latex(x)``.
-    - Falls back to ``str(x)``.
-    """
-    if isinstance(x, str):
-        return x
-    try:
-        import sympy as sym  # type: ignore
-        return sym.latex(x)
-    except Exception:
-        return str(x)
 
 
 def _is_zero_like(x: Any) -> bool:
@@ -204,7 +188,7 @@ def eigproblem_tex(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = _default_formater,
+    formater: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,
@@ -364,7 +348,7 @@ def eigproblem_svg(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = _default_formater,
+    formater: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,

@@ -24,6 +24,7 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
+from .formatting import latexify
 from .specs import (
     GEGridBundle,
     GELayoutSpec,
@@ -702,22 +703,6 @@ def ge_svg(
 # -----------------------------------------------------------------------------
 
 
-def _default_formater(x: Any) -> str:
-    """Default scalar formatter for TeX.
-
-    - If ``x`` is a string, it is assumed TeX-ready.
-    - Otherwise, if SymPy is available, uses ``sympy.latex``.
-    - Falls back to ``str(x)``.
-    """
-    if isinstance(x, str):
-        return x
-    try:
-        import sympy as sym  # type: ignore
-        return sym.latex(x)
-    except Exception:
-        return str(x)
-
-
 def _as_2d_list(M: Any) -> Tuple[List[List[Any]], int, int]:
     """Return (rows, nrows, ncols) from common matrix-like inputs."""
     if M is None:
@@ -795,7 +780,7 @@ def _pnicearray_tex(
 def ge_grid_tex(
     matrices: Sequence[Sequence[Any]],
     Nrhs: Any = 0,
-    formater: LatexFormatter = _default_formater,
+    formater: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
@@ -1122,7 +1107,7 @@ def ge_grid_bundle(
     matrices: Sequence[Sequence[Any]],
     *,
     Nrhs: int = 0,
-    formater: LatexFormatter = _default_formater,
+    formater: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
@@ -1163,7 +1148,7 @@ def ge_grid_bundle(
 def ge_grid_svg(
     matrices: Sequence[Sequence[Any]],
     Nrhs: int = 0,
-    formater: LatexFormatter = _default_formater,
+    formater: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",

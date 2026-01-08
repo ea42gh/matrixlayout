@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping, MutableMapping, Sequence, Tuple, TypedDict, Union, cast
 
+from .formatting import latexify
+
 
 class BackSubStep(TypedDict, total=False):
     """One back-substitution step.
@@ -54,22 +56,9 @@ class BackSubTrace(TypedDict, total=False):
 
 def _latexify(x: Any) -> str:
     """Convert an object to a TeX-ish string without performing computation."""
-
     if x is None:
         return ""
-
-    # If SymPy is present, prefer its latex() for symbolic objects.
-    try:
-        import sympy  # type: ignore
-
-        # sympy.Basic is the base class for most SymPy expressions.
-        if isinstance(x, sympy.Basic):
-            return cast(str, sympy.latex(x))
-    except Exception:
-        # No SymPy installed or latex conversion failed; fall back to str.
-        pass
-
-    return str(x)
+    return latexify(x)
 
 
 def _normalize_base(base: Any) -> str:
