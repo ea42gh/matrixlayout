@@ -61,8 +61,9 @@
 {{ preamble }}%
 $% begin math
 \begin{NiceArray}{%% if nice_options %%}[{{- nice_options -}}]{%% endif %%}{ {{- mat_format -}} }% begin NiceArray
-\CodeBefore{%% if create_cell_nodes %%}[create-cell-nodes]{%% endif %%}% 
-{%%- for entry in codebefore -%%}{{ entry }}%{%%- endfor -%%}%
+\CodeBefore{%% if create_cell_nodes %%}[create-cell-nodes]{%% endif %%}
+{%%- for entry in codebefore -%%}{{ entry }}
+{%%- endfor -%%}%
 \Body%
 {{ mat_rep }}%
 {%%- set has_after = (submatrix_spans|length > 0) or (submatrix_names|length > 0) or (pivot_locs|length > 0) or (txt_with_locs|length > 0) or (rowechelon_paths|length > 0) -%%}%

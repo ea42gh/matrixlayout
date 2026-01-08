@@ -678,6 +678,7 @@ def ge_svg(
     crop: Optional[str] = None,
     padding: Any = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
+    output_stem: str = "output",
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
     tex = ge_tex(
@@ -705,8 +706,15 @@ def ge_svg(
         outer_delims_span=outer_delims_span,
     )
     if toolchain_name:
-        return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, output_dir=output_dir)
-    return _render_svg(tex, crop=crop, padding=padding, output_dir=output_dir)
+        return _render_svg(
+            tex,
+            toolchain_name=toolchain_name,
+            crop=crop,
+            padding=padding,
+            output_dir=output_dir,
+            output_stem=output_stem,
+        )
+    return _render_svg(tex, crop=crop, padding=padding, output_dir=output_dir, output_stem=output_stem)
 
 
 # -----------------------------------------------------------------------------
@@ -1200,6 +1208,7 @@ def ge_grid_svg(
     crop: Optional[str] = None,
     padding: Any = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
+    output_stem: str = "output",
     frame: Any = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
@@ -1240,4 +1249,5 @@ def ge_grid_svg(
         padding=padding,
         frame=frame,
         output_dir=output_dir,
+        output_stem=output_stem,
     )
