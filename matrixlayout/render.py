@@ -15,12 +15,22 @@ Policy
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Any, Optional, Union
 
 _PathLike = Union[str, os.PathLike, Path]
+
+_SVG_HEADER_COMMENT_RE = re.compile(r"^\s*<!--.*?-->\s*", flags=re.DOTALL)
+
+
+def _strip_svg_header_comment(svg_text: str) -> str:
+    """Remove leading XML comments (e.g., dvisvgm generator headers)."""
+    if not svg_text:
+        return svg_text
+    return _SVG_HEADER_COMMENT_RE.sub("", svg_text, count=1)
 
 
 def render_svg_with_artifacts(
@@ -100,7 +110,7 @@ def render_svg(
             frame=frame,
             exact_bbox=exact_bbox,
         )
-        return artifacts.read_svg()
+        return _strip_svg_header_comment(artifacts.read_svg())
 
     # Default: isolate artifacts per-call, keep them on failure for diagnostics.
     tmp = Path(tempfile.mkdtemp(prefix="matrixlayout_render_"))
@@ -115,7 +125,7 @@ def render_svg(
             frame=frame,
             exact_bbox=exact_bbox,
         )
-        svg_text = artifacts.read_svg()
+        svg_text = _strip_svg_header_comment(artifacts.read_svg())
     except Exception:
         # Keep tmp directory for inspection on failure.
         raise

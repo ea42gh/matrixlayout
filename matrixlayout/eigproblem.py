@@ -136,6 +136,46 @@ def _mk_diag_matrix(
     return pre + nl.join(rows) + r" \\ " + post
 
 
+def _mk_sigma_matrix(
+    values: Sequence[Any],
+    multiplicities: Sequence[int],
+    *,
+    formater: LatexFormatter,
+    sz: Tuple[int, int],
+    mm: int = 8,
+    span_cols: Optional[int] = None,
+    extra_space: str = "",
+    add_height_mm: int = 0,
+) -> str:
+    diag: List[Any] = []
+    for v, m in zip(values, multiplicities):
+        diag.extend([v] * int(m))
+    n = len(diag)
+
+    mrows, ncols = int(sz[0]), int(sz[1])
+    if ncols <= 0 or mrows <= 0:
+        raise ValueError("Invalid sz for sigma matrix")
+
+    space = r"@{\hspace{" + str(mm) + r"mm}}"
+    n_value_cols = max(1, len(multiplicities)) if span_cols is None else int(span_cols)
+    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * ncols) + "}"
+    post = r"\end{pNiceArray}$}"
+
+    zero = formater(0)
+    mat: List[List[str]] = [[zero for _ in range(ncols)] for __ in range(mrows)]
+    for i in range(min(n, mrows, ncols)):
+        mat[i][i] = formater(diag[i])
+
+    if extra_space:
+        for i in range(mrows):
+            mat[i][0] = extra_space + mat[i][0]
+            mat[i][ncols - 1] = mat[i][ncols - 1] + extra_space
+
+    nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
+    rows = [" & ".join(row) for row in mat]
+    return pre + nl.join(rows) + r" \\ " + post
+
+
 def _mk_vecs_matrix(
     vec_groups: Sequence[Sequence[Iterable[Any]]],
     *,
@@ -272,7 +312,7 @@ def eigproblem_tex(
     # Matrices (diagonal + eigen/singular vector matrix)
     if case.upper() == "SVD" and "sigma" in eig:
         diag_values = list(eig["sigma"])
-        lambda_matrix = _mk_diag_matrix(
+        lambda_matrix = _mk_sigma_matrix(
             diag_values,
             multiplicities,
             formater=formater,
@@ -358,6 +398,7 @@ def eigproblem_svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    frame: Any = None,
 ) -> str:
     """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
     tex = eigproblem_tex(
@@ -371,4 +412,4 @@ def eigproblem_svg(
         preamble=preamble,
         sz=sz,
     )
-    return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
+    return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, frame=frame)

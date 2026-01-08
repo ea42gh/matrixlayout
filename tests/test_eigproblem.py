@@ -52,3 +52,18 @@ def test_eigproblem_tex_case_SVD_includes_sigma_and_U():
     assert r"\sigma" in tex
     assert re.search(r"\\color\{[^}]+\}\{\s*\\Sigma\s*=\s*\}", tex) is not None
     assert re.search(r"\\color\{[^}]+\}\{\s*U\s*=\s*\}", tex) is not None
+
+
+def test_eigproblem_tex_svd_uses_spec_size_when_sz_missing():
+    spec = {
+        "lambda": [4],
+        "ma": [1],
+        "sigma": [2],
+        "evecs": [[[1, 0]]],
+        "qvecs": [[[1, 0]]],
+        "uvecs": [[[1, 0, 0]]],
+        "sz": (3, 2),
+    }
+    tex = matrixlayout.eigproblem_tex(spec, case="SVD", formater=str, fig_scale=None)
+    assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex
+    assert r"2 & 0 \\ 0 & 0 \\ 0 & 0 \\" in tex

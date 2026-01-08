@@ -27,6 +27,7 @@ from .render import render_svg as _render_svg
 from .formatting import latexify
 from .specs import (
     GEGridBundle,
+    GEGridSpec,
     GELayoutSpec,
     PivotBox,
     RowEchelonPath,
@@ -395,6 +396,16 @@ def _coerce_layout_spec(layout: Any) -> Optional[GELayoutSpec]:
     if isinstance(layout, dict):
         return GELayoutSpec.from_dict(layout)
     raise TypeError(f"layout must be a GELayoutSpec or dict, not {type(layout).__name__}")
+
+
+def _coerce_grid_spec(spec: Any) -> Optional[GEGridSpec]:
+    if spec is None:
+        return None
+    if isinstance(spec, GEGridSpec):
+        return spec
+    if isinstance(spec, dict):
+        return GEGridSpec.from_dict(spec)
+    raise TypeError(f"spec must be a GEGridSpec or dict, not {type(spec).__name__}")
 
 
 _BODY_PREAMBLE_FORBIDDEN = (
@@ -778,13 +789,15 @@ def _pnicearray_tex(
 
 
 def ge_grid_tex(
-    matrices: Sequence[Sequence[Any]],
+    matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: Any = 0,
     formater: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    *,
+    spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -816,6 +829,24 @@ def ge_grid_tex(
     str
         TeX document (via :func:`ge_tex`).
     """
+    grid_spec = _coerce_grid_spec(spec)
+    if grid_spec is not None:
+        if matrices is None:
+            matrices = grid_spec.matrices
+        else:
+            matrices = grid_spec.matrices
+        Nrhs = grid_spec.Nrhs
+        if grid_spec.formater is not None:
+            formater = grid_spec.formater
+        outer_hspace_mm = int(grid_spec.outer_hspace_mm)
+        cell_align = str(grid_spec.cell_align)
+        extension = str(grid_spec.extension or extension)
+        fig_scale = grid_spec.fig_scale if grid_spec.fig_scale is not None else fig_scale
+        if grid_spec.layout is not None:
+            kwargs["layout"] = grid_spec.layout
+        kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
+        kwargs["legacy_format"] = bool(grid_spec.legacy_format)
+
     grid: List[List[Any]] = [list(r) for r in (matrices or [])]
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
@@ -1104,7 +1135,7 @@ def ge_grid_submatrix_spans(
 
 
 def ge_grid_bundle(
-    matrices: Sequence[Sequence[Any]],
+    matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     Nrhs: int = 0,
     formater: LatexFormatter = latexify,
@@ -1113,6 +1144,7 @@ def ge_grid_bundle(
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
+    spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> GEGridBundle:
     """Return both the GE-grid TeX and the resolved ``\\SubMatrix`` spans.
@@ -1134,19 +1166,30 @@ def ge_grid_bundle(
         extension=extension,
         fig_scale=fig_scale,
         layout=layout,
+        spec=spec,
         **kwargs,
     )
+    use_spec = _coerce_grid_spec(spec)
+    if use_spec is not None:
+        matrices = use_spec.matrices
+        Nrhs = use_spec.Nrhs
+        outer_hspace_mm = int(use_spec.outer_hspace_mm)
+        cell_align = str(use_spec.cell_align)
+        legacy_submatrix_names = bool(use_spec.legacy_submatrix_names)
+    else:
+        legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
     spans = ge_grid_submatrix_spans(
         matrices,
         Nrhs=Nrhs,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
+        legacy_submatrix_names=legacy_submatrix_names,
     )
     return GEGridBundle(tex=tex, submatrix_spans=spans)
 
 
 def ge_grid_svg(
-    matrices: Sequence[Sequence[Any]],
+    matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: int = 0,
     formater: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
@@ -1157,6 +1200,9 @@ def ge_grid_svg(
     crop: Optional[str] = None,
     padding: Any = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
+    frame: Any = None,
+    *,
+    spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Render the GE matrix stack to SVG.
@@ -1184,6 +1230,14 @@ def ge_grid_svg(
         cell_align=cell_align,
         extension=extension,
         fig_scale=fig_scale,
+        spec=spec,
         **kwargs,
     )
-    return _render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, output_dir=output_dir)
+    return _render_svg(
+        tex,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+    )

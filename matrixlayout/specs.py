@@ -164,3 +164,75 @@ class GEGridBundle:
 
     tex: str
     submatrix_spans: List[SubMatrixSpan]
+
+
+@dataclass(frozen=True)
+class GEGridSpec:
+    """Serializable spec for a GE matrix grid + layout options."""
+
+    matrices: Sequence[Sequence[Any]]
+    Nrhs: Any = 0
+    formater: Optional[Any] = None
+    outer_hspace_mm: int = 6
+    cell_align: str = "r"
+    extension: str = ""
+    fig_scale: Optional[Any] = None
+    layout: Optional[Any] = None
+    legacy_submatrix_names: bool = False
+    legacy_format: bool = False
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]) -> "GEGridSpec":
+        if d is None:
+            raise ValueError("GEGridSpec.from_dict requires a mapping")
+        allowed = set(GEGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        extra = set(d.keys()) - allowed
+        if extra:
+            raise ValueError(f"Unknown GEGridSpec fields: {sorted(extra)}")
+        if "matrices" not in d:
+            raise ValueError("GEGridSpec requires 'matrices'")
+        return GEGridSpec(**d)
+
+    def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
+        d = asdict(self)
+        if drop_none:
+            return {k: v for k, v in d.items() if v is not None}
+        return d
+
+
+@dataclass(frozen=True)
+class QRGridSpec:
+    """Serializable spec for a QR matrix grid + layout options."""
+
+    matrices: Sequence[Sequence[Any]]
+    formater: Optional[Any] = None
+    array_names: Any = True
+    fig_scale: Optional[Any] = None
+    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n"
+    extension: str = ""
+    nice_options: Optional[str] = "vlines-in-sub-matrix = I"
+    label_color: str = "blue"
+    label_text_color: str = "red"
+    known_zero_color: str = "brown"
+    landscape: Optional[bool] = None
+    create_cell_nodes: Optional[bool] = True
+    create_extra_nodes: Optional[bool] = True
+    create_medium_nodes: Optional[bool] = True
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]) -> "QRGridSpec":
+        if d is None:
+            raise ValueError("QRGridSpec.from_dict requires a mapping")
+        allowed = set(QRGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        extra = set(d.keys()) - allowed
+        if extra:
+            raise ValueError(f"Unknown QRGridSpec fields: {sorted(extra)}")
+        if "matrices" not in d:
+            raise ValueError("QRGridSpec requires 'matrices'")
+        return QRGridSpec(**d)
+
+    def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
+        d = asdict(self)
+        if drop_none:
+            return {k: v for k, v in d.items() if v is not None}
+        return d
