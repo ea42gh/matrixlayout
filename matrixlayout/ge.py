@@ -1508,12 +1508,48 @@ def _parse_ge_decorations(
             continue
 
         if "hlines" in item or "vlines" in item:
+            mat = matrices[key[0]][key[1]]
+            _, h, w = _as_2d_list(mat)
+            rows = item.get("rows")
+            cols = item.get("cols")
+            if "submatrix" in item and item["submatrix"] is not None:
+                sub = item["submatrix"]
+                if isinstance(sub, (tuple, list)) and len(sub) == 2:
+                    rows = sub[0]
+                    cols = sub[1]
+
+            def _coerce_line(val: Any, axis_len: int, sel: Any) -> Any:
+                if val is True or (isinstance(val, str) and val.strip().lower() == "submatrix"):
+                    idx = _normalize_index_list(sel, axis_len)
+                    if not idx:
+                        return None
+                    return max(idx) + 1
+                if isinstance(val, str) and val.strip().lower() == "bounds":
+                    idx = _normalize_index_list(sel, axis_len)
+                    if not idx:
+                        return None
+                    lo = min(idx)
+                    hi = max(idx)
+                    if lo == hi:
+                        return hi + 1
+                    return [lo, hi + 1]
+                if isinstance(val, str) and val.strip().lower() == "all":
+                    idx = _normalize_index_list(sel, axis_len)
+                    if not idx:
+                        return None
+                    lo = min(idx)
+                    hi = max(idx)
+                    return list(range(lo, hi + 1))
+                return val
+
+            hlines = _coerce_line(item.get("hlines"), h, rows)
+            vlines = _coerce_line(item.get("vlines"), w, cols)
             sub_locs.extend(
                 ge_grid_line_specs(
                     matrices,
                     targets=[key],
-                    hlines=item.get("hlines"),
-                    vlines=item.get("vlines"),
+                    hlines=hlines,
+                    vlines=vlines,
                     block_align=block_align,
                     block_valign=block_valign,
                 )

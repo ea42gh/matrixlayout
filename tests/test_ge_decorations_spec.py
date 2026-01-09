@@ -51,3 +51,36 @@ def test_ge_grid_tex_decorations_lines_and_label():
     assert "hlines=1" in tex
     assert "vlines=1" in tex
     assert r"\mathbf{A}" in tex
+
+
+def test_ge_grid_tex_decorations_lines_submatrix_shorthand():
+    matrices = [[None, [[1, 2, 3, 4], [5, 6, 7, 8]]]]
+    decorations = [
+        {"grid": (0, 1), "submatrix": ("0:0", None), "hlines": "submatrix"},
+        {"grid": (0, 1), "submatrix": (None, "0:2"), "vlines": True},
+    ]
+    tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
+    assert "hlines=1" in tex
+    assert "vlines=3" in tex
+
+
+def test_ge_grid_tex_decorations_lines_bounds():
+    matrices = [[None, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]]]
+    decorations = [
+        {"grid": (0, 1), "submatrix": ("0:2", None), "hlines": "bounds"},
+        {"grid": (0, 1), "submatrix": (None, "0:1"), "vlines": "bounds"},
+    ]
+    tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
+    assert "hlines={0,3}" in tex or "hlines={0, 3}" in tex
+    assert "vlines={0,2}" in tex or "vlines={0, 2}" in tex
+
+
+def test_ge_grid_tex_decorations_lines_all():
+    matrices = [[None, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]]]
+    decorations = [
+        {"grid": (0, 1), "submatrix": ("0:2", None), "hlines": "all"},
+        {"grid": (0, 1), "submatrix": (None, "0:2"), "vlines": "all"},
+    ]
+    tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
+    assert "hlines={0,1,2}" in tex or "hlines={0, 1, 2}" in tex
+    assert "vlines={0,1,2}" in tex or "vlines={0, 1, 2}" in tex
