@@ -10,6 +10,7 @@ decorator specs. Example:
 from __future__ import annotations
 
 from fractions import Fraction
+import inspect
 import numbers
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
@@ -195,10 +196,83 @@ def decorate_tex_entries(
     return grid
 
 
+def expand_entry_selectors(
+    entries: Optional[Iterable[Any]],
+    nrows: int,
+    ncols: int,
+    *,
+    allow_int: bool = False,
+    filter_bounds: bool = False,
+) -> set[Tuple[int, int]]:
+    """Expand selector specs into entry coordinates."""
+    out: set[Tuple[int, int]] = set()
+    if entries is None:
+        for i in range(nrows):
+            for j in range(ncols):
+                out.add((i, j))
+        return out
+    for ent in entries:
+        if allow_int and isinstance(ent, int):
+            out.add((int(ent), 0))
+            continue
+        if isinstance(ent, dict):
+            if ent.get("all"):
+                for i in range(nrows):
+                    for j in range(ncols):
+                        out.add((i, j))
+            if "row" in ent:
+                i = int(ent["row"])
+                for j in range(ncols):
+                    out.add((i, j))
+            if "col" in ent:
+                j = int(ent["col"])
+                for i in range(nrows):
+                    out.add((i, j))
+            if "rows" in ent:
+                for i in ent["rows"]:
+                    for j in range(ncols):
+                        out.add((int(i), j))
+            if "cols" in ent:
+                for j in ent["cols"]:
+                    for i in range(nrows):
+                        out.add((i, int(j)))
+            continue
+        if isinstance(ent, (list, tuple)) and len(ent) == 2:
+            a, b = ent
+            if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+                i0, j0 = int(a[0]), int(a[1])
+                i1, j1 = int(b[0]), int(b[1])
+                for i in range(min(i0, i1), max(i0, i1) + 1):
+                    for j in range(min(j0, j1), max(j0, j1) + 1):
+                        out.add((i, j))
+            else:
+                out.add((int(a), int(b)))
+    if filter_bounds:
+        out = {(i, j) for (i, j) in out if 0 <= i < nrows and 0 <= j < ncols}
+    return out
+
+
+def apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
+    """Apply a decorator that accepts 1 or 4 positional args."""
+    try:
+        params = [
+            p for p in inspect.signature(dec).parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        ]
+    except Exception:
+        return dec(tex)
+    if len(params) >= 4:
+        return dec(i, j, v, tex)
+    if len(params) == 1:
+        return dec(tex)
+    raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
+
+
 __all__ = [
     "latexify",
     "make_decorator",
     "decorate_tex_entries",
+    "expand_entry_selectors",
+    "apply_decorator",
     "decorator_box",
     "decorator_color",
     "decorator_bg",

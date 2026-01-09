@@ -9,10 +9,9 @@ la_figures; this module focuses on layout + formatting only.
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable
-import inspect
 import re
 
-from .formatting import latexify
+from .formatting import latexify, apply_decorator, expand_entry_selectors
 from .ge import ge_tex
 from .render import render_svg
 from .specs import QRGridSpec
@@ -470,62 +469,7 @@ def qr_grid_tex(
     for (gM, gN), entries in _qr_known_zero_entries(layout.matrices):
         layout.decorate_tex_entries(gM, gN, brown, entries=entries)
 
-    def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
-        out: List[Tuple[int, int]] = []
-        if entries is None:
-            return [(i, j) for i in range(nrows) for j in range(ncols)]
-        for ent in entries:
-            if isinstance(ent, dict):
-                if ent.get("all"):
-                    out.extend((i, j) for i in range(nrows) for j in range(ncols))
-                if "row" in ent:
-                    i = int(ent["row"])
-                    out.extend((i, j) for j in range(ncols))
-                if "col" in ent:
-                    j = int(ent["col"])
-                    out.extend((i, j) for i in range(nrows))
-                if "rows" in ent:
-                    for i in ent["rows"]:
-                        out.extend((int(i), j) for j in range(ncols))
-                if "cols" in ent:
-                    for j in ent["cols"]:
-                        out.extend((i, int(j)) for i in range(nrows))
-                continue
-            if isinstance(ent, (list, tuple)) and len(ent) == 2:
-                a, b = ent
-                if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
-                    i0, j0 = int(a[0]), int(a[1])
-                    i1, j1 = int(b[0]), int(b[1])
-                    for i in range(min(i0, i1), max(i0, i1) + 1):
-                        for j in range(min(j0, j1), max(j0, j1) + 1):
-                            out.append((i, j))
-                else:
-                    out.append((int(a), int(b)))
-        return out
-
-    def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
-        try:
-            params = [
-                p
-                for p in inspect.signature(dec).parameters.values()
-                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-            ]
-        except Exception:
-            return dec(tex)
-        if len(params) >= 4:
-            return dec(i, j, v, tex)
-        if len(params) == 1:
-            return dec(tex)
-        raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
-
     if decorators:
-        base_name = layout.submatrix_name or "QR"
-        name_to_grid: Dict[str, Tuple[int, int]] = {}
-        for gM in range(layout.nGridRows):
-            for gN in range(layout.nGridCols):
-                if layout.array_shape[gM][gN][0] != 0:
-                    name_to_grid[f"{base_name}{gM}x{gN}"] = (gM, gN)
-
         def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
             grid_pos = spec_item.get("grid")
             if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
@@ -534,11 +478,9 @@ def qr_grid_tex(
             if isinstance(name, (list, tuple)) and len(name) == 3:
                 return (int(name[1]), int(name[2]))
             if isinstance(name, str):
-                if name in name_to_grid:
-                    return name_to_grid[name]
-                m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
-                if m:
-                    return (int(m.group(2)), int(m.group(3)))
+                resolved = resolve_qr_grid_name(name, matrices=layout.matrices)
+                if resolved is not None:
+                    return resolved
             return None
 
         for spec_item in decorators:
@@ -564,7 +506,7 @@ def qr_grid_tex(
                 if strict:
                     raise ValueError("decorator grid position out of range")
                 continue
-            entries = _expand_entries(spec_item.get("entries"), shape[0], shape[1])
+            entries = expand_entry_selectors(spec_item.get("entries"), shape[0], shape[1])
             applied = 0
             mat = layout.matrices[gM][gN]
             for i, j in entries:
@@ -573,7 +515,7 @@ def qr_grid_tex(
                 v = _mat_entry(mat, i, j)
                 tex = layout.a_tex[tl[0] + i][tl[1] + j]
                 base = tex if tex else str(fmt(v))
-                layout.a_tex[tl[0] + i][tl[1] + j] = _apply_decorator(dec, i, j, v, base)
+                layout.a_tex[tl[0] + i][tl[1] + j] = apply_decorator(dec, i, j, v, base)
                 applied += 1
             if strict and applied == 0:
                 raise ValueError("decorator selector did not match any entries")

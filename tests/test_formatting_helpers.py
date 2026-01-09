@@ -13,6 +13,7 @@ from matrixlayout import (
     sel_vec,
     sel_vec_range,
 )
+from matrixlayout.formatting import expand_entry_selectors, apply_decorator
 
 
 def test_decorator_presets_wrap_tex():
@@ -40,3 +41,13 @@ def test_selector_helpers():
     assert sel_all() == {"all": True}
     assert sel_vec(0, 1, 2) == (0, 1, 2)
     assert sel_vec_range((0, 1, 0), (0, 1, 2)) == ((0, 1, 0), (0, 1, 2))
+
+
+def test_expand_entry_selectors_and_apply_decorator():
+    entries = expand_entry_selectors([sel_entry(0, 0), sel_box((0, 1), (1, 1))], 2, 2, filter_bounds=True)
+    assert entries == {(0, 0), (0, 1), (1, 1)}
+
+    def dec(tex: str) -> str:
+        return rf"[{tex}]"
+
+    assert apply_decorator(dec, 0, 0, 5, "5") == "[5]"

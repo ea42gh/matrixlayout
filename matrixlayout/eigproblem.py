@@ -17,12 +17,11 @@ Out of scope:
 from __future__ import annotations
 
 from dataclasses import dataclass
-import inspect
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List
 
 from .jinja_env import render_template
 from .render import render_svg
-from .formatting import latexify
+from .formatting import latexify, apply_decorator, expand_entry_selectors
 
 
 LatexFormatter = Callable[[Any], str]
@@ -145,7 +144,7 @@ def _mk_vector_blocks(
                 if dec_specs:
                     for idx, (dec, expanded) in enumerate(dec_specs):
                         if (g_idx, v_idx, i_idx) in expanded:
-                            cell = _apply_decorator(dec, i_idx, v_idx, v, cell)
+                            cell = apply_decorator(dec, i_idx, v_idx, v, cell)
                             applied_counts[idx] += 1
                 entries.append(cell)
             vec_tex.append(r"$\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}$")
@@ -155,54 +154,6 @@ def _mk_vector_blocks(
             if count == 0:
                 raise ValueError("decorator selector did not match any entries")
     return " & & ".join(groups_out)
-
-
-def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
-    out: List[Tuple[int, int]] = []
-    if entries is None:
-        return [(i, j) for i in range(nrows) for j in range(ncols)]
-    for ent in entries:
-        if isinstance(ent, dict):
-            if ent.get("all"):
-                out.extend((i, j) for i in range(nrows) for j in range(ncols))
-            if "row" in ent:
-                i = int(ent["row"])
-                out.extend((i, j) for j in range(ncols))
-            if "col" in ent:
-                j = int(ent["col"])
-                out.extend((i, j) for i in range(nrows))
-            if "rows" in ent:
-                for i in ent["rows"]:
-                    out.extend((int(i), j) for j in range(ncols))
-            if "cols" in ent:
-                for j in ent["cols"]:
-                    out.extend((i, int(j)) for i in range(nrows))
-            continue
-        if isinstance(ent, (list, tuple)) and len(ent) == 2:
-            a, b = ent
-            if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
-                i0, j0 = int(a[0]), int(a[1])
-                i1, j1 = int(b[0]), int(b[1])
-                for i in range(min(i0, i1), max(i0, i1) + 1):
-                    for j in range(min(j0, j1), max(j0, j1) + 1):
-                        out.append((i, j))
-            else:
-                out.append((int(a), int(b)))
-    return out
-
-
-def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
-    try:
-        params = [
-            p for p in inspect.signature(dec).parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-        ]
-    except Exception:
-        return dec(tex)
-    if len(params) >= 4:
-        return dec(i, j, v, tex)
-    if len(params) == 1:
-        return dec(tex)
-    raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
 
 
 def _apply_matrix_decorators(
@@ -229,12 +180,12 @@ def _apply_matrix_decorators(
             raise ValueError("decorator must be callable")
         fmt = spec_item.get("formater", formater)
         applied = 0
-        for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
+        for i, j in expand_entry_selectors(spec_item.get("entries"), nrows, ncols):
             if i < 0 or j < 0 or i >= nrows or j >= ncols:
                 continue
             raw = mat_raw[i][j]
             base = mat_tex[i][j] or str(fmt(raw))
-            mat_tex[i][j] = _apply_decorator(dec, i, j, raw, base)
+            mat_tex[i][j] = apply_decorator(dec, i, j, raw, base)
             applied += 1
         if strict and applied == 0:
             raise ValueError("decorator selector did not match any entries")

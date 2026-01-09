@@ -47,3 +47,12 @@ def test_resolve_ge_grid_name():
     matrices = [[None, [[1, 2], [3, 4]]]]
     assert resolve_ge_grid_name("A0", matrices=matrices) == (0, 1)
     assert resolve_ge_grid_name("A0x1", matrices=matrices) == (0, 1)
+
+
+def test_ge_grid_tex_respects_explicit_matrices_over_spec():
+    from matrixlayout.ge import ge_grid_tex
+
+    spec = {"matrices": [[None, [[9]]]]}
+    tex = ge_grid_tex(matrices=[[None, [[1]]]], spec=spec, formater=lambda x: f"v{x}")
+    assert "v1" in tex
+    assert "v9" not in tex

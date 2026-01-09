@@ -14,12 +14,12 @@ The template is treated as a layout/presentation artifact only:
 from __future__ import annotations
 
 from dataclasses import dataclass
-import inspect
 from typing import Any, Iterable, Mapping, Optional, Sequence, Union, List, Tuple
 
 from .jinja_env import render_template
 from .render import render_svg
 from .shortcascade import mk_shortcascade_lines
+from .formatting import apply_decorator, expand_entry_selectors
 
 
 def _as_lines(value: Union[str, Sequence[str], None]) -> list[str]:
@@ -52,57 +52,6 @@ def _as_scale(value: Optional[Union[str, float, int]]) -> Optional[str]:
     return format(value, "g")
 
 
-def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
-    out: List[Tuple[int, int]] = []
-    if entries is None:
-        return [(i, j) for i in range(nrows) for j in range(ncols)]
-    for ent in entries:
-        if isinstance(ent, int):
-            out.append((int(ent), 0))
-            continue
-        if isinstance(ent, dict):
-            if ent.get("all"):
-                out.extend((i, j) for i in range(nrows) for j in range(ncols))
-            if "row" in ent:
-                i = int(ent["row"])
-                out.extend((i, j) for j in range(ncols))
-            if "col" in ent:
-                j = int(ent["col"])
-                out.extend((i, j) for i in range(nrows))
-            if "rows" in ent:
-                for i in ent["rows"]:
-                    out.extend((int(i), j) for j in range(ncols))
-            if "cols" in ent:
-                for j in ent["cols"]:
-                    out.extend((i, int(j)) for i in range(nrows))
-            continue
-        if isinstance(ent, (list, tuple)) and len(ent) == 2:
-            a, b = ent
-            if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
-                i0, j0 = int(a[0]), int(a[1])
-                i1, j1 = int(b[0]), int(b[1])
-                for i in range(min(i0, i1), max(i0, i1) + 1):
-                    for j in range(min(j0, j1), max(j0, j1) + 1):
-                        out.append((i, j))
-            else:
-                out.append((int(a), int(b)))
-    return out
-
-
-def _apply_decorator(dec: Any, i: int, j: int, v: Any, tex: str) -> str:
-    try:
-        params = [
-            p for p in inspect.signature(dec).parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-        ]
-    except Exception:
-        return dec(tex)
-    if len(params) >= 4:
-        return dec(i, j, v, tex)
-    if len(params) == 1:
-        return dec(tex)
-    raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
-
-
 def _apply_line_decorators(
     lines: List[str],
     decorators: Optional[Sequence[Any]],
@@ -124,11 +73,11 @@ def _apply_line_decorators(
         if not callable(dec):
             raise ValueError("decorator must be callable")
         applied = 0
-        for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
+        for i, j in expand_entry_selectors(spec_item.get("entries"), nrows, ncols, allow_int=True):
             if i < 0 or i >= nrows or j != 0:
                 continue
             base = lines[i]
-            lines[i] = _apply_decorator(dec, i, j, base, base)
+            lines[i] = apply_decorator(dec, i, j, base, base)
             applied += 1
         if strict and applied == 0:
             raise ValueError("decorator selector did not match any entries")

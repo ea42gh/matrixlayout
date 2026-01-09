@@ -19,13 +19,12 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 from __future__ import annotations
 
 from typing import List, Optional, Sequence, Tuple, Union, Any, Dict, Callable, Iterable
-import inspect
 import os
 import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .formatting import latexify
+from .formatting import latexify, apply_decorator, expand_entry_selectors
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -852,8 +851,6 @@ def ge_grid_tex(
     if grid_spec is not None:
         if matrices is None:
             matrices = grid_spec.matrices
-        else:
-            matrices = grid_spec.matrices
         Nrhs = grid_spec.Nrhs
         if grid_spec.formater is not None:
             formater = grid_spec.formater
@@ -957,84 +954,9 @@ def ge_grid_tex(
         s = formater(v)
         return s if (isinstance(s, str) and s.strip()) else blank
 
-    def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> set[Tuple[int, int]]:
-        out: set[Tuple[int, int]] = set()
-        if entries is None:
-            for i in range(nrows):
-                for j in range(ncols):
-                    out.add((i, j))
-            return out
-        for ent in entries:
-            if isinstance(ent, dict):
-                if ent.get("all"):
-                    for i in range(nrows):
-                        for j in range(ncols):
-                            out.add((i, j))
-                if "row" in ent:
-                    i = int(ent["row"])
-                    for j in range(ncols):
-                        out.add((i, j))
-                if "col" in ent:
-                    j = int(ent["col"])
-                    for i in range(nrows):
-                        out.add((i, j))
-                if "rows" in ent:
-                    for i in ent["rows"]:
-                        for j in range(ncols):
-                            out.add((int(i), j))
-                if "cols" in ent:
-                    for j in ent["cols"]:
-                        for i in range(nrows):
-                            out.add((i, int(j)))
-                continue
-            if isinstance(ent, (list, tuple)) and len(ent) == 2:
-                a, b = ent
-                if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
-                    i0, j0 = int(a[0]), int(a[1])
-                    i1, j1 = int(b[0]), int(b[1])
-                    for i in range(min(i0, i1), max(i0, i1) + 1):
-                        for j in range(min(j0, j1), max(j0, j1) + 1):
-                            out.add((i, j))
-                else:
-                    out.add((int(a), int(b)))
-        return out
-
-    def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
-        try:
-            params = [
-                p
-                for p in inspect.signature(dec).parameters.values()
-                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-            ]
-        except Exception:
-            return dec(tex)
-        if len(params) >= 4:
-            return dec(i, j, v, tex)
-        if len(params) == 1:
-            return dec(tex)
-        raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
-
     decorator_map: Dict[Tuple[int, int], List[Tuple[Callable[..., str], set[Tuple[int, int]], Callable[[Any], str]]]] = {}
     if decorators:
         use_legacy_names = bool(kwargs.get("legacy_submatrix_names", False))
-        name_to_grid: Dict[str, Tuple[int, int]] = {}
-        for br in range(n_block_rows):
-            for bc in range(n_block_cols):
-                _, h, w = cell_cache[br][bc]
-                if h == 0 or w == 0:
-                    continue
-                if use_legacy_names:
-                    name = f"A{br}x{bc}"
-                    name_to_grid[name] = (br, bc)
-                else:
-                    if n_block_cols == 2:
-                        base = ("E" if bc == 0 else "A")
-                    else:
-                        base = f"M{bc}"
-                    name = f"{base}{br}"
-                    name_to_grid[name] = (br, bc)
-                    # Provide legacy-style aliases for convenience.
-                    name_to_grid.setdefault(f"A{br}x{bc}", (br, bc))
 
         def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
             grid_pos = spec_item.get("grid")
@@ -1044,8 +966,9 @@ def ge_grid_tex(
             if isinstance(name, (list, tuple)) and len(name) == 3:
                 return (int(name[1]), int(name[2]))
             if isinstance(name, str):
-                if name in name_to_grid:
-                    return name_to_grid[name]
+                resolved = resolve_ge_grid_name(name, matrices=grid, legacy_submatrix_names=use_legacy_names)
+                if resolved is not None:
+                    return resolved
                 m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
                 if m:
                     return (int(m.group(2)), int(m.group(3)))
@@ -1073,8 +996,7 @@ def ge_grid_tex(
                 raise ValueError("decorator grid position out of range")
             nrows = block_heights[gM]
             ncols = block_widths[gN]
-            sel = _expand_entries(entries, nrows, ncols)
-            sel = {(i, j) for (i, j) in sel if 0 <= i < nrows and 0 <= j < ncols}
+            sel = expand_entry_selectors(entries, nrows, ncols, filter_bounds=True)
             if strict and not sel:
                 raise ValueError("decorator selector did not match any entries")
             decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
@@ -1111,7 +1033,7 @@ def ge_grid_tex(
                             base = fmt(v)
                             if not (isinstance(base, str) and base.strip()):
                                 base = blank
-                            tex = _apply_decorator(dec, i, j, v, base)
+                            tex = apply_decorator(dec, i, j, v, base)
                     out_cells.append(tex)
                 row_cells.extend(out_cells)
             lines.append(" & ".join(row_cells) + r" \\")
