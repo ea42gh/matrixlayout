@@ -1530,16 +1530,27 @@ def _parse_ge_decorations(
                         return None
                     lo = min(idx)
                     hi = max(idx)
-                    if lo == hi:
-                        return hi + 1
-                    return [lo, hi + 1]
+                    max_line = axis_len - 1
+                    if max_line <= 0:
+                        return None
+                    lines = set()
+                    if lo == 0:
+                        lines.add(1)
+                    else:
+                        lines.add(lo)
+                    if hi == axis_len - 1:
+                        lines.add(max_line)
+                    else:
+                        lines.add(hi + 1)
+                    out = sorted(lines)
+                    return out[0] if len(out) == 1 else out
                 if isinstance(val, str) and val.strip().lower() == "all":
                     idx = _normalize_index_list(sel, axis_len)
                     if not idx:
                         return None
                     lo = min(idx)
                     hi = max(idx)
-                    return list(range(lo, hi + 1))
+                    return list(range(lo + 1, hi + 1))
                 return val
 
             hlines = _coerce_line(item.get("hlines"), h, rows)

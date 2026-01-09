@@ -71,8 +71,8 @@ def test_ge_grid_tex_decorations_lines_bounds():
         {"grid": (0, 1), "submatrix": (None, "0:1"), "vlines": "bounds"},
     ]
     tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
-    assert "hlines={0,3}" in tex or "hlines={0, 3}" in tex
-    assert "vlines={0,2}" in tex or "vlines={0, 2}" in tex
+    assert "hlines={1,2}" in tex or "hlines={1, 2}" in tex
+    assert "vlines={1,2}" in tex or "vlines={1, 2}" in tex
 
 
 def test_ge_grid_tex_decorations_lines_all():
@@ -82,5 +82,5 @@ def test_ge_grid_tex_decorations_lines_all():
         {"grid": (0, 1), "submatrix": (None, "0:2"), "vlines": "all"},
     ]
     tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
-    assert "hlines={0,1,2}" in tex or "hlines={0, 1, 2}" in tex
-    assert "vlines={0,1,2}" in tex or "vlines={0, 1, 2}" in tex
+    assert "hlines={1,2}" in tex or "hlines={1, 2}" in tex
+    assert "vlines={1,2}" in tex or "vlines={1, 2}" in tex
