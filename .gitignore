@@ -76,3 +76,6 @@ _tmp/
 # PDFs are typically build artifacts in this project (SVG is returned as a string)
 *.pdf
 
+# -----------------------------------------------------------------------------
+# MkDocs build output
+site/
