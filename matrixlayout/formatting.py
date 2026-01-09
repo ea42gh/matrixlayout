@@ -1,4 +1,11 @@
-"""Shared TeX formatting helpers for matrixlayout."""
+"""Shared TeX formatting helpers for matrixlayout.
+
+Selector helpers and decorator presets are convenience utilities for building
+decorator specs. Example:
+
+    dec = decorator_box()
+    specs = [{"grid": (0, 1), "entries": [sel_entry(0, 0)], "decorator": dec}]
+"""
 
 from __future__ import annotations
 

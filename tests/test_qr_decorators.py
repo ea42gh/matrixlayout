@@ -65,3 +65,15 @@ def test_qr_grid_tex_decorators_strict_raises_on_empty():
     except ValueError:
         return
     raise AssertionError("strict decorator selection should raise")
+
+
+def test_resolve_qr_grid_name():
+    from matrixlayout.qr import resolve_qr_grid_name
+
+    matrices = [
+        [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
+        [None, [[1, 0], [0, 1]], [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
+        [[[1, 0], [0, 1]], [[1, 0], [0, 1]], [[1, 2], [3, 4]], None],
+    ]
+
+    assert resolve_qr_grid_name("QR0x2", matrices=matrices) == (0, 2)

@@ -39,3 +39,11 @@ def test_ge_grid_tex_decorators_strict_raises_on_empty():
     except ValueError:
         return
     raise AssertionError("strict decorator selection should raise")
+
+
+def test_resolve_ge_grid_name():
+    from matrixlayout.ge import resolve_ge_grid_name
+
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    assert resolve_ge_grid_name("A0", matrices=matrices) == (0, 1)
+    assert resolve_ge_grid_name("A0x1", matrices=matrices) == (0, 1)

@@ -7,8 +7,8 @@ Rendering is strictly delegated to jupyter_tikz via :func:`matrixlayout.render.r
 from .jinja_env import get_environment
 from .backsubst import backsubst_tex, backsubst_svg
 from .eigproblem import eigproblem_tex, eigproblem_svg
-from .ge import ge_tex, ge_svg, ge_grid_tex, ge_grid_svg
-from .qr import qr_grid_tex, qr_grid_svg
+from .ge import ge_tex, ge_svg, ge_grid_tex, ge_grid_svg, resolve_ge_grid_name
+from .qr import qr_grid_tex, qr_grid_svg, resolve_qr_grid_name
 from .specs import GEGridSpec, QRGridSpec
 from .formatting import (
     decorate_tex_entries,
@@ -47,8 +47,10 @@ __all__ = [
     "ge_svg",
     "ge_grid_tex",
     "ge_grid_svg",
+    "resolve_ge_grid_name",
     "qr_grid_tex",
     "qr_grid_svg",
+    "resolve_qr_grid_name",
     "GEGridSpec",
     "QRGridSpec",
     "latexify",

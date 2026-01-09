@@ -1293,6 +1293,27 @@ def ge_grid_submatrix_spans(
     return spans
 
 
+def resolve_ge_grid_name(
+    name: Any,
+    *,
+    matrices: Sequence[Sequence[Any]],
+    legacy_submatrix_names: bool = False,
+) -> Optional[Tuple[int, int]]:
+    """Resolve a GE submatrix name to a (block_row, block_col) tuple."""
+    if not isinstance(name, str):
+        return None
+    spans = ge_grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
+    name_map: Dict[str, Tuple[int, int]] = {}
+    for span in spans:
+        name_map[span.name] = (span.block_row, span.block_col)
+        name_map.setdefault(f"A{span.block_row}x{span.block_col}", (span.block_row, span.block_col))
+        if span.block_col == 0:
+            name_map.setdefault(f"E{span.block_row}", (span.block_row, span.block_col))
+        if span.block_col == 1 and any(s.block_col == 0 for s in spans):
+            name_map.setdefault(f"A{span.block_row}", (span.block_row, span.block_col))
+    return name_map.get(name)
+
+
 def ge_grid_bundle(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,

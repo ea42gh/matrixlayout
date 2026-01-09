@@ -23,10 +23,24 @@ This project is **layout-only** by design: it does not implement linear algebra 
 
 Algorithmic work lives in a separate package (`la_figures`) that produces **layout descriptions** consumed by `matrixlayout`.
 
+## Decorators & selectors
+
+Decorator specs let you style specific entries after formatting. Helpers in
+`matrixlayout.formatting` make selectors concise:
+
+```python
+from matrixlayout.formatting import decorator_box, sel_entry
+
+decorators = [
+    {"grid": (0, 1), "entries": [sel_entry(0, 0)], "decorator": decorator_box()},
+]
+```
+
+For eigenproblem vector rows, selectors use `(group, vector, entry)` tuples.
+
 ## Rendering boundary
 
 `matrixlayout` depends on `jupyter_tikz` and **always** renders through:
 
 ```python
 from jupyter_tikz import render_svg
-

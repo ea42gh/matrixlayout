@@ -16,10 +16,18 @@ from matrixlayout import (
 
 
 def test_decorator_presets_wrap_tex():
-    assert r"\boxed{a}" in decorator_box()("a")
-    assert r"\color{red}{a}" in decorator_color("red")("a")
-    assert r"\colorbox{yellow}{a}" in decorator_bg("yellow")("a")
-    assert r"\mathbf{a}" in decorator_bf()("a")
+    out = [
+        decorator_box()("a"),
+        decorator_color("red")("a"),
+        decorator_bg("yellow")("a"),
+        decorator_bf()("a"),
+    ]
+    assert r"\boxed{a}" in out[0]
+    assert r"\color{red}{a}" in out[1]
+    assert r"\colorbox{yellow}{a}" in out[2]
+    assert r"\mathbf{a}" in out[3]
+    for s in out:
+        assert s and "None" not in s
 
 
 def test_selector_helpers():

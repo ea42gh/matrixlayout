@@ -669,3 +669,25 @@ def qr_grid_svg(
         frame=frame,
         output_dir=output_dir,
     )
+
+
+def resolve_qr_grid_name(
+    name: Any,
+    *,
+    matrices: Sequence[Sequence[Any]],
+) -> Optional[Tuple[int, int]]:
+    """Resolve a QR submatrix name (e.g., 'QR0x2') to a (block_row, block_col) tuple."""
+    if not isinstance(name, str):
+        return None
+    layout = QRGridLayout(matrices)
+    name_map: Dict[str, Tuple[int, int]] = {}
+    for gM in range(layout.nGridRows):
+        for gN in range(layout.nGridCols):
+            if layout.array_shape[gM][gN][0] != 0:
+                name_map[f"QR{gM}x{gN}"] = (gM, gN)
+    if name in name_map:
+        return name_map[name]
+    m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
+    if m:
+        return (int(m.group(2)), int(m.group(3)))
+    return None
