@@ -1538,19 +1538,23 @@ def _parse_ge_decorations(
             highlights.append(spec)
             continue
 
-        decorator: Optional[Callable[..., str]] = None
+        boxed = False
+        box_color: Optional[str] = None
+        text_color: Optional[str] = None
+        bf = False
         if "box" in item:
             box = item["box"]
             if box is True:
-                decorator = make_decorator(boxed=True)
+                boxed = True
             elif isinstance(box, str):
-                decorator = make_decorator(box_color=box)
-        if decorator is None and "color" in item:
-            decorator = make_decorator(text_color=str(item["color"]))
-        if decorator is None and item.get("bold"):
-            decorator = make_decorator(bf=True)
-        if decorator is None:
+                box_color = str(box)
+        if "color" in item:
+            text_color = str(item["color"])
+        if item.get("bold"):
+            bf = True
+        if not (boxed or box_color or text_color or bf):
             continue
+        decorator = make_decorator(boxed=boxed, box_color=box_color, text_color=text_color, bf=bf)
 
         entries = item.get("entries")
         if entries is None:

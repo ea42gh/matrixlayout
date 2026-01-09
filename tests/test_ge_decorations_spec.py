@@ -31,6 +31,15 @@ def test_ge_grid_tex_decorations_color_rows_cols_range():
     assert r"\color{red}{4}" in tex
 
 
+def test_ge_grid_tex_decorations_color_and_bold():
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    decorations = [
+        {"grid": (0, 1), "entries": [(0, 0)], "color": "red", "bold": True},
+    ]
+    tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str)
+    assert r"\color{red}{\mathbf{1}}" in tex
+
+
 def test_ge_grid_tex_decorations_lines_and_label():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorations = [

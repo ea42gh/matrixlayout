@@ -37,6 +37,21 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
 and one of: `background`, `hlines`/`vlines`, `label`, or entry styling (`box`, `color`, `bold`).
 Row/col selection supports ranges, lists, or slices via `rows`/`cols` or `submatrix`.
+
+Quick reference:
+
+| Key | Purpose |
+| --- | --- |
+| `grid` | Target block `(row,col)` |
+| `submatrix` | Row/col range for highlights or entry styles |
+| `rows`, `cols` | Alternative row/col selectors |
+| `entries` | Explicit entry list |
+| `background` | Block highlight color |
+| `hlines`, `vlines` | Separator lines |
+| `box`, `color`, `bold` | Entry styling |
+| `label` | Callout label |
+
+See `decorators.md` for full syntax and examples.
 - `preamble`, `extension`, `nice_options`: LaTeX preamble and nicematrix options.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.

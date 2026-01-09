@@ -17,56 +17,52 @@ decorators = [
 
 ## Unified decorations (recommended)
 
-For one-line specs without nicematrix details, use `decorations` instead of
-`decorators`. Each item is a dict keyed by `grid=(row,col)`.
+Use `decorations` for one-line specs. Each dict must include `grid=(row,col)`.
 
-Row/col selectors accept ranges, lists, slices, or `None`:
+### Selector keys (shared)
 
-- `(0, 2)` inclusive
-- `"0:2"` inclusive
-- `slice(0, 3)` (stop exclusive)
-- `[0, 2]`
-- `None` (all)
+| Key | Meaning | Forms |
+| --- | --- | --- |
+| `entries` | explicit entries | `[(r,c), ...]` |
+| `rows` | row selection | `(r0,r1)`, `"r0:r1"`, `slice(r0,r1+1)`, `[r...]`, `None` |
+| `cols` | col selection | same as `rows` |
+| `submatrix` | rows+cols | `((rows),(cols))` |
 
-The same `rows`/`cols`/`submatrix` selectors work for both entry styling
-(`box`, `color`, `bold`) and block highlights (`background`). Use `entries`
-to override selectors with explicit coordinates.
+`entries` overrides `rows`/`cols`/`submatrix`. The same selectors work for
+entry styles and backgrounds.
 
-Background highlight:
+### Action keys (choose one)
+
+| Action | Key(s) | Notes |
+| --- | --- | --- |
+| Background | `background` | Uses selectors; emits `codebefore`. |
+| Lines | `hlines`, `vlines` | Integer or list of line indices. |
+| Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
+| Callout | `label` | Optional `side`, `angle`, `length`, `anchor`. |
+
+Selection keys apply to `background`, `box`, `color`, and `bold`. Line and label
+specs ignore `rows`/`cols`/`submatrix`.
+
+### One-liners
 
 ```python
 {"grid": (1, 0), "submatrix": ("0:1", "2:3"), "background": "yellow!25"}
-```
-
-Separator lines:
-
-```python
 {"grid": (0, 1), "hlines": 2}
 {"grid": (0, 1), "vlines": [1, 3]}
-```
-
-Entry emphasis:
-
-```python
 {"grid": (2, 1), "entries": [(0, 0)], "box": True}
-{"grid": (2, 1), "entries": [(0, 0)], "color": "red"}
-{"grid": (2, 1), "entries": [(0, 0)], "bold": True}
-```
-
-Callout labels:
-
-```python
+{"grid": (2, 1), "rows": "0:1", "cols": "1:1", "color": "red"}
+{"grid": (2, 1), "entries": [(0, 0)], "color": "red", "bold": True}
 {"grid": (1, 0), "label": r"\\mathbf{B}", "side": "left", "angle": -35, "length": 8}
 ```
 
-All-in-one list:
+### Minimal list
 
 ```python
 decorations = [
     {"grid": (0, 1), "submatrix": (None, "2:3"), "background": "yellow!25"},
-    {"grid": (2, 1), "entries": [(0, 0)], "box": True},
     {"grid": (1, 0), "hlines": 2},
     {"grid": (0, 1), "vlines": 2},
+    {"grid": (2, 1), "entries": [(0, 0)], "box": True},
     {"grid": (0, 1), "label": r"\\mathbf{C}", "side": "right", "angle": -35, "length": 8},
 ]
 svg = ge_grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)

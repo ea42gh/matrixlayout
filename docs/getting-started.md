@@ -23,6 +23,17 @@ from matrixlayout.ge import ge_grid_tex
 tex = ge_grid_tex(matrices=matrices)
 ```
 
+Quick decorations (one-line specs):
+
+```python
+decorations = [
+    {"grid": (0, 1), "entries": [(0, 0)], "box": True},
+    {"grid": (0, 1), "hlines": 1},
+    {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length": 8},
+]
+svg = ge_grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
+```
+
 ## QR grid
 
 ```python
