@@ -1502,6 +1502,7 @@ def _parse_ge_decorations(
     sub_locs: List[Tuple[str, str, str]] = []
     callouts: List[Dict[str, Any]] = []
     highlights: List[Dict[str, Any]] = []
+    outlines: List[Dict[str, Any]] = []
 
     for item in decorations or []:
         if not isinstance(item, dict):
@@ -1596,6 +1597,24 @@ def _parse_ge_decorations(
             )
             continue
 
+        if item.get("outline"):
+            spec = {"grid": key}
+            if "line_width_pt" in item:
+                spec["line_width_pt"] = item["line_width_pt"]
+            if "color" in item:
+                spec["color"] = item["color"]
+            if "submatrix" in item and item["submatrix"] is not None:
+                sub = item["submatrix"]
+                if isinstance(sub, (tuple, list)) and len(sub) == 2:
+                    spec["rows"] = sub[0]
+                    spec["cols"] = sub[1]
+            if "rows" in item:
+                spec["rows"] = item["rows"]
+            if "cols" in item:
+                spec["cols"] = item["cols"]
+            outlines.append(spec)
+            continue
+
         if "background" in item:
             spec = {"grid": key}
             if item.get("background") is not None:
@@ -1654,6 +1673,38 @@ def _parse_ge_decorations(
         block_align=block_align,
         block_valign=block_valign,
     )
+    if outlines:
+        spans = ge_grid_submatrix_spans(
+            matrices,
+            block_align=block_align,
+            block_valign=block_valign,
+        )
+        span_map = {(s.block_row, s.block_col): s for s in spans}
+        for spec in outlines:
+            grid = spec.get("grid")
+            if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                continue
+            key = (int(grid[0]), int(grid[1]))
+            if key not in span_map:
+                continue
+            mat = matrices[key[0]][key[1]]
+            _, h, w = _as_2d_list(mat)
+            if h == 0 or w == 0:
+                continue
+            r0, r1 = _normalize_range(spec.get("rows"), h)
+            c0, c1 = _normalize_range(spec.get("cols"), w)
+            if r1 < r0 or c1 < c0:
+                continue
+            span = span_map[key]
+            row_start = span.row_start + r0
+            row_end = span.row_start + r1
+            col_start = span.col_start + c0
+            col_end = span.col_start + c1
+            color = str(spec.get("color", "black"))
+            width = float(spec.get("line_width_pt", 0.4))
+            codebefore.append(
+                rf"\tikz \node [draw={color}, line width={width}pt, inner sep=0pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
+            )
     return dec_specs, sub_locs, callouts, codebefore
 
 

@@ -40,6 +40,15 @@ def test_ge_grid_tex_decorations_color_and_bold():
     assert r"\color{red}{\mathbf{1}}" in tex
 
 
+def test_ge_grid_tex_decorations_outline():
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    decorations = [
+        {"grid": (0, 1), "submatrix": ("0:1", "0:1"), "outline": True, "color": "blue"},
+    ]
+    tex = ge_grid_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
+    assert "draw=blue" in tex
+
+
 def test_ge_grid_tex_decorations_lines_and_label():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorations = [
