@@ -1,0 +1,44 @@
+def test_eigproblem_tex_decorates_lambda_matrix():
+    from matrixlayout.eigproblem import eigproblem_tex
+
+    spec = {
+        "lambda": [2],
+        "ma": [1],
+        "evecs": [[[1]]],
+    }
+
+    def dec(tex: str) -> str:
+        return rf"\boxed{{{tex}}}"
+
+    tex = eigproblem_tex(
+        spec,
+        case="S",
+        formater=str,
+        decorators=[{"matrix": "lambda", "entries": [(0, 0)], "decorator": dec}],
+        preamble="",
+    )
+
+    assert r"\boxed{2}" in tex
+
+
+def test_eigproblem_tex_decorates_eigenbasis_vector_entry():
+    from matrixlayout.eigproblem import eigproblem_tex
+
+    spec = {
+        "lambda": [2],
+        "ma": [1],
+        "evecs": [[[1, 5]]],
+    }
+
+    def dec(tex: str) -> str:
+        return rf"\boxed{{{tex}}}"
+
+    tex = eigproblem_tex(
+        spec,
+        case="S",
+        formater=str,
+        decorators=[{"target": "eigenbasis", "entries": [(0, 0, 1)], "decorator": dec}],
+        preamble="",
+    )
+
+    assert r"\boxed{5}" in tex

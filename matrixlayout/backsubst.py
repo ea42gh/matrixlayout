@@ -14,7 +14,8 @@ The template is treated as a layout/presentation artifact only:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Sequence, Union
+import inspect
+from typing import Any, Iterable, Mapping, Optional, Sequence, Union, List, Tuple
 
 from .jinja_env import render_template
 from .render import render_svg
@@ -49,6 +50,79 @@ def _as_scale(value: Optional[Union[str, float, int]]) -> Optional[str]:
         return value
     # Stable, TeX-friendly numeric formatting
     return format(value, "g")
+
+
+def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
+    out: List[Tuple[int, int]] = []
+    if entries is None:
+        return [(i, j) for i in range(nrows) for j in range(ncols)]
+    for ent in entries:
+        if isinstance(ent, int):
+            out.append((int(ent), 0))
+            continue
+        if isinstance(ent, dict):
+            if ent.get("all"):
+                out.extend((i, j) for i in range(nrows) for j in range(ncols))
+            if "row" in ent:
+                i = int(ent["row"])
+                out.extend((i, j) for j in range(ncols))
+            if "col" in ent:
+                j = int(ent["col"])
+                out.extend((i, j) for i in range(nrows))
+            if "rows" in ent:
+                for i in ent["rows"]:
+                    out.extend((int(i), j) for j in range(ncols))
+            if "cols" in ent:
+                for j in ent["cols"]:
+                    out.extend((i, int(j)) for i in range(nrows))
+            continue
+        if isinstance(ent, (list, tuple)) and len(ent) == 2:
+            a, b = ent
+            if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+                i0, j0 = int(a[0]), int(a[1])
+                i1, j1 = int(b[0]), int(b[1])
+                for i in range(min(i0, i1), max(i0, i1) + 1):
+                    for j in range(min(j0, j1), max(j0, j1) + 1):
+                        out.append((i, j))
+            else:
+                out.append((int(a), int(b)))
+    return out
+
+
+def _apply_decorator(dec: Any, i: int, j: int, v: Any, tex: str) -> str:
+    try:
+        params = [
+            p for p in inspect.signature(dec).parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        ]
+    except Exception:
+        return dec(tex)
+    if len(params) >= 4:
+        return dec(i, j, v, tex)
+    if len(params) == 1:
+        return dec(tex)
+    raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
+
+
+def _apply_line_decorators(lines: List[str], decorators: Optional[Sequence[Any]], block: str) -> List[str]:
+    if not decorators or not lines:
+        return lines
+    nrows, ncols = len(lines), 1
+    block_key = block.lower()
+    for spec_item in decorators:
+        if not isinstance(spec_item, dict):
+            raise ValueError("decorators must be dict specs")
+        key = spec_item.get("block", spec_item.get("target"))
+        if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
+            continue
+        dec = spec_item.get("decorator")
+        if not callable(dec):
+            raise ValueError("decorator must be callable")
+        for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
+            if i < 0 or i >= nrows or j != 0:
+                continue
+            base = lines[i]
+            lines[i] = _apply_decorator(dec, i, j, base, base)
+    return lines
 
 
 @dataclass(frozen=True)
@@ -87,6 +161,7 @@ def backsubst_tex(
     show_cascade: bool = True,
     show_solution: bool = True,
     fig_scale: Optional[Union[str, float, int]] = None,
+    decorators: Optional[Sequence[Any]] = None,
 ) -> str:
     """Render the back-substitution TeX document.
 
@@ -97,11 +172,15 @@ def backsubst_tex(
     if cascade_txt is None and cascade_trace is not None:
         cascade_txt = mk_shortcascade_lines(cascade_trace)
 
+    system_lines = _apply_line_decorators([system_txt] if system_txt else [], decorators, "system")
+    cascade_lines = _apply_line_decorators(_as_lines(cascade_txt), decorators, "cascade")
+    solution_lines = _apply_line_decorators([solution_txt] if solution_txt else [], decorators, "solution")
+
     ctx = BacksubstContext(
         preamble=preamble,
-        system_txt=system_txt,
-        cascade_txt=tuple(_as_lines(cascade_txt)),
-        solution_txt=solution_txt,
+        system_txt=system_lines[0] if system_lines else system_txt,
+        cascade_txt=tuple(cascade_lines),
+        solution_txt=solution_lines[0] if solution_lines else solution_txt,
         show_system=bool(show_system),
         show_cascade=bool(show_cascade),
         show_solution=bool(show_solution),
@@ -122,6 +201,7 @@ def backsubst_svg(
     show_cascade: bool = True,
     show_solution: bool = True,
     fig_scale: Optional[Union[str, float, int]] = None,
+    decorators: Optional[Sequence[Any]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -138,5 +218,6 @@ def backsubst_svg(
         show_cascade=show_cascade,
         show_solution=show_solution,
         fig_scale=fig_scale,
+        decorators=decorators,
     )
     return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)

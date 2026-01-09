@@ -8,7 +8,8 @@ la_figures; this module focuses on layout + formatting only.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable
+import inspect
 
 from .formatting import latexify
 from .ge import ge_tex
@@ -422,6 +423,7 @@ def qr_grid_tex(
     create_cell_nodes: Optional[bool] = True,
     create_extra_nodes: Optional[bool] = True,
     create_medium_nodes: Optional[bool] = True,
+    decorators: Optional[Sequence[Any]] = None,
 ) -> str:
     spec_obj = _coerce_qr_spec(spec)
     if spec_obj is not None:
@@ -439,6 +441,7 @@ def qr_grid_tex(
         create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec_obj.create_cell_nodes)
         create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec_obj.create_extra_nodes)
         create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes)
+        decorators = _merge_scalar("decorators", decorators, spec_obj.decorators)
 
     if matrices is None:
         raise ValueError("qr_grid_tex requires `matrices`")
@@ -453,6 +456,82 @@ def qr_grid_tex(
     brown = _make_decorator(text_color=known_zero_color, bf=True)
     for (gM, gN), entries in _qr_known_zero_entries(layout.matrices):
         layout.decorate_tex_entries(gM, gN, brown, entries=entries)
+
+    def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
+        out: List[Tuple[int, int]] = []
+        if entries is None:
+            return [(i, j) for i in range(nrows) for j in range(ncols)]
+        for ent in entries:
+            if isinstance(ent, dict):
+                if ent.get("all"):
+                    out.extend((i, j) for i in range(nrows) for j in range(ncols))
+                if "row" in ent:
+                    i = int(ent["row"])
+                    out.extend((i, j) for j in range(ncols))
+                if "col" in ent:
+                    j = int(ent["col"])
+                    out.extend((i, j) for i in range(nrows))
+                if "rows" in ent:
+                    for i in ent["rows"]:
+                        out.extend((int(i), j) for j in range(ncols))
+                if "cols" in ent:
+                    for j in ent["cols"]:
+                        out.extend((i, int(j)) for i in range(nrows))
+                continue
+            if isinstance(ent, (list, tuple)) and len(ent) == 2:
+                a, b = ent
+                if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+                    i0, j0 = int(a[0]), int(a[1])
+                    i1, j1 = int(b[0]), int(b[1])
+                    for i in range(min(i0, i1), max(i0, i1) + 1):
+                        for j in range(min(j0, j1), max(j0, j1) + 1):
+                            out.append((i, j))
+                else:
+                    out.append((int(a), int(b)))
+        return out
+
+    def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
+        try:
+            params = [
+                p
+                for p in inspect.signature(dec).parameters.values()
+                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+            ]
+        except Exception:
+            return dec(tex)
+        if len(params) >= 4:
+            return dec(i, j, v, tex)
+        if len(params) == 1:
+            return dec(tex)
+        raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
+
+    if decorators:
+        for spec_item in decorators:
+            if not isinstance(spec_item, dict):
+                raise ValueError("decorators must be dict specs")
+            grid_pos = spec_item.get("grid")
+            if not isinstance(grid_pos, (list, tuple)) or len(grid_pos) != 2:
+                raise ValueError("decorator grid must be a (row,col) pair")
+            gM, gN = int(grid_pos[0]), int(grid_pos[1])
+            dec = spec_item.get("decorator")
+            if not callable(dec):
+                raise ValueError("decorator must be callable")
+            fmt = spec_item.get("formater", formater)
+            try:
+                tl, _, shape = layout._top_left_bottom_right(gM, gN)
+            except Exception:
+                continue
+            if shape[0] <= 0 or shape[1] <= 0:
+                continue
+            entries = _expand_entries(spec_item.get("entries"), shape[0], shape[1])
+            mat = layout.matrices[gM][gN]
+            for i, j in entries:
+                if i < 0 or j < 0 or i >= shape[0] or j >= shape[1]:
+                    continue
+                v = _mat_entry(mat, i, j)
+                tex = layout.a_tex[tl[0] + i][tl[1] + j]
+                base = tex if tex else str(fmt(v))
+                layout.a_tex[tl[0] + i][tl[1] + j] = _apply_decorator(dec, i, j, v, base)
 
     # Add Gram–Schmidt labels.
     n_cols = 0
@@ -510,6 +589,7 @@ def qr_grid_svg(
     create_cell_nodes: Optional[bool] = True,
     create_extra_nodes: Optional[bool] = True,
     create_medium_nodes: Optional[bool] = True,
+    decorators: Optional[Sequence[Any]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -532,6 +612,7 @@ def qr_grid_svg(
         create_cell_nodes=create_cell_nodes,
         create_extra_nodes=create_extra_nodes,
         create_medium_nodes=create_medium_nodes,
+        decorators=decorators,
     )
     return render_svg(
         tex,

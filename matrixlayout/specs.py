@@ -214,6 +214,7 @@ class QRGridSpec:
     label_color: str = "blue"
     label_text_color: str = "red"
     known_zero_color: str = "brown"
+    decorators: Optional[Sequence[Any]] = None
     landscape: Optional[bool] = None
     create_cell_nodes: Optional[bool] = True
     create_extra_nodes: Optional[bool] = True

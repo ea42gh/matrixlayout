@@ -10,7 +10,7 @@ from .eigproblem import eigproblem_tex, eigproblem_svg
 from .ge import ge_tex, ge_svg, ge_grid_tex, ge_grid_svg
 from .qr import qr_grid_tex, qr_grid_svg
 from .specs import GEGridSpec, QRGridSpec
-from .formatting import latexify
+from .formatting import decorate_tex_entries, latexify, make_decorator
 from .nicematrix_decor import (
     DelimCallout,
     DelimCalloutDict,
@@ -35,6 +35,8 @@ __all__ = [
     "GEGridSpec",
     "QRGridSpec",
     "latexify",
+    "make_decorator",
+    "decorate_tex_entries",
     "DelimCallout",
     "DelimCalloutDict",
     "infer_ge_matrix_labels",

@@ -18,7 +18,8 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union, Any, Dict
+from typing import List, Optional, Sequence, Tuple, Union, Any, Dict, Callable, Iterable
+import inspect
 import os
 import re
 
@@ -804,6 +805,7 @@ def ge_grid_tex(
     cell_align: str = "r",
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    decorators: Optional[Sequence[Any]] = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
@@ -942,6 +944,84 @@ def ge_grid_tex(
         s = formater(v)
         return s if (isinstance(s, str) and s.strip()) else blank
 
+    def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> set[Tuple[int, int]]:
+        out: set[Tuple[int, int]] = set()
+        if entries is None:
+            for i in range(nrows):
+                for j in range(ncols):
+                    out.add((i, j))
+            return out
+        for ent in entries:
+            if isinstance(ent, dict):
+                if ent.get("all"):
+                    for i in range(nrows):
+                        for j in range(ncols):
+                            out.add((i, j))
+                if "row" in ent:
+                    i = int(ent["row"])
+                    for j in range(ncols):
+                        out.add((i, j))
+                if "col" in ent:
+                    j = int(ent["col"])
+                    for i in range(nrows):
+                        out.add((i, j))
+                if "rows" in ent:
+                    for i in ent["rows"]:
+                        for j in range(ncols):
+                            out.add((int(i), j))
+                if "cols" in ent:
+                    for j in ent["cols"]:
+                        for i in range(nrows):
+                            out.add((i, int(j)))
+                continue
+            if isinstance(ent, (list, tuple)) and len(ent) == 2:
+                a, b = ent
+                if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+                    i0, j0 = int(a[0]), int(a[1])
+                    i1, j1 = int(b[0]), int(b[1])
+                    for i in range(min(i0, i1), max(i0, i1) + 1):
+                        for j in range(min(j0, j1), max(j0, j1) + 1):
+                            out.add((i, j))
+                else:
+                    out.add((int(a), int(b)))
+        return out
+
+    def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
+        try:
+            params = [
+                p
+                for p in inspect.signature(dec).parameters.values()
+                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+            ]
+        except Exception:
+            return dec(tex)
+        if len(params) >= 4:
+            return dec(i, j, v, tex)
+        if len(params) == 1:
+            return dec(tex)
+        raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
+
+    decorator_map: Dict[Tuple[int, int], List[Tuple[Callable[..., str], set[Tuple[int, int]], Callable[[Any], str]]]] = {}
+    if decorators:
+        for spec_item in decorators:
+            if not isinstance(spec_item, dict):
+                raise ValueError("decorators must be dict specs")
+            grid_pos = spec_item.get("grid")
+            if not isinstance(grid_pos, (list, tuple)) or len(grid_pos) != 2:
+                raise ValueError("decorator grid must be a (row,col) pair")
+            gM, gN = int(grid_pos[0]), int(grid_pos[1])
+            dec = spec_item.get("decorator")
+            if not callable(dec):
+                raise ValueError("decorator must be callable")
+            fmt = spec_item.get("formater", formater)
+            entries = spec_item.get("entries")
+            if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+                raise ValueError("decorator grid position out of range")
+            nrows = block_heights[gM]
+            ncols = block_widths[gN]
+            sel = _expand_entries(entries, nrows, ncols)
+            decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
+
     # Flatten all blocks into one scalar matrix representation.
     lines: List[str] = []
     for br in range(n_block_rows):
@@ -962,7 +1042,21 @@ def ge_grid_tex(
                     src = []
                 if len(src) < W:
                     src.extend([None] * (W - len(src)))
-                row_cells.extend([_fmt(v) for v in src[:W]])
+                out_cells: List[str] = []
+                dec_specs = decorator_map.get((br, bc), [])
+                for j, v in enumerate(src[:W]):
+                    if not dec_specs:
+                        out_cells.append(_fmt(v))
+                        continue
+                    tex = _fmt(v)
+                    for dec, sel, fmt in dec_specs:
+                        if (i, j) in sel and v is not None:
+                            base = fmt(v)
+                            if not (isinstance(base, str) and base.strip()):
+                                base = blank
+                            tex = _apply_decorator(dec, i, j, v, base)
+                    out_cells.append(tex)
+                row_cells.extend(out_cells)
             lines.append(" & ".join(row_cells) + r" \\")
 
     mat_rep = "\n".join(lines)

@@ -17,6 +17,7 @@ Out of scope:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List
 
 from .jinja_env import render_template
@@ -83,16 +84,144 @@ def _mk_vector_blocks(
     *,
     formater: LatexFormatter,
     add_height_mm: int = 0,
+    decorators: Optional[Sequence[Any]] = None,
+    target_name: Optional[str] = None,
 ) -> str:
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
+    dec_specs: List[Tuple[Callable[..., str], set[Tuple[int, int, int]]]] = []
+    if decorators and target_name:
+        target_key = target_name.lower()
+        for spec_item in decorators:
+            if not isinstance(spec_item, dict):
+                raise ValueError("decorators must be dict specs")
+            key = spec_item.get("target")
+            if key is None or str(key).lower() not in {target_key}:
+                continue
+            dec = spec_item.get("decorator")
+            if not callable(dec):
+                raise ValueError("decorator must be callable")
+            entries = spec_item.get("entries")
+            expanded: set[Tuple[int, int, int]] = set()
+            if entries is None:
+                for g_idx, group in enumerate(vec_groups):
+                    for v_idx, vec in enumerate(group):
+                        for i_idx, _ in enumerate(vec):
+                            expanded.add((g_idx, v_idx, i_idx))
+            else:
+                for ent in entries:
+                    if isinstance(ent, (list, tuple)) and len(ent) == 3:
+                        expanded.add((int(ent[0]), int(ent[1]), int(ent[2])))
+                        continue
+                    if isinstance(ent, (list, tuple)) and len(ent) == 2:
+                        a, b = ent
+                        if (
+                            isinstance(a, (list, tuple))
+                            and isinstance(b, (list, tuple))
+                            and len(a) == 3
+                            and len(b) == 3
+                            and int(a[0]) == int(b[0])
+                            and int(a[1]) == int(b[1])
+                        ):
+                            g_idx, v_idx = int(a[0]), int(a[1])
+                            i0, i1 = int(a[2]), int(b[2])
+                            for i_idx in range(min(i0, i1), max(i0, i1) + 1):
+                                expanded.add((g_idx, v_idx, i_idx))
+            if expanded:
+                dec_specs.append((dec, expanded))
     groups_out: List[str] = []
-    for vecs in vec_groups:
+    for g_idx, vecs in enumerate(vec_groups):
         vec_tex: List[str] = []
-        for vec in vecs:
-            entries = [formater(v) for v in vec]
+        for v_idx, vec in enumerate(vecs):
+            entries: List[str] = []
+            for i_idx, v in enumerate(vec):
+                cell = formater(v)
+                if dec_specs:
+                    for dec, expanded in dec_specs:
+                        if (g_idx, v_idx, i_idx) in expanded:
+                            cell = _apply_decorator(dec, i_idx, v_idx, v, cell)
+                entries.append(cell)
             vec_tex.append(r"$\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}$")
         groups_out.append(", ".join(vec_tex))
     return " & & ".join(groups_out)
+
+
+def _expand_entries(entries: Optional[Iterable[Any]], nrows: int, ncols: int) -> List[Tuple[int, int]]:
+    out: List[Tuple[int, int]] = []
+    if entries is None:
+        return [(i, j) for i in range(nrows) for j in range(ncols)]
+    for ent in entries:
+        if isinstance(ent, dict):
+            if ent.get("all"):
+                out.extend((i, j) for i in range(nrows) for j in range(ncols))
+            if "row" in ent:
+                i = int(ent["row"])
+                out.extend((i, j) for j in range(ncols))
+            if "col" in ent:
+                j = int(ent["col"])
+                out.extend((i, j) for i in range(nrows))
+            if "rows" in ent:
+                for i in ent["rows"]:
+                    out.extend((int(i), j) for j in range(ncols))
+            if "cols" in ent:
+                for j in ent["cols"]:
+                    out.extend((i, int(j)) for i in range(nrows))
+            continue
+        if isinstance(ent, (list, tuple)) and len(ent) == 2:
+            a, b = ent
+            if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+                i0, j0 = int(a[0]), int(a[1])
+                i1, j1 = int(b[0]), int(b[1])
+                for i in range(min(i0, i1), max(i0, i1) + 1):
+                    for j in range(min(j0, j1), max(j0, j1) + 1):
+                        out.append((i, j))
+            else:
+                out.append((int(a), int(b)))
+    return out
+
+
+def _apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -> str:
+    try:
+        params = [
+            p for p in inspect.signature(dec).parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        ]
+    except Exception:
+        return dec(tex)
+    if len(params) >= 4:
+        return dec(i, j, v, tex)
+    if len(params) == 1:
+        return dec(tex)
+    raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
+
+
+def _apply_matrix_decorators(
+    mat_tex: List[List[str]],
+    mat_raw: List[List[Any]],
+    decorators: Optional[Sequence[Any]],
+    matrix_ids: Sequence[str],
+    formater: LatexFormatter,
+) -> List[List[str]]:
+    if not decorators:
+        return mat_tex
+    id_set = {str(mid).lower() for mid in matrix_ids}
+    nrows = len(mat_tex)
+    ncols = len(mat_tex[0]) if nrows else 0
+    for spec_item in decorators:
+        if not isinstance(spec_item, dict):
+            raise ValueError("decorators must be dict specs")
+        key = spec_item.get("matrix", spec_item.get("target"))
+        if key is None or str(key).lower() not in id_set:
+            continue
+        dec = spec_item.get("decorator")
+        if not callable(dec):
+            raise ValueError("decorator must be callable")
+        fmt = spec_item.get("formater", formater)
+        for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
+            if i < 0 or j < 0 or i >= nrows or j >= ncols:
+                continue
+            raw = mat_raw[i][j]
+            base = mat_tex[i][j] or str(fmt(raw))
+            mat_tex[i][j] = _apply_decorator(dec, i, j, raw, base)
+    return mat_tex
 
 
 def _mk_diag_matrix(
@@ -105,6 +234,8 @@ def _mk_diag_matrix(
     span_cols: Optional[int] = None,
     extra_space: str = "",
     add_height_mm: int = 0,
+    decorators: Optional[Sequence[Any]] = None,
+    matrix_ids: Optional[Sequence[str]] = None,
 ) -> str:
     # Expand distinct values by multiplicity to length N (diagonal entries)
     diag: List[Any] = []
@@ -121,18 +252,23 @@ def _mk_diag_matrix(
 
     # Build an n x n string matrix
     zero = formater(0)
-    mat: List[List[str]] = [[zero for _ in range(n)] for __ in range(n)]
+    mat_raw: List[List[Any]] = [[0 for _ in range(n)] for __ in range(n)]
+    mat_tex: List[List[str]] = [[zero for _ in range(n)] for __ in range(n)]
     for i, v in enumerate(diag):
-        mat[i][i] = formater(v)
+        mat_raw[i][i] = v
+        mat_tex[i][i] = formater(v)
 
     # Edge spacing
     if extra_space:
         for i in range(n):
-            mat[i][0] = extra_space + mat[i][0]
-            mat[i][n - 1] = mat[i][n - 1] + extra_space
+            mat_tex[i][0] = extra_space + mat_tex[i][0]
+            mat_tex[i][n - 1] = mat_tex[i][n - 1] + extra_space
+
+    if matrix_ids:
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
-    rows = [" & ".join(row) for row in mat]
+    rows = [" & ".join(row) for row in mat_tex]
     return pre + nl.join(rows) + r" \\ " + post
 
 
@@ -146,6 +282,8 @@ def _mk_sigma_matrix(
     span_cols: Optional[int] = None,
     extra_space: str = "",
     add_height_mm: int = 0,
+    decorators: Optional[Sequence[Any]] = None,
+    matrix_ids: Optional[Sequence[str]] = None,
 ) -> str:
     diag: List[Any] = []
     for v, m in zip(values, multiplicities):
@@ -162,17 +300,22 @@ def _mk_sigma_matrix(
     post = r"\end{pNiceArray}$}"
 
     zero = formater(0)
-    mat: List[List[str]] = [[zero for _ in range(ncols)] for __ in range(mrows)]
+    mat_raw: List[List[Any]] = [[0 for _ in range(ncols)] for __ in range(mrows)]
+    mat_tex: List[List[str]] = [[zero for _ in range(ncols)] for __ in range(mrows)]
     for i in range(min(n, mrows, ncols)):
-        mat[i][i] = formater(diag[i])
+        mat_raw[i][i] = diag[i]
+        mat_tex[i][i] = formater(diag[i])
 
     if extra_space:
         for i in range(mrows):
-            mat[i][0] = extra_space + mat[i][0]
-            mat[i][ncols - 1] = mat[i][ncols - 1] + extra_space
+            mat_tex[i][0] = extra_space + mat_tex[i][0]
+            mat_tex[i][ncols - 1] = mat_tex[i][ncols - 1] + extra_space
+
+    if matrix_ids:
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
-    rows = [" & ".join(row) for row in mat]
+    rows = [" & ".join(row) for row in mat_tex]
     return pre + nl.join(rows) + r" \\ " + post
 
 
@@ -185,12 +328,14 @@ def _mk_vecs_matrix(
     span_cols: int = 1,
     extra_space: str = "",
     add_height_mm: int = 0,
+    decorators: Optional[Sequence[Any]] = None,
+    matrix_ids: Optional[Sequence[str]] = None,
 ) -> Optional[str]:
     # Flatten vectors column-wise
     cols: List[List[str]] = []
     for group in vec_groups:
         for vec in group:
-            entries = [formater(v) for v in vec]
+            entries = [v for v in vec]
             cols.append(entries)
 
     if not cols:
@@ -205,22 +350,27 @@ def _mk_vecs_matrix(
         # Legacy code returned a raw matrix in this case; for layout code, None is clearer.
         return None
 
-    mat: List[List[str]] = [[formater(0) for _ in range(sz)] for __ in range(sz)]
+    mat_raw: List[List[Any]] = [[0 for _ in range(sz)] for __ in range(sz)]
+    mat_tex: List[List[str]] = [[formater(0) for _ in range(sz)] for __ in range(sz)]
     for j, col in enumerate(cols):
         for i, v in enumerate(col):
-            mat[i][j] = v
+            mat_raw[i][j] = v
+            mat_tex[i][j] = formater(v)
 
     if extra_space:
         for i in range(sz):
-            mat[i][0] = extra_space + mat[i][0]
-            mat[i][sz - 1] = mat[i][sz - 1] + extra_space
+            mat_tex[i][0] = extra_space + mat_tex[i][0]
+            mat_tex[i][sz - 1] = mat_tex[i][sz - 1] + extra_space
+
+    if matrix_ids:
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
     pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
     post = r"\end{pNiceArray}$}"
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
-    rows = [" & ".join(row) for row in mat]
+    rows = [" & ".join(row) for row in mat_tex]
     return pre + nl.join(rows) + r" \\ " + post
 
 
@@ -235,6 +385,7 @@ def eigproblem_tex(
     fig_scale: Optional[Union[int, float]] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
+    decorators: Optional[Sequence[Any]] = None,
 ) -> str:
     """Render an eigen/QR/SVD table TeX document using the migrated template.
 
@@ -293,20 +444,43 @@ def eigproblem_tex(
     mas_row = " & ".join(_mk_values(multiplicities, formater=formater)) + r" \\"
 
     # Vector blocks
-    evecs_row = _mk_vector_blocks(eig["evecs"], formater=formater) + r" \\"
+    evecs_row = _mk_vector_blocks(
+        eig["evecs"],
+        formater=formater,
+        decorators=decorators,
+        target_name="eigenbasis",
+    ) + r" \\"
 
     orthonormal_row = None
     left_singular_matrix = None
     if case.upper() == "Q":
         if "qvecs" in eig:
-            orthonormal_row = _mk_vector_blocks(eig["qvecs"], formater=formater, add_height_mm=1) + r" \\"
+            orthonormal_row = _mk_vector_blocks(
+                eig["qvecs"],
+                formater=formater,
+                add_height_mm=1,
+                decorators=decorators,
+                target_name="orthonormal_basis",
+            ) + r" \\"
     elif case.upper() == "SVD":
         if "qvecs" in eig:
-            orthonormal_row = _mk_vector_blocks(eig["qvecs"], formater=formater, add_height_mm=1) + r" \\"
+            orthonormal_row = _mk_vector_blocks(
+                eig["qvecs"],
+                formater=formater,
+                add_height_mm=1,
+                decorators=decorators,
+                target_name="orthonormal_basis",
+            ) + r" \\"
         # Left singular vectors are shown as a matrix (U) below, if provided.
         if "uvecs" in eig:
             left_singular_matrix = _mk_vecs_matrix(
-                eig["uvecs"], formater=formater, sz=sz[0], mm=mmS, span_cols=matrix_span_cols
+                eig["uvecs"],
+                formater=formater,
+                sz=sz[0],
+                mm=mmS,
+                span_cols=matrix_span_cols,
+                decorators=decorators,
+                matrix_ids=["uvecs", "left_singular_matrix", "u"],
             )
 
     # Matrices (diagonal + eigen/singular vector matrix)
@@ -319,6 +493,8 @@ def eigproblem_tex(
             sz=sz,
             mm=mmLambda,
             span_cols=matrix_span_cols,
+            decorators=decorators,
+            matrix_ids=["sigma", "sigma_matrix", "lambda", "lambda_matrix"],
         )
     else:
         lambda_matrix = _mk_diag_matrix(
@@ -328,6 +504,8 @@ def eigproblem_tex(
             sz=sz,
             mm=mmLambda,
             span_cols=matrix_span_cols,
+            decorators=decorators,
+            matrix_ids=["lambda", "lambda_matrix"],
         )
 
     if case.upper() == "S":
@@ -337,6 +515,8 @@ def eigproblem_tex(
             sz=sz[1],
             mm=mmS,
             span_cols=matrix_span_cols,
+            decorators=decorators,
+            matrix_ids=["evecs", "evecs_matrix", "s"],
         )
     else:
         qvecs = eig.get("qvecs")
@@ -347,6 +527,8 @@ def eigproblem_tex(
                 sz=sz[1],
                 mm=mmS,
                 span_cols=matrix_span_cols,
+                decorators=decorators,
+                matrix_ids=["qvecs", "evecs", "evecs_matrix", "q", "v"],
             )
             if qvecs
             else None
@@ -395,6 +577,7 @@ def eigproblem_svg(
     fig_scale: Optional[Union[int, float]] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
+    decorators: Optional[Sequence[Any]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -411,5 +594,6 @@ def eigproblem_svg(
         fig_scale=fig_scale,
         preamble=preamble,
         sz=sz,
+        decorators=decorators,
     )
     return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, frame=frame)
