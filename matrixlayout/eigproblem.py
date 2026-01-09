@@ -86,16 +86,22 @@ def _mk_vector_blocks(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     target_name: Optional[str] = None,
+    strict: bool = False,
 ) -> str:
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     dec_specs: List[Tuple[Callable[..., str], set[Tuple[int, int, int]]]] = []
     if decorators and target_name:
         target_key = target_name.lower()
+        alias_map = {
+            "eigenbasis": {"eigenbasis", "evecs_row", "basis"},
+            "orthonormal_basis": {"orthonormal_basis", "qvecs_row", "orthobasis"},
+        }
+        targets = alias_map.get(target_key, {target_key})
         for spec_item in decorators:
             if not isinstance(spec_item, dict):
                 raise ValueError("decorators must be dict specs")
             key = spec_item.get("target")
-            if key is None or str(key).lower() not in {target_key}:
+            if key is None or str(key).lower() not in targets:
                 continue
             dec = spec_item.get("decorator")
             if not callable(dec):
@@ -129,6 +135,7 @@ def _mk_vector_blocks(
             if expanded:
                 dec_specs.append((dec, expanded))
     groups_out: List[str] = []
+    applied_counts = [0 for _ in dec_specs]
     for g_idx, vecs in enumerate(vec_groups):
         vec_tex: List[str] = []
         for v_idx, vec in enumerate(vecs):
@@ -136,12 +143,17 @@ def _mk_vector_blocks(
             for i_idx, v in enumerate(vec):
                 cell = formater(v)
                 if dec_specs:
-                    for dec, expanded in dec_specs:
+                    for idx, (dec, expanded) in enumerate(dec_specs):
                         if (g_idx, v_idx, i_idx) in expanded:
                             cell = _apply_decorator(dec, i_idx, v_idx, v, cell)
+                            applied_counts[idx] += 1
                 entries.append(cell)
             vec_tex.append(r"$\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}$")
         groups_out.append(", ".join(vec_tex))
+    if strict and dec_specs:
+        for count in applied_counts:
+            if count == 0:
+                raise ValueError("decorator selector did not match any entries")
     return " & & ".join(groups_out)
 
 
@@ -199,6 +211,7 @@ def _apply_matrix_decorators(
     decorators: Optional[Sequence[Any]],
     matrix_ids: Sequence[str],
     formater: LatexFormatter,
+    strict: bool,
 ) -> List[List[str]]:
     if not decorators:
         return mat_tex
@@ -215,12 +228,16 @@ def _apply_matrix_decorators(
         if not callable(dec):
             raise ValueError("decorator must be callable")
         fmt = spec_item.get("formater", formater)
+        applied = 0
         for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
             if i < 0 or j < 0 or i >= nrows or j >= ncols:
                 continue
             raw = mat_raw[i][j]
             base = mat_tex[i][j] or str(fmt(raw))
             mat_tex[i][j] = _apply_decorator(dec, i, j, raw, base)
+            applied += 1
+        if strict and applied == 0:
+            raise ValueError("decorator selector did not match any entries")
     return mat_tex
 
 
@@ -236,6 +253,7 @@ def _mk_diag_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
+    strict: bool = False,
 ) -> str:
     # Expand distinct values by multiplicity to length N (diagonal entries)
     diag: List[Any] = []
@@ -265,7 +283,7 @@ def _mk_diag_matrix(
             mat_tex[i][n - 1] = mat_tex[i][n - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
@@ -284,6 +302,7 @@ def _mk_sigma_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
+    strict: bool = False,
 ) -> str:
     diag: List[Any] = []
     for v, m in zip(values, multiplicities):
@@ -312,7 +331,7 @@ def _mk_sigma_matrix(
             mat_tex[i][ncols - 1] = mat_tex[i][ncols - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
@@ -330,6 +349,7 @@ def _mk_vecs_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
+    strict: bool = False,
 ) -> Optional[str]:
     # Flatten vectors column-wise
     cols: List[List[str]] = []
@@ -363,7 +383,7 @@ def _mk_vecs_matrix(
             mat_tex[i][sz - 1] = mat_tex[i][sz - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
     pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
@@ -386,6 +406,7 @@ def eigproblem_tex(
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
 ) -> str:
     """Render an eigen/QR/SVD table TeX document using the migrated template.
 
@@ -413,6 +434,18 @@ def eigproblem_tex(
     sz:
         Matrix size (M, N) for SVD tables. If omitted, defaults to (N, N) where
         N = sum(ma).
+    decorators:
+        Optional decorator specs for matrix blocks or vector rows.
+    strict:
+        If True, raise when a decorator selector matches zero entries.
+
+    Examples
+    --------
+    Decorate a basis entry in the eigenbasis row::
+
+        def box(tex): return rf"\\boxed{{{tex}}}"
+        decorators = [{"target": "eigenbasis", "entries": [(0, 0, 1)], "decorator": box}]
+        tex = eigproblem_tex(spec, case="S", decorators=decorators)
     """
     if "lambda" not in eig or "ma" not in eig or "evecs" not in eig:
         missing = [k for k in ("lambda", "ma", "evecs") if k not in eig]
@@ -449,6 +482,7 @@ def eigproblem_tex(
         formater=formater,
         decorators=decorators,
         target_name="eigenbasis",
+        strict=strict,
     ) + r" \\"
 
     orthonormal_row = None
@@ -461,6 +495,7 @@ def eigproblem_tex(
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
+                strict=strict,
             ) + r" \\"
     elif case.upper() == "SVD":
         if "qvecs" in eig:
@@ -470,6 +505,7 @@ def eigproblem_tex(
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
+                strict=strict,
             ) + r" \\"
         # Left singular vectors are shown as a matrix (U) below, if provided.
         if "uvecs" in eig:
@@ -481,6 +517,7 @@ def eigproblem_tex(
                 span_cols=matrix_span_cols,
                 decorators=decorators,
                 matrix_ids=["uvecs", "left_singular_matrix", "u"],
+                strict=strict,
             )
 
     # Matrices (diagonal + eigen/singular vector matrix)
@@ -495,6 +532,7 @@ def eigproblem_tex(
             span_cols=matrix_span_cols,
             decorators=decorators,
             matrix_ids=["sigma", "sigma_matrix", "lambda", "lambda_matrix"],
+            strict=strict,
         )
     else:
         lambda_matrix = _mk_diag_matrix(
@@ -506,6 +544,7 @@ def eigproblem_tex(
             span_cols=matrix_span_cols,
             decorators=decorators,
             matrix_ids=["lambda", "lambda_matrix"],
+            strict=strict,
         )
 
     if case.upper() == "S":
@@ -517,6 +556,7 @@ def eigproblem_tex(
             span_cols=matrix_span_cols,
             decorators=decorators,
             matrix_ids=["evecs", "evecs_matrix", "s"],
+            strict=strict,
         )
     else:
         qvecs = eig.get("qvecs")
@@ -529,6 +569,7 @@ def eigproblem_tex(
                 span_cols=matrix_span_cols,
                 decorators=decorators,
                 matrix_ids=["qvecs", "evecs", "evecs_matrix", "q", "v"],
+                strict=strict,
             )
             if qvecs
             else None
@@ -578,6 +619,7 @@ def eigproblem_svg(
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -595,5 +637,6 @@ def eigproblem_svg(
         preamble=preamble,
         sz=sz,
         decorators=decorators,
+        strict=strict,
     )
     return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, frame=frame)

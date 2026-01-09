@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable
 import inspect
+import re
 
 from .formatting import latexify
 from .ge import ge_tex
@@ -424,7 +425,18 @@ def qr_grid_tex(
     create_extra_nodes: Optional[bool] = True,
     create_medium_nodes: Optional[bool] = True,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
 ) -> str:
+    """Return a QR layout TeX document.
+
+    Examples
+    --------
+    Decorate the (0,0) entry in the A-block::
+
+        def box(tex): return rf"\\boxed{{{tex}}}"
+        decorators = [{"grid": (0, 2), "entries": [(0, 0)], "decorator": box}]
+        tex = qr_grid_tex(matrices=matrices, decorators=decorators)
+    """
     spec_obj = _coerce_qr_spec(spec)
     if spec_obj is not None:
         matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
@@ -442,6 +454,7 @@ def qr_grid_tex(
         create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec_obj.create_extra_nodes)
         create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes)
         decorators = _merge_scalar("decorators", decorators, spec_obj.decorators)
+        strict = _merge_scalar("strict", strict, spec_obj.strict)
 
     if matrices is None:
         raise ValueError("qr_grid_tex requires `matrices`")
@@ -506,13 +519,37 @@ def qr_grid_tex(
         raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
 
     if decorators:
+        base_name = layout.submatrix_name or "QR"
+        name_to_grid: Dict[str, Tuple[int, int]] = {}
+        for gM in range(layout.nGridRows):
+            for gN in range(layout.nGridCols):
+                if layout.array_shape[gM][gN][0] != 0:
+                    name_to_grid[f"{base_name}{gM}x{gN}"] = (gM, gN)
+
+        def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
+            grid_pos = spec_item.get("grid")
+            if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
+                return (int(grid_pos[0]), int(grid_pos[1]))
+            name = spec_item.get("matrix_name") or spec_item.get("name") or spec_item.get("matrix")
+            if isinstance(name, (list, tuple)) and len(name) == 3:
+                return (int(name[1]), int(name[2]))
+            if isinstance(name, str):
+                if name in name_to_grid:
+                    return name_to_grid[name]
+                m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
+                if m:
+                    return (int(m.group(2)), int(m.group(3)))
+            return None
+
         for spec_item in decorators:
             if not isinstance(spec_item, dict):
                 raise ValueError("decorators must be dict specs")
-            grid_pos = spec_item.get("grid")
-            if not isinstance(grid_pos, (list, tuple)) or len(grid_pos) != 2:
-                raise ValueError("decorator grid must be a (row,col) pair")
-            gM, gN = int(grid_pos[0]), int(grid_pos[1])
+            grid_pos = _resolve_grid(spec_item)
+            if grid_pos is None:
+                if strict:
+                    raise ValueError("decorator grid must be a (row,col) pair or resolvable name")
+                continue
+            gM, gN = grid_pos
             dec = spec_item.get("decorator")
             if not callable(dec):
                 raise ValueError("decorator must be callable")
@@ -520,10 +557,15 @@ def qr_grid_tex(
             try:
                 tl, _, shape = layout._top_left_bottom_right(gM, gN)
             except Exception:
+                if strict:
+                    raise ValueError("decorator grid position out of range")
                 continue
             if shape[0] <= 0 or shape[1] <= 0:
+                if strict:
+                    raise ValueError("decorator grid position out of range")
                 continue
             entries = _expand_entries(spec_item.get("entries"), shape[0], shape[1])
+            applied = 0
             mat = layout.matrices[gM][gN]
             for i, j in entries:
                 if i < 0 or j < 0 or i >= shape[0] or j >= shape[1]:
@@ -532,6 +574,9 @@ def qr_grid_tex(
                 tex = layout.a_tex[tl[0] + i][tl[1] + j]
                 base = tex if tex else str(fmt(v))
                 layout.a_tex[tl[0] + i][tl[1] + j] = _apply_decorator(dec, i, j, v, base)
+                applied += 1
+            if strict and applied == 0:
+                raise ValueError("decorator selector did not match any entries")
 
     # Add Gram–Schmidt labels.
     n_cols = 0
@@ -590,6 +635,7 @@ def qr_grid_svg(
     create_extra_nodes: Optional[bool] = True,
     create_medium_nodes: Optional[bool] = True,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -613,6 +659,7 @@ def qr_grid_svg(
         create_extra_nodes=create_extra_nodes,
         create_medium_nodes=create_medium_nodes,
         decorators=decorators,
+        strict=strict,
     )
     return render_svg(
         tex,

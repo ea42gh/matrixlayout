@@ -180,6 +180,8 @@ class GEGridSpec:
     layout: Optional[Any] = None
     legacy_submatrix_names: bool = False
     legacy_format: bool = False
+    decorators: Optional[Sequence[Any]] = None
+    strict: Optional[bool] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "GEGridSpec":
@@ -215,6 +217,7 @@ class QRGridSpec:
     label_text_color: str = "red"
     known_zero_color: str = "brown"
     decorators: Optional[Sequence[Any]] = None
+    strict: Optional[bool] = None
     landscape: Optional[bool] = None
     create_cell_nodes: Optional[bool] = True
     create_extra_nodes: Optional[bool] = True

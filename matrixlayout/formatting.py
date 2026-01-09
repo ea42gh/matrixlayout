@@ -76,6 +76,78 @@ def make_decorator(
     return _decorate
 
 
+def decorator_box(*, color: Optional[str] = None) -> Callable[[str], str]:
+    """Return a decorator that draws a (possibly colored) box around TeX."""
+    if color:
+        return make_decorator(box_color=color)
+    return make_decorator(boxed=True)
+
+
+def decorator_color(color: str) -> Callable[[str], str]:
+    """Return a decorator that colors TeX."""
+    return make_decorator(text_color=color)
+
+
+def decorator_bg(color: str) -> Callable[[str], str]:
+    """Return a decorator that adds a background color."""
+    return make_decorator(bg_color=color)
+
+
+def decorator_bf() -> Callable[[str], str]:
+    """Return a decorator that boldfaces TeX."""
+    return make_decorator(bf=True)
+
+
+def sel_entry(i: int, j: int) -> Tuple[int, int]:
+    """Selector for a single matrix entry."""
+    return (int(i), int(j))
+
+
+def sel_box(top_left: Tuple[int, int], bottom_right: Tuple[int, int]) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    """Selector for a rectangular entry region."""
+    return ((int(top_left[0]), int(top_left[1])), (int(bottom_right[0]), int(bottom_right[1])))
+
+
+def sel_row(i: int) -> dict:
+    """Selector for an entire row."""
+    return {"row": int(i)}
+
+
+def sel_col(j: int) -> dict:
+    """Selector for an entire column."""
+    return {"col": int(j)}
+
+
+def sel_rows(rows: Sequence[int]) -> dict:
+    """Selector for multiple rows."""
+    return {"rows": [int(r) for r in rows]}
+
+
+def sel_cols(cols: Sequence[int]) -> dict:
+    """Selector for multiple columns."""
+    return {"cols": [int(c) for c in cols]}
+
+
+def sel_all() -> dict:
+    """Selector for all entries."""
+    return {"all": True}
+
+
+def sel_vec(group: int, vec: int, entry: int) -> Tuple[int, int, int]:
+    """Selector for a vector entry in an eigenproblem row."""
+    return (int(group), int(vec), int(entry))
+
+
+def sel_vec_range(
+    start: Tuple[int, int, int],
+    end: Tuple[int, int, int],
+) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    """Selector for a contiguous vector entry range."""
+    return (
+        (int(start[0]), int(start[1]), int(start[2])),
+        (int(end[0]), int(end[1]), int(end[2])),
+    )
+
 def decorate_tex_entries(
     matrices: Sequence[Sequence[Any]],
     gM: int,
@@ -116,4 +188,21 @@ def decorate_tex_entries(
     return grid
 
 
-__all__ = ["latexify", "make_decorator", "decorate_tex_entries"]
+__all__ = [
+    "latexify",
+    "make_decorator",
+    "decorate_tex_entries",
+    "decorator_box",
+    "decorator_color",
+    "decorator_bg",
+    "decorator_bf",
+    "sel_entry",
+    "sel_box",
+    "sel_row",
+    "sel_col",
+    "sel_rows",
+    "sel_cols",
+    "sel_all",
+    "sel_vec",
+    "sel_vec_range",
+]

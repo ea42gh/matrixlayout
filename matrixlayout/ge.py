@@ -806,6 +806,7 @@ def ge_grid_tex(
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
@@ -838,6 +839,14 @@ def ge_grid_tex(
     -------
     str
         TeX document (via :func:`ge_tex`).
+
+    Examples
+    --------
+    Decorate entries in the A-block using a boxed decorator::
+
+        def box(tex): return rf"\\boxed{{{tex}}}"
+        decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
+        tex = ge_grid_tex(matrices=matrices, decorators=decorators)
     """
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
@@ -856,6 +865,10 @@ def ge_grid_tex(
             kwargs["layout"] = grid_spec.layout
         kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
         kwargs["legacy_format"] = bool(grid_spec.legacy_format)
+        if grid_spec.decorators is not None:
+            decorators = grid_spec.decorators
+        if grid_spec.strict is not None:
+            strict = bool(grid_spec.strict)
 
     grid: List[List[Any]] = [list(r) for r in (matrices or [])]
     if not grid:
@@ -1003,13 +1016,54 @@ def ge_grid_tex(
 
     decorator_map: Dict[Tuple[int, int], List[Tuple[Callable[..., str], set[Tuple[int, int]], Callable[[Any], str]]]] = {}
     if decorators:
+        use_legacy_names = bool(kwargs.get("legacy_submatrix_names", False))
+        name_to_grid: Dict[str, Tuple[int, int]] = {}
+        for br in range(n_block_rows):
+            for bc in range(n_block_cols):
+                _, h, w = cell_cache[br][bc]
+                if h == 0 or w == 0:
+                    continue
+                if use_legacy_names:
+                    name = f"A{br}x{bc}"
+                    name_to_grid[name] = (br, bc)
+                else:
+                    if n_block_cols == 2:
+                        base = ("E" if bc == 0 else "A")
+                    else:
+                        base = f"M{bc}"
+                    name = f"{base}{br}"
+                    name_to_grid[name] = (br, bc)
+                    # Provide legacy-style aliases for convenience.
+                    name_to_grid.setdefault(f"A{br}x{bc}", (br, bc))
+
+        def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
+            grid_pos = spec_item.get("grid")
+            if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
+                return (int(grid_pos[0]), int(grid_pos[1]))
+            name = spec_item.get("matrix_name") or spec_item.get("name") or spec_item.get("matrix")
+            if isinstance(name, (list, tuple)) and len(name) == 3:
+                return (int(name[1]), int(name[2]))
+            if isinstance(name, str):
+                if name in name_to_grid:
+                    return name_to_grid[name]
+                m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
+                if m:
+                    return (int(m.group(2)), int(m.group(3)))
+                m = re.match(r"([A-Za-z]+)(\d+)$", name)
+                if m and n_block_cols == 2 and m.group(1) in ("E", "A"):
+                    bc = 0 if m.group(1) == "E" else 1
+                    return (int(m.group(2)), bc)
+            return None
+
         for spec_item in decorators:
             if not isinstance(spec_item, dict):
                 raise ValueError("decorators must be dict specs")
-            grid_pos = spec_item.get("grid")
-            if not isinstance(grid_pos, (list, tuple)) or len(grid_pos) != 2:
-                raise ValueError("decorator grid must be a (row,col) pair")
-            gM, gN = int(grid_pos[0]), int(grid_pos[1])
+            grid_pos = _resolve_grid(spec_item)
+            if grid_pos is None:
+                if strict:
+                    raise ValueError("decorator grid must be a (row,col) pair or resolvable name")
+                continue
+            gM, gN = grid_pos
             dec = spec_item.get("decorator")
             if not callable(dec):
                 raise ValueError("decorator must be callable")
@@ -1020,6 +1074,9 @@ def ge_grid_tex(
             nrows = block_heights[gM]
             ncols = block_widths[gN]
             sel = _expand_entries(entries, nrows, ncols)
+            sel = {(i, j) for (i, j) in sel if 0 <= i < nrows and 0 <= j < ncols}
+            if strict and not sel:
+                raise ValueError("decorator selector did not match any entries")
             decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
 
     # Flatten all blocks into one scalar matrix representation.
@@ -1301,6 +1358,7 @@ def ge_grid_svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    strict: bool = False,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     output_stem: str = "output",
     frame: Any = None,
@@ -1333,6 +1391,7 @@ def ge_grid_svg(
         cell_align=cell_align,
         extension=extension,
         fig_scale=fig_scale,
+        strict=strict,
         spec=spec,
         **kwargs,
     )

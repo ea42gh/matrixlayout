@@ -103,7 +103,13 @@ def _apply_decorator(dec: Any, i: int, j: int, v: Any, tex: str) -> str:
     raise ValueError("Decorator must accept either 1 argument (tex) or 4 arguments (row,col,value,tex).")
 
 
-def _apply_line_decorators(lines: List[str], decorators: Optional[Sequence[Any]], block: str) -> List[str]:
+def _apply_line_decorators(
+    lines: List[str],
+    decorators: Optional[Sequence[Any]],
+    block: str,
+    *,
+    strict: bool,
+) -> List[str]:
     if not decorators or not lines:
         return lines
     nrows, ncols = len(lines), 1
@@ -117,11 +123,15 @@ def _apply_line_decorators(lines: List[str], decorators: Optional[Sequence[Any]]
         dec = spec_item.get("decorator")
         if not callable(dec):
             raise ValueError("decorator must be callable")
+        applied = 0
         for i, j in _expand_entries(spec_item.get("entries"), nrows, ncols):
             if i < 0 or i >= nrows or j != 0:
                 continue
             base = lines[i]
             lines[i] = _apply_decorator(dec, i, j, base, base)
+            applied += 1
+        if strict and applied == 0:
+            raise ValueError("decorator selector did not match any entries")
     return lines
 
 
@@ -162,6 +172,7 @@ def backsubst_tex(
     show_solution: bool = True,
     fig_scale: Optional[Union[str, float, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
 ) -> str:
     """Render the back-substitution TeX document.
 
@@ -172,9 +183,9 @@ def backsubst_tex(
     if cascade_txt is None and cascade_trace is not None:
         cascade_txt = mk_shortcascade_lines(cascade_trace)
 
-    system_lines = _apply_line_decorators([system_txt] if system_txt else [], decorators, "system")
-    cascade_lines = _apply_line_decorators(_as_lines(cascade_txt), decorators, "cascade")
-    solution_lines = _apply_line_decorators([solution_txt] if solution_txt else [], decorators, "solution")
+    system_lines = _apply_line_decorators([system_txt] if system_txt else [], decorators, "system", strict=strict)
+    cascade_lines = _apply_line_decorators(_as_lines(cascade_txt), decorators, "cascade", strict=strict)
+    solution_lines = _apply_line_decorators([solution_txt] if solution_txt else [], decorators, "solution", strict=strict)
 
     ctx = BacksubstContext(
         preamble=preamble,
@@ -202,6 +213,7 @@ def backsubst_svg(
     show_solution: bool = True,
     fig_scale: Optional[Union[str, float, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -219,5 +231,6 @@ def backsubst_svg(
         show_solution=show_solution,
         fig_scale=fig_scale,
         decorators=decorators,
+        strict=strict,
     )
     return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding)
