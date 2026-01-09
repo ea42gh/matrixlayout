@@ -12,7 +12,7 @@ def test_qr_grid_tex_decorators_apply():
 
     tex = qr_grid_tex(
         matrices=matrices,
-        formater=str,
+        formatter=str,
         preamble="",
         decorators=[{"grid": (0, 2), "entries": [(0, 0)], "decorator": dec}],
     )
@@ -34,7 +34,7 @@ def test_qr_grid_tex_decorators_resolve_matrix_name():
 
     tex = qr_grid_tex(
         matrices=matrices,
-        formater=str,
+        formatter=str,
         preamble="",
         decorators=[{"matrix_name": "QR0x2", "entries": [(0, 0)], "decorator": dec}],
     )
@@ -57,7 +57,7 @@ def test_qr_grid_tex_decorators_strict_raises_on_empty():
     try:
         qr_grid_tex(
             matrices=matrices,
-            formater=str,
+            formatter=str,
             preamble="",
             decorators=[{"grid": (0, 2), "entries": [(9, 9)], "decorator": dec}],
             strict=True,

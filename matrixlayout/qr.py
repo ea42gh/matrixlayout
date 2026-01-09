@@ -158,7 +158,7 @@ class QRGridLayout:
 
         self.format = fmt
 
-    def array_of_tex_entries(self, *, formater: Any = latexify) -> None:
+    def array_of_tex_entries(self, *, formatter: Any = latexify) -> None:
         rows, cols = self.tex_shape
         a_tex: List[List[str]] = [["" for _ in range(cols)] for __ in range(rows)]
         for i in range(self.nGridRows):
@@ -169,7 +169,7 @@ class QRGridLayout:
                 mat = self.matrices[i][j] if j < len(self.matrices[i]) else None
                 for ia in range(shape[0]):
                     for ja in range(shape[1]):
-                        a_tex[tl[0] + ia][tl[1] + ja] = str(formater(_mat_entry(mat, ia, ja)))
+                        a_tex[tl[0] + ia][tl[1] + ja] = str(formatter(_mat_entry(mat, ia, ja)))
         self.a_tex = a_tex
 
     def decorate_tex_entries(self, gM: int, gN: int, decorate: Any, *, entries: Optional[Sequence[Tuple[int, int]]] = None) -> None:
@@ -196,15 +196,15 @@ class QRGridLayout:
         tl, _, _ = self._top_left_bottom_right(gM, gN)
         return (tl[0], tl[1] - self.extra_cols[gN]), (self.tex_shape[0] - tl[0], self.extra_cols[gN])
 
-    def add_row_above(self, gM: int, gN: int, m: Sequence[Any], *, formater: Any = latexify, offset: int = 0) -> None:
+    def add_row_above(self, gM: int, gN: int, m: Sequence[Any], *, formatter: Any = latexify, offset: int = 0) -> None:
         tl, _ = self.tl_shape_above(gM, gN)
         for j, v in enumerate(m):
-            self.a_tex[tl[0] + offset][tl[1] + j] = str(formater(v))
+            self.a_tex[tl[0] + offset][tl[1] + j] = str(formatter(v))
 
-    def add_col_left(self, gM: int, gN: int, m: Sequence[Any], *, formater: Any = latexify, offset: int = 0) -> None:
+    def add_col_left(self, gM: int, gN: int, m: Sequence[Any], *, formatter: Any = latexify, offset: int = 0) -> None:
         tl, _ = self.tl_shape_left(gM, gN)
         for i, v in enumerate(m):
-            self.a_tex[tl[0] + i][tl[1] + offset - 1] = str(formater(v))
+            self.a_tex[tl[0] + i][tl[1] + offset - 1] = str(formatter(v))
 
     def nm_submatrix_locs(
         self,
@@ -410,7 +410,7 @@ def qr_grid_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
-    formater: Any = latexify,
+    formatter: Any = latexify,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
@@ -439,7 +439,7 @@ def qr_grid_tex(
     spec_obj = _coerce_qr_spec(spec)
     if spec_obj is not None:
         matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
-        formater = _merge_scalar("formater", formater, spec_obj.formater)
+        formatter = _merge_scalar("formatter", formatter, spec_obj.formatter)
         array_names = _merge_scalar("array_names", array_names, spec_obj.array_names)
         fig_scale = _merge_scalar("fig_scale", fig_scale, spec_obj.fig_scale)
         preamble = _merge_scalar("preamble", preamble, spec_obj.preamble)
@@ -457,12 +457,12 @@ def qr_grid_tex(
 
     if matrices is None:
         raise ValueError("qr_grid_tex requires `matrices`")
-    if formater is None:
-        formater = latexify
+    if formatter is None:
+        formatter = latexify
 
     layout = QRGridLayout(matrices, extra_rows=[1, 0, 0, 0])
     layout.array_format_string_list()
-    layout.array_of_tex_entries(formater=formater)
+    layout.array_of_tex_entries(formatter=formatter)
 
     # Highlight known zeros.
     brown = _make_decorator(text_color=known_zero_color, bf=True)
@@ -495,7 +495,7 @@ def qr_grid_tex(
             dec = spec_item.get("decorator")
             if not callable(dec):
                 raise ValueError("decorator must be callable")
-            fmt = spec_item.get("formater", formater)
+            fmt = spec_item.get("formatter", formatter)
             try:
                 tl, _, shape = layout._top_left_bottom_right(gM, gN)
             except Exception:
@@ -532,8 +532,8 @@ def qr_grid_tex(
         red_rgt = _make_decorator(text_color=label_text_color, bf=True, move_right=True)
         row_labels = [red(f"v_{i+1}") for i in range(n_cols)] + [red(f"w_{i+1}") for i in range(n_cols)]
         col_labels = [red_rgt(f"w^t_{i+1}") for i in range(n_cols)]
-        layout.add_row_above(0, 2, row_labels, formater=lambda a: a)
-        layout.add_col_left(1, 1, col_labels, formater=lambda a: a)
+        layout.add_row_above(0, 2, row_labels, formatter=lambda a: a)
+        layout.add_col_left(1, 1, col_labels, formatter=lambda a: a)
 
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
@@ -563,7 +563,7 @@ def qr_grid_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
-    formater: Any = latexify,
+    formatter: Any = latexify,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
@@ -587,7 +587,7 @@ def qr_grid_svg(
     tex = qr_grid_tex(
         matrices=matrices,
         spec=spec,
-        formater=formater,
+        formatter=formatter,
         array_names=array_names,
         fig_scale=fig_scale,
         preamble=preamble,

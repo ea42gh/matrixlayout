@@ -24,7 +24,7 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors
+from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -38,17 +38,10 @@ from .specs import (
 
 
 def _julia_str(x: Any) -> str:
-    """Normalize Julia/PythonCall/PyCall "string-like" values to plain strings.
-
-    Julia Symbols frequently stringify to ``":name"`` (e.g. ``:tight``).
-    For interop, strip a single leading colon.
-    """
+    """Normalize Julia/PythonCall/PyCall "string-like" values to plain strings."""
     if x is None:
         return ""
-    s = str(x).strip()
-    if s.startswith(":"):
-        s = s[1:]
-    return s
+    return str(norm_str(x))
 
 
 def _coord_token(x: Any) -> str:
@@ -757,7 +750,7 @@ def _as_2d_list(M: Any) -> Tuple[List[List[Any]], int, int]:
     return rows2, nrows, ncols
 
 
-def _matrix_body_tex(M: Any, *, formater: LatexFormatter) -> str:
+def _matrix_body_tex(M: Any, *, formatter: LatexFormatter) -> str:
     """Format a matrix-like object into a TeX body: ``a & b \\ c & d``."""
     rows, nrows, ncols = _as_2d_list(M)
     if nrows == 0 or ncols == 0:
@@ -765,7 +758,7 @@ def _matrix_body_tex(M: Any, *, formater: LatexFormatter) -> str:
 
     body_rows: List[str] = []
     for r in rows:
-        cells = [formater(v) for v in r]
+        cells = [formatter(v) for v in r]
         body_rows.append(" & ".join(cells) + r" \\")
     return "\n".join(body_rows)
 
@@ -774,7 +767,7 @@ def _pnicearray_tex(
     M: Any,
     *,
     Nrhs: int = 0,
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     align: str = "r",
 ) -> str:
     """Wrap a matrix body into a ``pNiceArray`` environment."""
@@ -791,7 +784,7 @@ def _pnicearray_tex(
     else:
         fmt = align * ncols
 
-    body = _matrix_body_tex(rows, formater=formater)
+    body = _matrix_body_tex(rows, formatter=formatter)
     # IMPORTANT: emit real newlines, not a literal "\\n" TeX control sequence.
     return f"\\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\\end{{pNiceArray}}"
 
@@ -799,7 +792,7 @@ def _pnicearray_tex(
 def ge_grid_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: Any = 0,
-    formater: LatexFormatter = latexify,
+    formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
@@ -829,7 +822,7 @@ def ge_grid_tex(
         Number of RHS columns in the *A-block* matrices, or a list of RHS block
         widths (legacy partition style). This is used to insert an
         augmented-matrix partition bar in the last block-column's preamble.
-    formater:
+    formatter:
         Scalar formatter for TeX.
     outer_hspace_mm:
         Horizontal spacing between adjacent matrix blocks.
@@ -852,8 +845,8 @@ def ge_grid_tex(
         if matrices is None:
             matrices = grid_spec.matrices
         Nrhs = grid_spec.Nrhs
-        if grid_spec.formater is not None:
-            formater = grid_spec.formater
+        if grid_spec.formatter is not None:
+            formatter = grid_spec.formatter
         outer_hspace_mm = int(grid_spec.outer_hspace_mm)
         cell_align = str(grid_spec.cell_align)
         extension = str(grid_spec.extension or extension)
@@ -951,7 +944,7 @@ def ge_grid_tex(
     def _fmt(v: Any) -> str:
         if v is None:
             return blank
-        s = formater(v)
+        s = formatter(v)
         return s if (isinstance(s, str) and s.strip()) else blank
 
     decorator_map: Dict[Tuple[int, int], List[Tuple[Callable[..., str], set[Tuple[int, int]], Callable[[Any], str]]]] = {}
@@ -990,7 +983,7 @@ def ge_grid_tex(
             dec = spec_item.get("decorator")
             if not callable(dec):
                 raise ValueError("decorator must be callable")
-            fmt = spec_item.get("formater", formater)
+            fmt = spec_item.get("formatter", formatter)
             entries = spec_item.get("entries")
             if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
                 raise ValueError("decorator grid position out of range")
@@ -1240,7 +1233,7 @@ def ge_grid_bundle(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     Nrhs: int = 0,
-    formater: LatexFormatter = latexify,
+    formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
@@ -1262,7 +1255,7 @@ def ge_grid_bundle(
     tex = ge_grid_tex(
         matrices=matrices,
         Nrhs=Nrhs,
-        formater=formater,
+        formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
         extension=extension,
@@ -1293,7 +1286,7 @@ def ge_grid_bundle(
 def ge_grid_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: int = 0,
-    formater: LatexFormatter = latexify,
+    formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     extension: str = "",
@@ -1316,7 +1309,7 @@ def ge_grid_svg(
 
     Parameters
     ----------
-    matrices, Nrhs, formater, outer_hspace_mm, cell_align:
+    matrices, Nrhs, formatter, outer_hspace_mm, cell_align:
         See :func:`ge_grid_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
@@ -1329,7 +1322,7 @@ def ge_grid_svg(
     tex = ge_grid_tex(
         matrices=matrices,
         Nrhs=Nrhs,
-        formater=formater,
+        formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
         extension=extension,

@@ -21,7 +21,7 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, 
 
 from .jinja_env import render_template
 from .render import render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors
+from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str
 
 
 LatexFormatter = Callable[[Any], str]
@@ -48,14 +48,14 @@ def _is_zero_like(x: Any) -> bool:
         return False
 
 
-def _mk_values(values: Sequence[Any], *, formater: LatexFormatter, zero_blank: bool = False) -> List[str]:
+def _mk_values(values: Sequence[Any], *, formatter: LatexFormatter, zero_blank: bool = False) -> List[str]:
     """Return interleaved value cells matching the legacy tabular column scheme."""
     l: List[str] = []
     for v in values:
         if zero_blank and _is_zero_like(v):
             s = ""
         else:
-            s = formater(v)
+            s = formatter(v)
         l.append(f"${s}$")
 
     if not l:
@@ -81,7 +81,7 @@ def _mk_rule_format(num_distinct: int) -> str:
 def _mk_vector_blocks(
     vec_groups: Sequence[Sequence[Iterable[Any]]],
     *,
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     target_name: Optional[str] = None,
@@ -140,7 +140,7 @@ def _mk_vector_blocks(
         for v_idx, vec in enumerate(vecs):
             entries: List[str] = []
             for i_idx, v in enumerate(vec):
-                cell = formater(v)
+                cell = formatter(v)
                 if dec_specs:
                     for idx, (dec, expanded) in enumerate(dec_specs):
                         if (g_idx, v_idx, i_idx) in expanded:
@@ -161,7 +161,7 @@ def _apply_matrix_decorators(
     mat_raw: List[List[Any]],
     decorators: Optional[Sequence[Any]],
     matrix_ids: Sequence[str],
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     strict: bool,
 ) -> List[List[str]]:
     if not decorators:
@@ -178,7 +178,7 @@ def _apply_matrix_decorators(
         dec = spec_item.get("decorator")
         if not callable(dec):
             raise ValueError("decorator must be callable")
-        fmt = spec_item.get("formater", formater)
+        fmt = spec_item.get("formatter", formatter)
         applied = 0
         for i, j in expand_entry_selectors(spec_item.get("entries"), nrows, ncols):
             if i < 0 or j < 0 or i >= nrows or j >= ncols:
@@ -196,7 +196,7 @@ def _mk_diag_matrix(
     values: Sequence[Any],
     multiplicities: Sequence[int],
     *,
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     sz: Tuple[int, int],
     mm: int = 8,
     span_cols: Optional[int] = None,
@@ -220,12 +220,12 @@ def _mk_diag_matrix(
     post = r"\end{pNiceArray}$}"
 
     # Build an n x n string matrix
-    zero = formater(0)
+    zero = formatter(0)
     mat_raw: List[List[Any]] = [[0 for _ in range(n)] for __ in range(n)]
     mat_tex: List[List[str]] = [[zero for _ in range(n)] for __ in range(n)]
     for i, v in enumerate(diag):
         mat_raw[i][i] = v
-        mat_tex[i][i] = formater(v)
+        mat_tex[i][i] = formatter(v)
 
     # Edge spacing
     if extra_space:
@@ -234,7 +234,7 @@ def _mk_diag_matrix(
             mat_tex[i][n - 1] = mat_tex[i][n - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formatter, strict)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
@@ -245,7 +245,7 @@ def _mk_sigma_matrix(
     values: Sequence[Any],
     multiplicities: Sequence[int],
     *,
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     sz: Tuple[int, int],
     mm: int = 8,
     span_cols: Optional[int] = None,
@@ -269,12 +269,12 @@ def _mk_sigma_matrix(
     pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * ncols) + "}"
     post = r"\end{pNiceArray}$}"
 
-    zero = formater(0)
+    zero = formatter(0)
     mat_raw: List[List[Any]] = [[0 for _ in range(ncols)] for __ in range(mrows)]
     mat_tex: List[List[str]] = [[zero for _ in range(ncols)] for __ in range(mrows)]
     for i in range(min(n, mrows, ncols)):
         mat_raw[i][i] = diag[i]
-        mat_tex[i][i] = formater(diag[i])
+        mat_tex[i][i] = formatter(diag[i])
 
     if extra_space:
         for i in range(mrows):
@@ -282,7 +282,7 @@ def _mk_sigma_matrix(
             mat_tex[i][ncols - 1] = mat_tex[i][ncols - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formatter, strict)
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
@@ -292,7 +292,7 @@ def _mk_sigma_matrix(
 def _mk_vecs_matrix(
     vec_groups: Sequence[Sequence[Iterable[Any]]],
     *,
-    formater: LatexFormatter,
+    formatter: LatexFormatter,
     sz: int,
     mm: int = 8,
     span_cols: int = 1,
@@ -322,11 +322,11 @@ def _mk_vecs_matrix(
         return None
 
     mat_raw: List[List[Any]] = [[0 for _ in range(sz)] for __ in range(sz)]
-    mat_tex: List[List[str]] = [[formater(0) for _ in range(sz)] for __ in range(sz)]
+    mat_tex: List[List[str]] = [[formatter(0) for _ in range(sz)] for __ in range(sz)]
     for j, col in enumerate(cols):
         for i, v in enumerate(col):
             mat_raw[i][j] = v
-            mat_tex[i][j] = formater(v)
+            mat_tex[i][j] = formatter(v)
 
     if extra_space:
         for i in range(sz):
@@ -334,7 +334,7 @@ def _mk_vecs_matrix(
             mat_tex[i][sz - 1] = mat_tex[i][sz - 1] + extra_space
 
     if matrix_ids:
-        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formater, strict)
+        mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formatter, strict)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
     pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
@@ -349,7 +349,7 @@ def eigproblem_tex(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = latexify,
+    formatter: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,
@@ -370,7 +370,7 @@ def eigproblem_tex(
           - optional: 'sigma', 'qvecs', 'uvecs'
     case:
         'S' for eigenvectors S, 'Q' for orthonormal eigenvectors Q, 'SVD' for SVD.
-    formater:
+    formatter:
         Converts scalar entries to LaTeX strings (e.g. sympy.latex).
     color:
         xcolor color name (e.g. 'blue', 'RoyalBlue', 'DarkGreen').
@@ -402,6 +402,8 @@ def eigproblem_tex(
         missing = [k for k in ("lambda", "ma", "evecs") if k not in eig]
         raise KeyError(f"eigproblem_tex missing required keys: {missing}")
 
+    case = norm_str(case) or ""
+    color = norm_str(color) or ""
     lambdas_distinct = list(eig["lambda"])
     multiplicities = list(eig["ma"])
     n = int(sum(multiplicities))
@@ -422,15 +424,15 @@ def eigproblem_tex(
     # Values rows
     sigmas_row = None
     if case.upper() == "SVD" and "sigma" in eig:
-        sig_cells = _mk_values(list(eig["sigma"]), formater=formater, zero_blank=True)
+        sig_cells = _mk_values(list(eig["sigma"]), formatter=formatter, zero_blank=True)
         sigmas_row = " & ".join(sig_cells) + r" \\"
-    lambdas_row = " & ".join(_mk_values(lambdas_distinct, formater=formater)) + r" \\"
-    mas_row = " & ".join(_mk_values(multiplicities, formater=formater)) + r" \\"
+    lambdas_row = " & ".join(_mk_values(lambdas_distinct, formatter=formatter)) + r" \\"
+    mas_row = " & ".join(_mk_values(multiplicities, formatter=formatter)) + r" \\"
 
     # Vector blocks
     evecs_row = _mk_vector_blocks(
         eig["evecs"],
-        formater=formater,
+        formatter=formatter,
         decorators=decorators,
         target_name="eigenbasis",
         strict=strict,
@@ -442,7 +444,7 @@ def eigproblem_tex(
         if "qvecs" in eig:
             orthonormal_row = _mk_vector_blocks(
                 eig["qvecs"],
-                formater=formater,
+                formatter=formatter,
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
@@ -452,7 +454,7 @@ def eigproblem_tex(
         if "qvecs" in eig:
             orthonormal_row = _mk_vector_blocks(
                 eig["qvecs"],
-                formater=formater,
+                formatter=formatter,
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
@@ -462,7 +464,7 @@ def eigproblem_tex(
         if "uvecs" in eig:
             left_singular_matrix = _mk_vecs_matrix(
                 eig["uvecs"],
-                formater=formater,
+                formatter=formatter,
                 sz=sz[0],
                 mm=mmS,
                 span_cols=matrix_span_cols,
@@ -477,7 +479,7 @@ def eigproblem_tex(
         lambda_matrix = _mk_sigma_matrix(
             diag_values,
             multiplicities,
-            formater=formater,
+            formatter=formatter,
             sz=sz,
             mm=mmLambda,
             span_cols=matrix_span_cols,
@@ -489,7 +491,7 @@ def eigproblem_tex(
         lambda_matrix = _mk_diag_matrix(
             lambdas_distinct,
             multiplicities,
-            formater=formater,
+            formatter=formatter,
             sz=sz,
             mm=mmLambda,
             span_cols=matrix_span_cols,
@@ -501,7 +503,7 @@ def eigproblem_tex(
     if case.upper() == "S":
         evecs_matrix = _mk_vecs_matrix(
             eig["evecs"],
-            formater=formater,
+            formatter=formatter,
             sz=sz[1],
             mm=mmS,
             span_cols=matrix_span_cols,
@@ -514,7 +516,7 @@ def eigproblem_tex(
         evecs_matrix = (
             _mk_vecs_matrix(
                 qvecs,
-                formater=formater,
+                formatter=formatter,
                 sz=sz[1],
                 mm=mmS,
                 span_cols=matrix_span_cols,
@@ -562,7 +564,7 @@ def eigproblem_svg(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
-    formater: LatexFormatter = latexify,
+    formatter: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
     mmS: int = 4,
@@ -580,7 +582,7 @@ def eigproblem_svg(
     tex = eigproblem_tex(
         eig,
         case=case,
-        formater=formater,
+        formatter=formatter,
         color=color,
         mmLambda=mmLambda,
         mmS=mmS,

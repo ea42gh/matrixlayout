@@ -44,3 +44,16 @@ For eigenproblem vector rows, selectors use `(group, vector, entry)` tuples.
 
 ```python
 from jupyter_tikz import render_svg
+```
+
+## Documentation
+
+MkDocs configuration lives in `matrixlayout/mkdocs.yml` with content under
+`matrixlayout/docs/`.
+
+Build the docs:
+
+```bash
+cd matrixlayout
+mkdocs build
+```

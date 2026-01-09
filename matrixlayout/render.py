@@ -21,6 +21,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from .formatting import norm_str
+
 _PathLike = Union[str, os.PathLike, Path]
 
 _SVG_HEADER_COMMENT_RE = re.compile(r"^\s*<!--.*?-->\s*", flags=re.DOTALL)
@@ -59,6 +61,9 @@ def render_svg_with_artifacts(
         raise ModuleNotFoundError(
             "jupyter_tikz is required for SVG rendering. Install the optional dependency via: pip install 'matrixlayout[render]'"
         ) from e
+
+    toolchain_name = norm_str(toolchain_name)
+    crop = norm_str(crop)
 
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)

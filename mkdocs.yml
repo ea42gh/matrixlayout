@@ -1,0 +1,23 @@
+site_name: matrixlayout
+docs_dir: docs
+site_dir: site
+theme:
+  name: readthedocs
+plugins:
+  - search
+  - mkdocs-jupyter
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Getting Started: getting-started.md
+  - Specs: specs.md
+  - Decorators: decorators.md
+  - Rendering: rendering.md
+  - Interop: interop.md
+  - API: api.md
+  - Notebooks:
+      - Overview: notebooks/README.md
+      - GE minimal: notebooks/01_ge_minimal.ipynb
+      - QR layout: notebooks/02_qr_layout.ipynb
+      - Eigen/SVD table: notebooks/03_eig_svd_table.ipynb
+      - Decorators gallery: notebooks/04_decorators_gallery.ipynb

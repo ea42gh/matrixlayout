@@ -172,7 +172,7 @@ class GEGridSpec:
 
     matrices: Sequence[Sequence[Any]]
     Nrhs: Any = 0
-    formater: Optional[Any] = None
+    formatter: Optional[Any] = None
     outer_hspace_mm: int = 6
     cell_align: str = "r"
     extension: str = ""
@@ -207,7 +207,7 @@ class QRGridSpec:
     """Serializable spec for a QR matrix grid + layout options."""
 
     matrices: Sequence[Sequence[Any]]
-    formater: Optional[Any] = None
+    formatter: Optional[Any] = None
     array_names: Any = True
     fig_scale: Optional[Any] = None
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n"

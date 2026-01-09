@@ -12,6 +12,7 @@ from __future__ import annotations
 from fractions import Fraction
 import inspect
 import numbers
+import re
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
 
@@ -40,6 +41,25 @@ def latexify(x: Any) -> str:
 
     return str(x)
 
+
+def norm_str(x: Any) -> Any:
+    """Normalize Julia/PythonCall/PyCall string-like values."""
+    if x is None:
+        return None
+    s = x if isinstance(x, str) else str(x)
+    s = s.strip()
+    if s.startswith(":"):
+        return s[1:]
+    if "Symbol(" in s:
+        match = re.search(r"Symbol\((.*)\)", s)
+        if match:
+            inner = match.group(1).strip()
+            if inner.startswith(":"):
+                inner = inner[1:]
+            if len(inner) >= 2 and inner[0] == inner[-1] and inner[0] in ("'", '"'):
+                inner = inner[1:-1]
+            return inner
+    return s
 
 def make_decorator(
     *,
@@ -163,7 +183,7 @@ def decorate_tex_entries(
     decorator: Callable[[str], str],
     *,
     entries: Optional[Iterable[Tuple[int, int]]] = None,
-    formater: Callable[[Any], str] = latexify,
+    formatter: Callable[[Any], str] = latexify,
 ) -> Sequence[Sequence[Any]]:
     """Apply a decorator to selected entries in a grid matrix (in-place)."""
     grid = [list(r) for r in matrices]
@@ -190,7 +210,7 @@ def decorate_tex_entries(
     for i, j in entries:
         if i < 0 or j < 0 or i >= nrows or j >= ncols:
             continue
-        rows[i][j] = decorator(formater(rows[i][j]))
+        rows[i][j] = decorator(formatter(rows[i][j]))
 
     grid[gM][gN] = rows
     return grid
@@ -269,6 +289,7 @@ def apply_decorator(dec: Callable[..., str], i: int, j: int, v: Any, tex: str) -
 
 __all__ = [
     "latexify",
+    "norm_str",
     "make_decorator",
     "decorate_tex_entries",
     "expand_entry_selectors",

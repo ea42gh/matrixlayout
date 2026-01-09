@@ -13,7 +13,7 @@ def test_eigproblem_tex_decorates_lambda_matrix():
     tex = eigproblem_tex(
         spec,
         case="S",
-        formater=str,
+        formatter=str,
         decorators=[{"matrix": "lambda", "entries": [(0, 0)], "decorator": dec}],
         preamble="",
     )
@@ -36,7 +36,7 @@ def test_eigproblem_tex_decorates_eigenbasis_vector_entry():
     tex = eigproblem_tex(
         spec,
         case="S",
-        formater=str,
+        formatter=str,
         decorators=[{"target": "eigenbasis", "entries": [(0, 0, 1)], "decorator": dec}],
         preamble="",
     )
@@ -59,7 +59,7 @@ def test_eigproblem_tex_decorates_evecs_row_alias():
     tex = eigproblem_tex(
         spec,
         case="S",
-        formater=str,
+        formatter=str,
         decorators=[{"target": "evecs_row", "entries": [(0, 0, 1)], "decorator": dec}],
         preamble="",
     )

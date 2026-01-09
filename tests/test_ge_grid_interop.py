@@ -20,8 +20,8 @@ def test_ge_tex_normalizes_julia_style_inputs():
         mat_rep="1",
         mat_format="c",
         submatrix_locs=[(SymLike(":name=Z"), (1, 1), (1, 1))],
-        pivot_locs=[(((1, 1), (1, 1)), SymLike(":thick"))],
-        txt_with_locs=[((1, 1), "x", SymLike(":red"))],
+        pivot_locs=[(((1, 1), (1, 1)), SymLike("Symbol(:thick)"))],
+        txt_with_locs=[((1, 1), "x", SymLike("Symbol(:red)"))],
     )
 
     assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex
