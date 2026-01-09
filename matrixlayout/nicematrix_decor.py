@@ -72,8 +72,8 @@ class DelimCallout:
     label: str
     side: Side = "auto"
     anchor: Anchor = "top"
-    angle_deg: float = 25.0
-    length_mm: float = 10.0
+    angle_deg: float = -35.0
+    length_mm: float = 6.0
     color: str = "blue"
     line_width_pt: float = 0.35
     # Uses arrows.meta. Templates that render these callouts should include it.
@@ -103,8 +103,8 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
                 label=str(d["label"]),
                 side=str(d.get("side", "auto")),
                 anchor=str(d.get("anchor", "top")),
-                angle_deg=float(d.get("angle_deg", 25.0)),
-                length_mm=float(d.get("length_mm", 10.0)),
+                angle_deg=float(d.get("angle_deg", -35.0)),
+                length_mm=float(d.get("length_mm", 6.0)),
                 color=str(d.get("color", "blue")),
                 line_width_pt=float(d.get("line_width_pt", 0.35)),
                 tip=str(d.get("tip", r"-{Stealth[length=2.4mm]}")),
@@ -240,7 +240,7 @@ def render_delim_callouts(
         auto: List[CalloutLike] = []
         for n in sorted(str(x) for x in available_names):
             side = "left" if n.startswith("E") else "right"
-            auto.append({"name": n, "label": _default_label(n), "side": side})
+            auto.append({"name": n, "label": _default_label(n), "side": side, "angle_deg": -35.0, "length_mm": 6.0})
         callouts = auto
     elif not callouts:
         return []
