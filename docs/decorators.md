@@ -39,7 +39,7 @@ entry styles and backgrounds.
 | --- | --- | --- |
 | Background | `background` | Uses selectors; emits `codebefore`. |
 | Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. |
-| Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`. |
+| Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`, `padding_pt`. |
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
 | Callout | `label` | Optional `side`, `angle`, `length`, `anchor`, `color`. |
 
@@ -58,7 +58,7 @@ specs ignore `rows`/`cols`/`submatrix`.
 {"grid": (0, 1), "submatrix": (None, "0:1"), "vlines": "bounds"}
 {"grid": (0, 1), "submatrix": ("0:2", None), "hlines": "all"}
 {"grid": (0, 1), "submatrix": (None, "0:2"), "vlines": "all"}
-{"grid": (0, 1), "submatrix": ("0:1", "0:1"), "outline": True}
+{"grid": (0, 1), "submatrix": ("0:1", "0:1"), "outline": True, "padding_pt": 1.0}
 {"grid": (2, 1), "entries": [(0, 0)], "box": True}
 {"grid": (2, 1), "rows": "0:1", "cols": "1:1", "color": "red"}
 {"grid": (2, 1), "entries": [(0, 0)], "color": "red", "bold": True}

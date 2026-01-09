@@ -1602,6 +1602,8 @@ def _parse_ge_decorations(
             spec = {"grid": key}
             if "line_width_pt" in item:
                 spec["line_width_pt"] = item["line_width_pt"]
+            if "padding_pt" in item:
+                spec["padding_pt"] = item["padding_pt"]
             if "color" in item:
                 spec["color"] = item["color"]
             if "submatrix" in item and item["submatrix"] is not None:
@@ -1703,8 +1705,9 @@ def _parse_ge_decorations(
             col_end = span.col_start + c1
             color = str(spec.get("color", "black"))
             width = float(spec.get("line_width_pt", 0.4))
+            pad = float(spec.get("padding_pt", 0.0))
             codebefore.append(
-                rf"\tikz \node [draw={color}, line width={width}pt, inner sep=0pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
+                rf"\tikz \node [draw={color}, line width={width}pt, inner sep={pad}pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
             )
     return dec_specs, sub_locs, callouts, codebefore
 
@@ -1731,6 +1734,7 @@ def ge_decorations_help() -> str:
         "- outline: True (draw rectangle around selected submatrix).\n"
         "- color: stroke color.\n"
         "- line_width_pt: float.\n"
+        "- padding_pt: float (expands the box).\n"
         "\n"
         "Lines\n"
         "- hlines / vlines: int | [int,...] | True | 'submatrix' | 'bounds' | 'all'.\n"
