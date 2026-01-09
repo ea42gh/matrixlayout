@@ -15,6 +15,7 @@ from .ge import (
     resolve_ge_grid_name,
     ge_grid_line_specs,
     ge_grid_highlight_specs,
+    ge_decorations_help,
 )
 from .qr import qr_grid_tex, qr_grid_svg, resolve_qr_grid_name
 from .specs import GEGridSpec, QRGridSpec
@@ -57,6 +58,7 @@ __all__ = [
     "ge_grid_svg",
     "ge_grid_line_specs",
     "ge_grid_highlight_specs",
+    "ge_decorations_help",
     "resolve_ge_grid_name",
     "qr_grid_tex",
     "qr_grid_svg",

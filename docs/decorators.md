@@ -38,10 +38,10 @@ entry styles and backgrounds.
 | Action | Key(s) | Notes |
 | --- | --- | --- |
 | Background | `background` | Uses selectors; emits `codebefore`. |
-| Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses start+end; `"all"` uses every interior line. |
-| Outline | `outline` | Draws a rectangle around the selected submatrix. |
+| Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. |
+| Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`. |
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
-| Callout | `label` | Optional `side`, `angle`, `length`, `anchor`. |
+| Callout | `label` | Optional `side`, `angle`, `length`, `anchor`, `color`. |
 
 Selection keys apply to `background`, `box`, `color`, and `bold`. Line and label
 specs ignore `rows`/`cols`/`submatrix`.

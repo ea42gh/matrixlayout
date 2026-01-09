@@ -1373,6 +1373,36 @@ def ge_grid_line_specs(
     return out
 
 
+def _normalize_range(val: Any, max_len: int) -> Tuple[int, int]:
+    if max_len <= 0:
+        return (0, -1)
+    if val is None:
+        return (0, max_len - 1)
+    if isinstance(val, slice):
+        start = 0 if val.start is None else int(val.start)
+        stop = max_len if val.stop is None else int(val.stop)
+        return (max(0, start), min(max_len - 1, stop - 1))
+    if isinstance(val, str):
+        txt = val.strip()
+        if ":" in txt:
+            left, right = txt.split(":", 1)
+            start = int(left) if left.strip() else 0
+            end = int(right) if right.strip() else (max_len - 1)
+            lo, hi = (start, end) if start <= end else (end, start)
+            return (max(0, lo), min(max_len - 1, hi))
+    if isinstance(val, (tuple, list)) and len(val) == 2 and all(isinstance(x, int) for x in val):
+        a, b = int(val[0]), int(val[1])
+        lo, hi = (a, b) if a <= b else (b, a)
+        return (max(0, lo), min(max_len - 1, hi))
+    if isinstance(val, (list, tuple, set)):
+        items = [int(x) for x in val]
+        if not items:
+            return (0, -1)
+        lo, hi = min(items), max(items)
+        return (max(0, lo), min(max_len - 1, hi))
+    raise ValueError("rows/cols must be None, a (start,end) pair, or a list of indices")
+
+
 def ge_grid_highlight_specs(
     matrices: Sequence[Sequence[Any]],
     *,
@@ -1383,35 +1413,6 @@ def ge_grid_highlight_specs(
     block_valign: Optional[str] = None,
 ) -> List[str]:
     """Return ``codebefore`` entries that highlight rectangular sub-blocks."""
-
-    def _normalize_range(val: Any, max_len: int) -> Tuple[int, int]:
-        if max_len <= 0:
-            return (0, -1)
-        if val is None:
-            return (0, max_len - 1)
-        if isinstance(val, slice):
-            start = 0 if val.start is None else int(val.start)
-            stop = max_len if val.stop is None else int(val.stop)
-            return (max(0, start), min(max_len - 1, stop - 1))
-        if isinstance(val, str):
-            txt = val.strip()
-            if ":" in txt:
-                left, right = txt.split(":", 1)
-                start = int(left) if left.strip() else 0
-                end = int(right) if right.strip() else (max_len - 1)
-                lo, hi = (start, end) if start <= end else (end, start)
-                return (max(0, lo), min(max_len - 1, hi))
-        if isinstance(val, (tuple, list)) and len(val) == 2 and all(isinstance(x, int) for x in val):
-            a, b = int(val[0]), int(val[1])
-            lo, hi = (a, b) if a <= b else (b, a)
-            return (max(0, lo), min(max_len - 1, hi))
-        if isinstance(val, (list, tuple, set)):
-            items = [int(x) for x in val]
-            if not items:
-                return (0, -1)
-            lo, hi = min(items), max(items)
-            return (max(0, lo), min(max_len - 1, hi))
-        raise ValueError("rows/cols must be None, a (start,end) pair, or a list of indices")
 
     def _coerce_block(obj: Any) -> Dict[str, Any]:
         if isinstance(obj, dict):
@@ -1706,6 +1707,16 @@ def _parse_ge_decorations(
                 rf"\tikz \node [draw={color}, line width={width}pt, inner sep=0pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
             )
     return dec_specs, sub_locs, callouts, codebefore
+
+
+def ge_decorations_help() -> str:
+    """Return a concise help string for the `decorations` dict schema."""
+    return (
+        "decorations: list of dicts keyed by grid=(row,col).\n"
+        "Selectors: entries=[(r,c)], rows/cols=(r0,r1) or 'r0:r1' or slice or list or None, submatrix=(rows,cols).\n"
+        "Actions: background=<color>, outline=True, hlines/vlines=int|list|True|'submatrix'|'bounds'|'all',\n"
+        "box=True|<color>, color=<text color>, bold=True, label=<latex> with side/angle/length/anchor.\n"
+    )
 
 
 def resolve_ge_grid_name(
