@@ -750,6 +750,29 @@ def _as_2d_list(M: Any) -> Tuple[List[List[Any]], int, int]:
     return rows2, nrows, ncols
 
 
+def _normalize_grid_input(matrices: Any) -> List[List[Any]]:
+    """Coerce common inputs into a grid-of-matrices list."""
+    if matrices is None:
+        return []
+    if not isinstance(matrices, (list, tuple)):
+        return [[matrices]]
+    if not matrices:
+        return []
+    if not isinstance(matrices[0], (list, tuple)):
+        return [list(matrices)]
+
+    # Heuristic: a 2D list of scalars is a single matrix, not a grid.
+    def _is_scalar_like(x: Any) -> bool:
+        if isinstance(x, (list, tuple)):
+            return False
+        return not hasattr(x, "shape") and not hasattr(x, "tolist")
+
+    if all(isinstance(r, (list, tuple)) for r in matrices):
+        if all(all(_is_scalar_like(v) for v in r) for r in matrices):
+            return [[matrices]]
+    return [list(r) for r in matrices]
+
+
 def _block_pad_left(width: int, actual: int, block_align: Optional[str]) -> int:
     if actual <= 0 or width <= actual:
         return 0
@@ -895,7 +918,7 @@ def ge_grid_tex(
         if grid_spec.strict is not None:
             strict = bool(grid_spec.strict)
 
-    grid: List[List[Any]] = [list(r) for r in (matrices or [])]
+    grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
 
@@ -948,6 +971,8 @@ def ge_grid_tex(
             kwargs["callouts"] = list(kwargs.get("callouts", []) or []) + extra_callouts
         if extra_codebefore:
             kwargs["codebefore"] = list(kwargs.get("codebefore", []) or []) + extra_codebefore
+            if "create_medium_nodes" not in kwargs:
+                kwargs["create_medium_nodes"] = True
 
     legacy_format = bool(kwargs.pop("legacy_format", False))
 
@@ -1191,7 +1216,7 @@ def ge_grid_submatrix_spans(
     """
 
     # Keep this logic intentionally aligned with ge_grid_tex.
-    grid: List[List[Any]] = [list(r) for r in (matrices or [])]
+    grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
 
@@ -1482,9 +1507,15 @@ def _parse_ge_decorations(
         if not isinstance(item, dict):
             raise ValueError("decorations must be dict specs")
         grid = item.get("grid")
-        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
-            raise ValueError("decorations require grid=(row,col)")
-        key = (int(grid[0]), int(grid[1]))
+        if grid is None:
+            if len(matrices) == 1 and len(matrices[0]) == 1:
+                key = (0, 0)
+            else:
+                raise ValueError("decorations require grid=(row,col)")
+        else:
+            if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                raise ValueError("decorations require grid=(row,col)")
+            key = (int(grid[0]), int(grid[1]))
 
         if "label" in item:
             label = str(item["label"])

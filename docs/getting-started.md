@@ -15,6 +15,12 @@ matrices = [[None, sym.Matrix([[1, 2], [3, 4]])]]
 svg = ge_grid_svg(matrices=matrices)
 ```
 
+You can also pass a single matrix directly (it is wrapped as `[[A]]`):
+
+```python
+svg = ge_grid_svg(matrices=sym.Matrix([[1, 2], [3, 4]]))
+```
+
 To inspect the TeX instead of rendering SVG:
 
 ```python

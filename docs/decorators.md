@@ -18,6 +18,8 @@ decorators = [
 ## Unified decorations (recommended)
 
 Use `decorations` for one-line specs. Each dict must include `grid=(row,col)`.
+If the grid is a single matrix, `grid` defaults to `(0,0)`.
+Background highlights enable `create_medium_nodes` automatically.
 
 ### Selector keys (shared)
 
