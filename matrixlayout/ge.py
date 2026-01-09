@@ -24,7 +24,7 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str
+from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -750,6 +750,32 @@ def _as_2d_list(M: Any) -> Tuple[List[List[Any]], int, int]:
     return rows2, nrows, ncols
 
 
+def _block_pad_left(width: int, actual: int, block_align: Optional[str]) -> int:
+    if actual <= 0 or width <= actual:
+        return 0
+    mode = (block_align or "auto").strip().lower()
+    if mode in ("left", "l", "none"):
+        return 0
+    if mode in ("center", "centre", "c"):
+        return (width - actual) // 2
+    if mode in ("right", "r", "auto"):
+        return width - actual
+    raise ValueError(f"Invalid block_align: {block_align!r} (expected left/right/center/auto)")
+
+
+def _block_pad_top(height: int, actual: int, block_valign: Optional[str]) -> int:
+    if actual <= 0 or height <= actual:
+        return 0
+    mode = (block_valign or "bottom").strip().lower()
+    if mode in ("top", "t", "none"):
+        return 0
+    if mode in ("center", "centre", "c"):
+        return (height - actual) // 2
+    if mode in ("bottom", "b", "auto"):
+        return height - actual
+    raise ValueError(f"Invalid block_valign: {block_valign!r} (expected top/bottom/center/auto)")
+
+
 def _matrix_body_tex(M: Any, *, formatter: LatexFormatter) -> str:
     """Format a matrix-like object into a TeX body: ``a & b \\ c & d``."""
     rows, nrows, ncols = _as_2d_list(M)
@@ -795,9 +821,12 @@ def ge_grid_tex(
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
     decorators: Optional[Sequence[Any]] = None,
+    decorations: Optional[Sequence[Any]] = None,
     strict: bool = False,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
@@ -826,6 +855,8 @@ def ge_grid_tex(
         Scalar formatter for TeX.
     outer_hspace_mm:
         Horizontal spacing between adjacent matrix blocks.
+    decorations:
+        One-line dicts for backgrounds, separators, callouts, and entry styles.
 
     Returns
     -------
@@ -849,6 +880,8 @@ def ge_grid_tex(
             formatter = grid_spec.formatter
         outer_hspace_mm = int(grid_spec.outer_hspace_mm)
         cell_align = str(grid_spec.cell_align)
+        block_align = grid_spec.block_align if grid_spec.block_align is not None else block_align
+        block_valign = grid_spec.block_valign if grid_spec.block_valign is not None else block_valign
         extension = str(grid_spec.extension or extension)
         fig_scale = grid_spec.fig_scale if grid_spec.fig_scale is not None else fig_scale
         if grid_spec.layout is not None:
@@ -857,6 +890,8 @@ def ge_grid_tex(
         kwargs["legacy_format"] = bool(grid_spec.legacy_format)
         if grid_spec.decorators is not None:
             decorators = grid_spec.decorators
+        if grid_spec.decorations is not None:
+            decorations = grid_spec.decorations
         if grid_spec.strict is not None:
             strict = bool(grid_spec.strict)
 
@@ -897,6 +932,22 @@ def ge_grid_tex(
 
     if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
         raise ValueError("Could not infer matrix block sizes from `matrices`.")
+
+    if decorations:
+        extra_decorators, extra_sub_locs, extra_callouts, extra_codebefore = _parse_ge_decorations(
+            grid,
+            decorations,
+            block_align=block_align,
+            block_valign=block_valign,
+        )
+        if extra_decorators:
+            decorators = list(decorators or []) + extra_decorators
+        if extra_sub_locs:
+            kwargs["submatrix_locs"] = list(kwargs.get("submatrix_locs", []) or []) + extra_sub_locs
+        if extra_callouts:
+            kwargs["callouts"] = list(kwargs.get("callouts", []) or []) + extra_callouts
+        if extra_codebefore:
+            kwargs["codebefore"] = list(kwargs.get("codebefore", []) or []) + extra_codebefore
 
     legacy_format = bool(kwargs.pop("legacy_format", False))
 
@@ -987,8 +1038,7 @@ def ge_grid_tex(
             entries = spec_item.get("entries")
             if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
                 raise ValueError("decorator grid position out of range")
-            nrows = block_heights[gM]
-            ncols = block_widths[gN]
+            _, nrows, ncols = cell_cache[gM][gN]
             sel = expand_entry_selectors(entries, nrows, ncols, filter_bounds=True)
             if strict and not sel:
                 raise ValueError("decorator selector did not match any entries")
@@ -996,6 +1046,22 @@ def ge_grid_tex(
 
     # Flatten all blocks into one scalar matrix representation.
     lines: List[str] = []
+    block_pad_left: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    block_pad_top: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+            W = block_widths[bc]
+            H = block_heights[br]
+            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
+            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
+
     for br in range(n_block_rows):
         H = block_heights[br]
         for i in range(H):
@@ -1006,28 +1072,30 @@ def ge_grid_tex(
                 if h == 0 or w == 0:
                     row_cells.extend([blank] * W)
                     continue
+                pad_top = block_pad_top[br][bc]
+                src_i = i - pad_top
+                if src_i < 0 or src_i >= h:
+                    row_cells.extend([blank] * W)
+                    continue
 
-                # Pad to the inferred block dimensions.
-                if i < len(rows):
-                    src = list(rows[i])
-                else:
-                    src = []
-                if len(src) < W:
-                    src.extend([None] * (W - len(src)))
-                out_cells: List[str] = []
+                src = list(rows[src_i]) if src_i < len(rows) else []
+                if len(src) < w:
+                    src.extend([None] * (w - len(src)))
+                pad_left = block_pad_left[br][bc]
+                out_cells: List[str] = [blank] * W
                 dec_specs = decorator_map.get((br, bc), [])
-                for j, v in enumerate(src[:W]):
+                for j, v in enumerate(src[:w]):
                     if not dec_specs:
-                        out_cells.append(_fmt(v))
+                        out_cells[pad_left + j] = _fmt(v)
                         continue
                     tex = _fmt(v)
                     for dec, sel, fmt in dec_specs:
-                        if (i, j) in sel and v is not None:
+                        if (src_i, j) in sel and v is not None:
                             base = fmt(v)
                             if not (isinstance(base, str) and base.strip()):
                                 base = blank
-                            tex = apply_decorator(dec, i, j, v, base)
-                    out_cells.append(tex)
+                            tex = apply_decorator(dec, src_i, j, v, base)
+                    out_cells[pad_left + j] = tex
                 row_cells.extend(out_cells)
             lines.append(" & ".join(row_cells) + r" \\")
 
@@ -1057,10 +1125,10 @@ def ge_grid_tex(
             _, h, w = cell_cache[br][bc]
             if h == 0 or w == 0:
                 continue
-            r0 = row_starts[br]
-            c0 = col_starts[bc]
-            r1 = r0 + block_heights[br] - 1
-            c1 = c0 + block_widths[bc] - 1
+            r0 = row_starts[br] + block_pad_top[br][bc]
+            c0 = col_starts[bc] + block_pad_left[br][bc]
+            r1 = r0 + h - 1
+            c1 = c0 + w - 1
             # Name matrices by their column role when in the legacy 2-column layout.
             if use_legacy_names:
                 base = "A"
@@ -1103,6 +1171,8 @@ def ge_grid_submatrix_spans(
     Nrhs: int = 0,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
     legacy_submatrix_names: bool = False,
 ) -> List[SubMatrixSpan]:
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid.
@@ -1160,6 +1230,22 @@ def ge_grid_submatrix_spans(
     # computation is intentionally mirrored.
     _ = (Nrhs, outer_hspace_mm, cell_align)  # for signature parity / future use
 
+    block_pad_left: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    block_pad_top: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+            W = block_widths[bc]
+            H = block_heights[br]
+            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
+            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
+
     row_starts: List[int] = []
     acc = 1
     for H in block_heights:
@@ -1179,10 +1265,10 @@ def ge_grid_submatrix_spans(
             if h == 0 or w == 0:
                 continue
 
-            r0 = row_starts[br]
-            c0 = col_starts[bc]
-            r1 = r0 + block_heights[br] - 1
-            c1 = c0 + block_widths[bc] - 1
+            r0 = row_starts[br] + block_pad_top[br][bc]
+            c0 = col_starts[bc] + block_pad_left[br][bc]
+            r1 = r0 + h - 1
+            c1 = c0 + w - 1
 
             if legacy_submatrix_names:
                 name = f"A{br}x{bc}"
@@ -1206,6 +1292,289 @@ def ge_grid_submatrix_spans(
             )
 
     return spans
+
+
+def ge_grid_line_specs(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    targets: Sequence[Tuple[int, int]],
+    hlines: Optional[Union[int, Sequence[int]]] = None,
+    vlines: Optional[Union[int, Sequence[int]]] = None,
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
+) -> List[Tuple[str, str, str]]:
+    """Return ``submatrix_locs`` entries that draw hlines/vlines in targets."""
+
+    def _normalize_lines(val: Any, max_idx: int) -> List[int]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple, set)):
+            items = [int(x) for x in val]
+        else:
+            items = [int(val)]
+        out = [x for x in items if 1 <= x <= max_idx]
+        return sorted(set(out))
+
+    targets_set = {(int(r), int(c)) for r, c in targets}
+    spans = ge_grid_submatrix_spans(
+        matrices,
+        block_align=block_align,
+        block_valign=block_valign,
+    )
+    out: List[Tuple[str, str, str]] = []
+    for span in spans:
+        key = (span.block_row, span.block_col)
+        if key not in targets_set:
+            continue
+        rows, h, w = _as_2d_list(matrices[key[0]][key[1]])
+        if h == 0 or w == 0:
+            continue
+        hspec = _normalize_lines(hlines, h - 1)
+        vspec = _normalize_lines(vlines, w - 1)
+        if not hspec and not vspec:
+            continue
+        opts: List[str] = ["delimiters/color=."]
+        if hspec:
+            if len(hspec) == 1:
+                opts.append(f"hlines={hspec[0]}")
+            else:
+                opts.append("hlines={" + ",".join(str(x) for x in hspec) + "}")
+        if vspec:
+            if len(vspec) == 1:
+                opts.append(f"vlines={vspec[0]}")
+            else:
+                opts.append("vlines={" + ",".join(str(x) for x in vspec) + "}")
+        out.append((",".join(opts), span.start_token, span.end_token))
+    return out
+
+
+def ge_grid_highlight_specs(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    blocks: Sequence[Any],
+    color: str = "yellow!25",
+    padding_pt: float = 1.0,
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
+) -> List[str]:
+    """Return ``codebefore`` entries that highlight rectangular sub-blocks."""
+
+    def _normalize_range(val: Any, max_len: int) -> Tuple[int, int]:
+        if max_len <= 0:
+            return (0, -1)
+        if val is None:
+            return (0, max_len - 1)
+        if isinstance(val, slice):
+            start = 0 if val.start is None else int(val.start)
+            stop = max_len if val.stop is None else int(val.stop)
+            return (max(0, start), min(max_len - 1, stop - 1))
+        if isinstance(val, str):
+            txt = val.strip()
+            if ":" in txt:
+                left, right = txt.split(":", 1)
+                start = int(left) if left.strip() else 0
+                end = int(right) if right.strip() else (max_len - 1)
+                lo, hi = (start, end) if start <= end else (end, start)
+                return (max(0, lo), min(max_len - 1, hi))
+        if isinstance(val, (tuple, list)) and len(val) == 2 and all(isinstance(x, int) for x in val):
+            a, b = int(val[0]), int(val[1])
+            lo, hi = (a, b) if a <= b else (b, a)
+            return (max(0, lo), min(max_len - 1, hi))
+        if isinstance(val, (list, tuple, set)):
+            items = [int(x) for x in val]
+            if not items:
+                return (0, -1)
+            lo, hi = min(items), max(items)
+            return (max(0, lo), min(max_len - 1, hi))
+        raise ValueError("rows/cols must be None, a (start,end) pair, or a list of indices")
+
+    def _coerce_block(obj: Any) -> Dict[str, Any]:
+        if isinstance(obj, dict):
+            return dict(obj)
+        if isinstance(obj, (list, tuple)) and len(obj) >= 1:
+            d: Dict[str, Any] = {"grid": obj[0]}
+            if len(obj) > 1:
+                d["rows"] = obj[1]
+            if len(obj) > 2:
+                d["cols"] = obj[2]
+            if len(obj) > 3:
+                d["color"] = obj[3]
+            return d
+        raise ValueError("block highlight must be a dict or a (grid, rows, cols) tuple")
+
+    spans = ge_grid_submatrix_spans(
+        matrices,
+        block_align=block_align,
+        block_valign=block_valign,
+    )
+    span_map = {(s.block_row, s.block_col): s for s in spans}
+    out: List[str] = []
+    for spec in blocks:
+        item = _coerce_block(spec)
+        grid = item.get("grid")
+        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+            raise ValueError("highlight spec requires grid=(row,col)")
+        key = (int(grid[0]), int(grid[1]))
+        if key not in span_map:
+            continue
+        mat = matrices[key[0]][key[1]]
+        rows, h, w = _as_2d_list(mat)
+        if h == 0 or w == 0:
+            continue
+        r0, r1 = _normalize_range(item.get("rows"), h)
+        c0, c1 = _normalize_range(item.get("cols"), w)
+        if r1 < r0 or c1 < c0:
+            continue
+        span = span_map[key]
+        row_start = span.row_start + r0
+        row_end = span.row_start + r1
+        col_start = span.col_start + c0
+        col_end = span.col_start + c1
+        fill = str(item.get("color", color))
+        pad = float(item.get("padding_pt", padding_pt))
+        out.append(
+            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
+        )
+    return out
+
+
+def _normalize_index_list(val: Any, max_len: int) -> List[int]:
+    if max_len <= 0:
+        return []
+    if val is None:
+        return list(range(max_len))
+    if isinstance(val, slice):
+        start = 0 if val.start is None else int(val.start)
+        stop = max_len if val.stop is None else int(val.stop)
+        return [i for i in range(start, min(stop, max_len)) if i >= 0]
+    if isinstance(val, str):
+        txt = val.strip()
+        if ":" in txt:
+            left, right = txt.split(":", 1)
+            start = int(left) if left.strip() else 0
+            end = int(right) if right.strip() else (max_len - 1)
+            lo, hi = (start, end) if start <= end else (end, start)
+            return [i for i in range(max(0, lo), min(max_len - 1, hi) + 1)]
+    if isinstance(val, (tuple, list)) and len(val) == 2 and all(isinstance(x, int) for x in val):
+        a, b = int(val[0]), int(val[1])
+        lo, hi = (a, b) if a <= b else (b, a)
+        return [i for i in range(max(0, lo), min(max_len - 1, hi) + 1)]
+    if isinstance(val, (list, tuple, set)):
+        return sorted({int(x) for x in val if 0 <= int(x) < max_len})
+    if isinstance(val, int):
+        return [val] if 0 <= val < max_len else []
+    raise ValueError("rows/cols must be None, a range, a list, or a slice")
+
+
+def _parse_ge_decorations(
+    matrices: Sequence[Sequence[Any]],
+    decorations: Sequence[Any],
+    *,
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], List[Tuple[str, str, str]], List[Dict[str, Any]], List[str]]:
+    dec_specs: List[Dict[str, Any]] = []
+    sub_locs: List[Tuple[str, str, str]] = []
+    callouts: List[Dict[str, Any]] = []
+    highlights: List[Dict[str, Any]] = []
+
+    for item in decorations or []:
+        if not isinstance(item, dict):
+            raise ValueError("decorations must be dict specs")
+        grid = item.get("grid")
+        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+            raise ValueError("decorations require grid=(row,col)")
+        key = (int(grid[0]), int(grid[1]))
+
+        if "label" in item:
+            label = str(item["label"])
+            callout: Dict[str, Any] = {"grid_pos": key, "label": label}
+            for src, dst in [
+                ("side", "side"),
+                ("anchor", "anchor"),
+                ("angle", "angle_deg"),
+                ("angle_deg", "angle_deg"),
+                ("length", "length_mm"),
+                ("length_mm", "length_mm"),
+                ("color", "color"),
+                ("line_width_pt", "line_width_pt"),
+                ("tip", "tip"),
+                ("label_shift_y_mm", "label_shift_y_mm"),
+                ("label_shift_x_mm", "label_shift_x_mm"),
+            ]:
+                if src in item:
+                    callout[dst] = item[src]
+            callouts.append(callout)
+            continue
+
+        if "hlines" in item or "vlines" in item:
+            sub_locs.extend(
+                ge_grid_line_specs(
+                    matrices,
+                    targets=[key],
+                    hlines=item.get("hlines"),
+                    vlines=item.get("vlines"),
+                    block_align=block_align,
+                    block_valign=block_valign,
+                )
+            )
+            continue
+
+        if "background" in item:
+            spec = {"grid": key}
+            if item.get("background") is not None:
+                spec["color"] = item.get("background")
+            if "padding_pt" in item:
+                spec["padding_pt"] = item["padding_pt"]
+            if "submatrix" in item and item["submatrix"] is not None:
+                sub = item["submatrix"]
+                if isinstance(sub, (tuple, list)) and len(sub) == 2:
+                    spec["rows"] = sub[0]
+                    spec["cols"] = sub[1]
+            if "rows" in item:
+                spec["rows"] = item["rows"]
+            if "cols" in item:
+                spec["cols"] = item["cols"]
+            highlights.append(spec)
+            continue
+
+        decorator: Optional[Callable[..., str]] = None
+        if "box" in item:
+            box = item["box"]
+            if box is True:
+                decorator = make_decorator(boxed=True)
+            elif isinstance(box, str):
+                decorator = make_decorator(box_color=box)
+        if decorator is None and "color" in item:
+            decorator = make_decorator(text_color=str(item["color"]))
+        if decorator is None and item.get("bold"):
+            decorator = make_decorator(bf=True)
+        if decorator is None:
+            continue
+
+        entries = item.get("entries")
+        if entries is None:
+            mat = matrices[key[0]][key[1]]
+            _, h, w = _as_2d_list(mat)
+            rows = item.get("rows")
+            cols = item.get("cols")
+            if "submatrix" in item and item["submatrix"] is not None:
+                sub = item["submatrix"]
+                if isinstance(sub, (tuple, list)) and len(sub) == 2:
+                    rows = sub[0]
+                    cols = sub[1]
+            row_idx = _normalize_index_list(rows, h)
+            col_idx = _normalize_index_list(cols, w)
+            entries = [(r, c) for r in row_idx for c in col_idx]
+        dec_specs.append({"grid": key, "entries": entries, "decorator": decorator})
+
+    codebefore = ge_grid_highlight_specs(
+        matrices,
+        blocks=highlights,
+        block_align=block_align,
+        block_valign=block_valign,
+    )
+    return dec_specs, sub_locs, callouts, codebefore
 
 
 def resolve_ge_grid_name(
@@ -1236,9 +1605,12 @@ def ge_grid_bundle(
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
+    decorations: Optional[Sequence[Any]] = None,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> GEGridBundle:
@@ -1258,9 +1630,12 @@ def ge_grid_bundle(
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
+        block_align=block_align,
+        block_valign=block_valign,
         extension=extension,
         fig_scale=fig_scale,
         layout=layout,
+        decorations=decorations,
         spec=spec,
         **kwargs,
     )
@@ -1270,6 +1645,8 @@ def ge_grid_bundle(
         Nrhs = use_spec.Nrhs
         outer_hspace_mm = int(use_spec.outer_hspace_mm)
         cell_align = str(use_spec.cell_align)
+        block_align = use_spec.block_align if use_spec.block_align is not None else block_align
+        block_valign = use_spec.block_valign if use_spec.block_valign is not None else block_valign
         legacy_submatrix_names = bool(use_spec.legacy_submatrix_names)
     else:
         legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
@@ -1278,6 +1655,8 @@ def ge_grid_bundle(
         Nrhs=Nrhs,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
+        block_align=block_align,
+        block_valign=block_valign,
         legacy_submatrix_names=legacy_submatrix_names,
     )
     return GEGridBundle(tex=tex, submatrix_spans=spans)
@@ -1289,11 +1668,14 @@ def ge_grid_svg(
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    decorations: Optional[Sequence[Any]] = None,
     strict: bool = False,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     output_stem: str = "output",
@@ -1325,8 +1707,11 @@ def ge_grid_svg(
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
+        block_align=block_align,
+        block_valign=block_valign,
         extension=extension,
         fig_scale=fig_scale,
+        decorations=decorations,
         strict=strict,
         spec=spec,
         **kwargs,

@@ -175,12 +175,15 @@ class GEGridSpec:
     formatter: Optional[Any] = None
     outer_hspace_mm: int = 6
     cell_align: str = "r"
+    block_align: Optional[str] = None
+    block_valign: Optional[str] = None
     extension: str = ""
     fig_scale: Optional[Any] = None
     layout: Optional[Any] = None
     legacy_submatrix_names: bool = False
     legacy_format: bool = False
     decorators: Optional[Sequence[Any]] = None
+    decorations: Optional[Sequence[Any]] = None
     strict: Optional[bool] = None
 
     @staticmethod

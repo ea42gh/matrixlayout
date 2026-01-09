@@ -1,0 +1,86 @@
+% -----------------------------------------------------------------------------
+% GE template (layout-only)
+% Target: current nicematrix (CodeBefore/Body/CodeAfter + \SubMatrix syntax)
+% -----------------------------------------------------------------------------
+\documentclass[notitlepage]{article}
+\pagestyle{empty}
+% NOTE: Large page + generous margins prevent TikZ callouts (e.g., delimiter arrows/labels)
+% from being clipped at negative coordinates before tight-cropping.
+\usepackage[left=50mm,right=50mm,top=50mm,bottom=50mm,paperwidth=90in,paperheight=90in]{geometry}
+
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage[table,svgnames]{xcolor}
+
+\usepackage{nicematrix,tikz}
+\usetikzlibrary{calc,fit,decorations.markings,arrows.meta}
+
+% Convenience shorthands for user-supplied TikZ.
+% Many notebook users naturally write `node[west]` (meaning anchor=west). TikZ
+% does not define these keys by default, so we provide them as styles.
+\tikzset{
+  west/.style={anchor=west},
+  east/.style={anchor=east},
+  north/.style={anchor=north},
+  south/.style={anchor=south},
+  northwest/.style={anchor=north west},
+  northeast/.style={anchor=north east},
+  southwest/.style={anchor=south west},
+  southeast/.style={anchor=south east},
+}
+
+% nicematrix provides \NotEmpty in modern releases. We use it in generated
+% matrices to ensure cell nodes exist without introducing visible spacing.
+% Provide a harmless fallback for older nicematrix versions.
+\providecommand\NotEmpty{\kern0pt}
+
+
+
+\newcommand*{\colorboxed}{}
+\def\colorboxed#1#{%
+  \colorboxedAux{#1}%
+}
+\newcommand*{\colorboxedAux}[3]{%
+  \begingroup
+    \colorlet{cb@saved}{.}%
+    \color#1{#2}%
+    \boxed{%
+      \color{cb@saved}%
+      #3%
+    }%
+  \endgroup
+}
+
+
+
+\begin{document}\begin{minipage}{\textwidth}%
+%
+%
+%
+$% begin math
+\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr}% begin NiceArray
+\CodeBefore[create-cell-nodes]%
+\Body%
+\NotEmpty & \NotEmpty & 1 & 2 \\
+\NotEmpty & \NotEmpty & 3 & 4 \\
+1 & 0 & \color{black}{\boxed{1}} & 2 \\
+-3 & 1 & 0 & -2 \\%%
+%
+\CodeAfter%
+% ----- \SubMatrix delimiters%%%%
+\SubMatrix({1-3}{2-4})[name=A0x1]%%%%
+\SubMatrix({3-1}{4-2})[name=A1x0]%%%%
+\SubMatrix({3-3}{4-4})[name=A1x1]%%
+% ----- Labels / names%%
+% ----- TikZ decorations%%
+\begin{tikzpicture}%
+\begin{scope}[every node/.style = draw]%%
+\end{scope}%%%
+\draw[draw=blue, text=blue, line width=0.35pt, -{Stealth[length=2.4mm]}] ($ (A1x1-right.north) + (395.000000:8.0mm) $) node[anchor=west] {$ $A_1$ $} -- (A1x1-right.north);%%
+\end{tikzpicture}%%
+%
+\end{NiceArray}% end NiceArray
+$% end math
+%
+%
+\end{minipage}\end{document}

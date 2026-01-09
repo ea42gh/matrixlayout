@@ -15,6 +15,63 @@ decorators = [
 ]
 ```
 
+## Unified decorations (recommended)
+
+For one-line specs without nicematrix details, use `decorations` instead of
+`decorators`. Each item is a dict keyed by `grid=(row,col)`.
+
+Row/col selectors accept ranges, lists, slices, or `None`:
+
+- `(0, 2)` inclusive
+- `"0:2"` inclusive
+- `slice(0, 3)` (stop exclusive)
+- `[0, 2]`
+- `None` (all)
+
+The same `rows`/`cols`/`submatrix` selectors work for both entry styling
+(`box`, `color`, `bold`) and block highlights (`background`). Use `entries`
+to override selectors with explicit coordinates.
+
+Background highlight:
+
+```python
+{"grid": (1, 0), "submatrix": ("0:1", "2:3"), "background": "yellow!25"}
+```
+
+Separator lines:
+
+```python
+{"grid": (0, 1), "hlines": 2}
+{"grid": (0, 1), "vlines": [1, 3]}
+```
+
+Entry emphasis:
+
+```python
+{"grid": (2, 1), "entries": [(0, 0)], "box": True}
+{"grid": (2, 1), "entries": [(0, 0)], "color": "red"}
+{"grid": (2, 1), "entries": [(0, 0)], "bold": True}
+```
+
+Callout labels:
+
+```python
+{"grid": (1, 0), "label": r"\\mathbf{B}", "side": "left", "angle": -35, "length": 8}
+```
+
+All-in-one list:
+
+```python
+decorations = [
+    {"grid": (0, 1), "submatrix": (None, "2:3"), "background": "yellow!25"},
+    {"grid": (2, 1), "entries": [(0, 0)], "box": True},
+    {"grid": (1, 0), "hlines": 2},
+    {"grid": (0, 1), "vlines": 2},
+    {"grid": (0, 1), "label": r"\\mathbf{C}", "side": "right", "angle": -35, "length": 8},
+]
+svg = ge_grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
+```
+
 ## Selectors
 
 - `sel_entry(i, j)`

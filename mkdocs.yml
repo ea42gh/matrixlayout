@@ -24,3 +24,4 @@ nav:
       - QR layout: notebooks/02_qr_layout.ipynb
       - Eigen/SVD table: notebooks/03_eig_svd_table.ipynb
       - Decorators gallery: notebooks/04_decorators_gallery.ipynb
+      - GE stack overview: notebooks/05_ge_stack_overview.ipynb

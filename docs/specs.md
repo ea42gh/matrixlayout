@@ -9,6 +9,9 @@ dictionaries passed to `*_tex` or `*_svg` helpers.
 | --- | --- | --- | --- |
 | GE | `matrices` | list | Grid of matrices (rows of blocks). |
 | GE | `Nrhs` | int | RHS column count for augmented matrices. |
+| GE | `block_align` | str | Align narrower blocks within a column (`left/right/center/auto`). |
+| GE | `block_valign` | str | Align shorter blocks within a row (`top/bottom/center/auto`). |
+| GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, callouts, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
 | GE | `callouts` | list | Labels attached to submatrix names. |
 | QR | `matrices` | list | Grid of matrices (rows of blocks). |
@@ -27,6 +30,13 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 
 - `matrices`: grid of matrices (list of rows).
 - `Nrhs`: number of RHS columns for augmented matrices.
+- `block_align`: align narrower blocks within a block column (`left`, `right`, `center`, `auto`).
+- `block_valign`: align shorter blocks within a block row (`top`, `bottom`, `center`, `auto`).
+- `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
+
+The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
+and one of: `background`, `hlines`/`vlines`, `label`, or entry styling (`box`, `color`, `bold`).
+Row/col selection supports ranges, lists, or slices via `rows`/`cols` or `submatrix`.
 - `preamble`, `extension`, `nice_options`: LaTeX preamble and nicematrix options.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.
@@ -39,6 +49,15 @@ spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
     "Nrhs": 0,
     "pivot_locs": [("(1-1)(1-1)", "draw=red")],
+}
+```
+
+Block alignment example (right-align a narrower block within its column):
+
+```python
+spec = {
+    "matrices": [[None, [[1, 2, 3]]], [[[4, 5]], [[6, 7, 8]]]],
+    "block_align": "right",
 }
 ```
 
