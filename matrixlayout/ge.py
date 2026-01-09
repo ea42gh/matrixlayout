@@ -767,6 +767,16 @@ def _normalize_grid_input(matrices: Any) -> List[List[Any]]:
             return False
         return not hasattr(x, "shape") and not hasattr(x, "tolist")
 
+    def _is_matrix_like_list(val: Any) -> bool:
+        if not isinstance(val, (list, tuple)) or not val:
+            return False
+        if not all(isinstance(r, (list, tuple)) for r in val):
+            return False
+        return all(all(_is_scalar_like(v) for v in r) for r in val)
+
+    if len(matrices) == 1 and _is_matrix_like_list(matrices[0]):
+        return [[matrices[0]]]
+
     if all(isinstance(r, (list, tuple)) for r in matrices):
         if all(all(_is_scalar_like(v) for v in r) for r in matrices):
             return [[matrices]]

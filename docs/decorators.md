@@ -38,7 +38,7 @@ entry styles and backgrounds.
 | Action | Key(s) | Notes |
 | --- | --- | --- |
 | Background | `background` | Uses selectors; emits `codebefore`. |
-| Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. |
+| Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. Use `outline` for outer borders. |
 | Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`, `padding_pt`. |
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
 | Callout | `label` | Optional `side`, `angle`, `length`, `anchor`, `color`. |
