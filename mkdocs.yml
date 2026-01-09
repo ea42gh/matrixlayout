@@ -11,9 +11,12 @@ nav:
   - Overview: overview.md
   - Getting Started: getting-started.md
   - Specs: specs.md
-  - Decorators: decorators.md
+  - Recipes: recipes.md
   - Rendering: rendering.md
+  - Pitfalls: pitfalls.md
   - Interop: interop.md
+  - End-to-End: end-to-end.md
+  - Glossary: glossary.md
   - API: api.md
   - Notebooks:
       - Overview: notebooks/README.md
