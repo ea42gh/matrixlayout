@@ -1565,14 +1565,12 @@ def _parse_ge_decorations(
                     if max_line <= 0:
                         return None
                     lines = set()
-                    if lo == 0:
-                        lines.add(1)
-                    else:
+                    if lo > 0:
                         lines.add(lo)
-                    if hi == axis_len - 1:
-                        lines.add(max_line)
-                    else:
+                    if hi < axis_len - 1:
                         lines.add(hi + 1)
+                    if not lines:
+                        return None
                     out = sorted(lines)
                     return out[0] if len(out) == 1 else out
                 if isinstance(val, str) and val.strip().lower() == "all":
