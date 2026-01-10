@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, 
 import re
 
 from .formatting import latexify, apply_decorator, expand_entry_selectors
-from .ge import ge_tex
+from .ge import ge_tex, ge_grid_text_specs
 from .render import render_svg
 from .specs import QRGridSpec
 
@@ -460,7 +460,7 @@ def qr_grid_tex(
     if formatter is None:
         formatter = latexify
 
-    layout = QRGridLayout(matrices, extra_rows=[1, 0, 0, 0])
+    layout = QRGridLayout(matrices)
     layout.array_format_string_list()
     layout.array_of_tex_entries(formatter=formatter)
 
@@ -527,13 +527,23 @@ def qr_grid_tex(
     except Exception:
         n_cols = 0
 
+    txt_with_locs: List[Tuple[str, str, str]] = []
     if n_cols > 0:
         red = _make_decorator(text_color=label_text_color, bf=True)
         red_rgt = _make_decorator(text_color=label_text_color, bf=True, move_right=True)
-        row_labels = [red(f"v_{i+1}") for i in range(n_cols)] + [red(f"w_{i+1}") for i in range(n_cols)]
-        col_labels = [red_rgt(f"w^t_{i+1}") for i in range(n_cols)]
-        layout.add_row_above(0, 2, row_labels, formatter=lambda a: a)
-        layout.add_col_left(1, 1, col_labels, formatter=lambda a: a)
+        v_labels = [rf"$ {red(f'v_{i+1}')} $" for i in range(n_cols)]
+        w_labels = [rf"$ {red(f'w_{i+1}')} $" for i in range(n_cols)]
+        wt_labels = [rf"$ {red_rgt(f'w^t_{i+1}')} $" for i in range(n_cols)]
+        txt_with_locs.extend(
+            ge_grid_text_specs(
+                layout.matrices,
+                [
+                    {"grid": (0, 2), "side": "above", "labels": v_labels, "offset_mm": 1.0},
+                    {"grid": (0, 3), "side": "above", "labels": w_labels, "offset_mm": 1.0},
+                    {"grid": (1, 1), "side": "left", "labels": wt_labels, "offset_mm": 1.0},
+                ],
+            )
+        )
 
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
@@ -551,6 +561,7 @@ def qr_grid_tex(
         nice_options=(nice_options or "").strip(),
         submatrix_locs=layout.locs,
         submatrix_names=layout.array_names,
+        txt_with_locs=txt_with_locs or None,
         fig_scale=fig_scale,
         landscape=landscape,
         create_cell_nodes=create_cell_nodes,

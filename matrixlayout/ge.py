@@ -18,7 +18,7 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union, Any, Dict, Callable, Iterable
+from typing import List, Optional, Sequence, Tuple, Union, Any, Dict, Callable, Iterable, Mapping
 import os
 import re
 
@@ -1765,6 +1765,74 @@ def ge_decorations_help() -> str:
         "- anchor: 'top'|'bottom'|'center'.\n"
         "- color: label/arrow color.\n"
     )
+
+
+def ge_grid_text_specs(
+    matrices: Sequence[Sequence[Any]],
+    targets: Sequence[Mapping[str, Any]],
+) -> List[Tuple[str, str, str]]:
+    """Return text placements around matrix blocks.
+
+    Each target supports:
+      - grid: (block_row, block_col)
+      - side: right/left/above/below
+      - labels: list of strings (rows for left/right; cols for above/below)
+      - offset_mm: numeric offset (xshift for left/right; yshift for above/below)
+      - style: extra TikZ node style (e.g. "text=blue,align=left")
+    """
+
+    spans = ge_grid_submatrix_spans(matrices)
+    span_map = {(s.block_row, s.block_col): s for s in spans}
+    out: List[Tuple[str, str, str]] = []
+
+    from collections.abc import Mapping as _Mapping
+
+    for item in targets:
+        if not isinstance(item, _Mapping):
+            continue
+        grid = item.get("grid")
+        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+            continue
+        key = (int(grid[0]), int(grid[1]))
+        span = span_map.get(key)
+        if span is None:
+            continue
+        labels = list(item.get("labels") or [])
+        side = str(item.get("side", "right")).strip().lower()
+        offset = float(item.get("offset_mm", 0.0))
+        style = str(item.get("style", "")).strip()
+
+        if side in ("right", "left"):
+            col = span.col_end if side == "right" else span.col_start
+            anchor = "west" if side == "right" else "east"
+            xshift = offset if side == "right" else -offset
+            for i, text in enumerate(labels):
+                row = span.row_start + i
+                coord = f"({row}-{col}.{anchor})"
+                opts = f"anchor={anchor}"
+                if xshift:
+                    opts += f", xshift={xshift}mm"
+                if style:
+                    opts += f", {style}"
+                out.append((coord, str(text), opts))
+            continue
+
+        if side in ("above", "below"):
+            row = span.row_start if side == "above" else span.row_end
+            anchor = "south" if side == "above" else "north"
+            yshift = offset if side == "above" else -offset
+            for j, text in enumerate(labels):
+                col = span.col_start + j
+                coord = f"({row}-{col}.{anchor})"
+                opts = f"anchor={anchor}"
+                if yshift:
+                    opts += f", yshift={yshift}mm"
+                if style:
+                    opts += f", {style}"
+                out.append((coord, str(text), opts))
+            continue
+
+    return out
 
 
 def resolve_ge_grid_name(
