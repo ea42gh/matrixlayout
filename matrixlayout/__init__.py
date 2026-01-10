@@ -16,6 +16,7 @@ from .ge import (
     ge_grid_line_specs,
     ge_grid_highlight_specs,
     ge_grid_text_specs,
+    ge_grid_label_layouts,
     ge_decorations_help,
 )
 from .qr import qr_grid_tex, qr_grid_svg, resolve_qr_grid_name
@@ -60,6 +61,7 @@ __all__ = [
     "ge_grid_line_specs",
     "ge_grid_highlight_specs",
     "ge_grid_text_specs",
+    "ge_grid_label_layouts",
     "ge_decorations_help",
     "resolve_ge_grid_name",
     "qr_grid_tex",

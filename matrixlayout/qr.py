@@ -11,8 +11,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable
 import re
 
-from .formatting import latexify, apply_decorator, expand_entry_selectors
-from .ge import ge_tex, ge_grid_text_specs
+from .formatting import latexify
+from .ge import ge_grid_tex
 from .render import render_svg
 from .specs import QRGridSpec
 
@@ -375,17 +375,58 @@ def _qr_known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tupl
 
 
 def _qr_default_name_specs() -> List[Any]:
-    dec = _make_decorator(bf=True, delim="$")
     return [
-        [(0, 2), "al", dec("A")],
-        [(0, 3), "ar", dec("W")],
-        [(1, 1), "al", dec(r"W^t")],
-        [(1, 2), "al", dec(r"W^t A")],
-        [(1, 3), "ar", dec(r"W^t W")],
-        [(2, 0), "al", dec(r"S = \left( W^t W \right)^{-\tfrac{1}{2}}")],
-        [(2, 1), "br", dec(r"Q^t = S W^t")],
-        [(2, 2), "br", dec(r"R = S W^t A")],
+        [(0, 2), "al", r"\mathbf{A}"],
+        [(0, 3), "ar", r"\mathbf{W}"],
+        [(1, 1), "al", r"\mathbf{W^T}"],
+        [(1, 2), "al", r"\mathbf{W^T A}"],
+        [(1, 3), "ar", r"\mathbf{W^T W}"],
+        [(2, 0), "al", r"\mathbf{S = \left( W^T W \right)^{-\tfrac{1}{2}}}"],
+        [(2, 1), "br", r"\mathbf{Q^T = S W^T}"],
+        [(2, 2), "br", r"\mathbf{R = S W^T A}"],
     ]
+
+
+def _qr_name_specs_to_callouts(
+    name_specs: Sequence[Any],
+    *,
+    color: str,
+    angle_deg: float = -35.0,
+    length_mm: float = 6.0,
+) -> List[Dict[str, Any]]:
+    side_map = {
+        "al": ("left", "top"),
+        "tl": ("left", "top"),
+        "bl": ("left", "bottom"),
+        "ar": ("right", "top"),
+        "tr": ("right", "top"),
+        "br": ("right", "bottom"),
+    }
+    out: List[Dict[str, Any]] = []
+    for spec in name_specs:
+        if not isinstance(spec, (list, tuple)) or len(spec) < 3:
+            continue
+        grid = spec[0]
+        if not (isinstance(grid, (list, tuple)) and len(grid) == 2):
+            continue
+        loc = str(spec[1]).strip().lower()
+        label_str = str(spec[2]).strip()
+        side, anchor = side_map.get(loc, ("right", "center"))
+        local_angle = angle_deg
+        if "Q^T" in label_str or "R =" in label_str:
+            local_angle = 40.0
+        out.append(
+            {
+                "grid_pos": (int(grid[0]), int(grid[1])),
+                "label": label_str,
+                "side": side,
+                "anchor": anchor,
+                "color": color,
+                "angle_deg": float(local_angle),
+                "length_mm": float(length_mm),
+            }
+        )
+    return out
 
 
 def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
@@ -460,113 +501,66 @@ def qr_grid_tex(
     if formatter is None:
         formatter = latexify
 
-    layout = QRGridLayout(matrices)
-    layout.array_format_string_list()
-    layout.array_of_tex_entries(formatter=formatter)
+    grid = _as_grid(matrices)
 
-    # Highlight known zeros.
+    # Known-zero decorators.
+    qr_decorators: List[Dict[str, Any]] = list(decorators or [])
     brown = _make_decorator(text_color=known_zero_color, bf=True)
-    for (gM, gN), entries in _qr_known_zero_entries(layout.matrices):
-        layout.decorate_tex_entries(gM, gN, brown, entries=entries)
-
-    if decorators:
-        def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
-            grid_pos = spec_item.get("grid")
-            if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
-                return (int(grid_pos[0]), int(grid_pos[1]))
-            name = spec_item.get("matrix_name") or spec_item.get("name") or spec_item.get("matrix")
-            if isinstance(name, (list, tuple)) and len(name) == 3:
-                return (int(name[1]), int(name[2]))
-            if isinstance(name, str):
-                resolved = resolve_qr_grid_name(name, matrices=layout.matrices)
-                if resolved is not None:
-                    return resolved
-            return None
-
-        for spec_item in decorators:
-            if not isinstance(spec_item, dict):
-                raise ValueError("decorators must be dict specs")
-            grid_pos = _resolve_grid(spec_item)
-            if grid_pos is None:
-                if strict:
-                    raise ValueError("decorator grid must be a (row,col) pair or resolvable name")
-                continue
-            gM, gN = grid_pos
-            dec = spec_item.get("decorator")
-            if not callable(dec):
-                raise ValueError("decorator must be callable")
-            fmt = spec_item.get("formatter", formatter)
-            try:
-                tl, _, shape = layout._top_left_bottom_right(gM, gN)
-            except Exception:
-                if strict:
-                    raise ValueError("decorator grid position out of range")
-                continue
-            if shape[0] <= 0 or shape[1] <= 0:
-                if strict:
-                    raise ValueError("decorator grid position out of range")
-                continue
-            entries = expand_entry_selectors(spec_item.get("entries"), shape[0], shape[1])
-            applied = 0
-            mat = layout.matrices[gM][gN]
-            for i, j in entries:
-                if i < 0 or j < 0 or i >= shape[0] or j >= shape[1]:
-                    continue
-                v = _mat_entry(mat, i, j)
-                tex = layout.a_tex[tl[0] + i][tl[1] + j]
-                base = tex if tex else str(fmt(v))
-                layout.a_tex[tl[0] + i][tl[1] + j] = apply_decorator(dec, i, j, v, base)
-                applied += 1
-            if strict and applied == 0:
-                raise ValueError("decorator selector did not match any entries")
-
-    # Add Gram–Schmidt labels.
-    n_cols = 0
-    try:
-        n_cols = _mat_shape(layout.matrices[0][2])[1]
-    except Exception:
-        n_cols = 0
-
-    txt_with_locs: List[Tuple[str, str, str]] = []
-    if n_cols > 0:
-        red = _make_decorator(text_color=label_text_color, bf=True)
-        red_rgt = _make_decorator(text_color=label_text_color, bf=True, move_right=True)
-        v_labels = [rf"$ {red(f'v_{i+1}')} $" for i in range(n_cols)]
-        w_labels = [rf"$ {red(f'w_{i+1}')} $" for i in range(n_cols)]
-        wt_labels = [rf"$ {red_rgt(f'w^t_{i+1}')} $" for i in range(n_cols)]
-        txt_with_locs.extend(
-            ge_grid_text_specs(
-                layout.matrices,
-                [
-                    {"grid": (0, 2), "side": "above", "labels": v_labels, "offset_mm": 3.0},
-                    {"grid": (0, 3), "side": "above", "labels": w_labels, "offset_mm": 3.0},
-                    {"grid": (1, 1), "side": "left", "labels": wt_labels, "offset_mm": 3.0},
-                ],
-            )
+    for (gM, gN), entries in _qr_known_zero_entries(grid):
+        qr_decorators.append(
+            {"grid": (gM, gN), "entries": entries, "decorator": brown},
         )
 
+    # Gram–Schmidt labels via label rows/cols.
+    label_rows: List[Dict[str, Any]] = []
+    label_cols: List[Dict[str, Any]] = []
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+    n_cols = 0
+    if n_block_rows > 0 and n_block_cols > 2:
+        try:
+            n_cols = _mat_shape(grid[0][2])[1]
+        except Exception:
+            n_cols = 0
+    if n_cols > 0:
+        v_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{v_{i+1}}}}}$" for i in range(n_cols)]
+        w_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{i+1}}}}}$" for i in range(n_cols)]
+        wt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
+        if n_block_rows > 0 and n_block_cols > 2:
+            label_rows.append({"grid": (0, 2), "side": "above", "rows": v_labels})
+        if n_block_rows > 0 and n_block_cols > 3:
+            label_rows.append({"grid": (0, 3), "side": "above", "rows": w_labels})
+        if n_block_rows > 1 and n_block_cols > 1:
+            label_cols.append(
+                {"grid": (1, 1), "side": "left", "cols": wt_labels}
+            )
+
+    callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
-        layout.nm_submatrix_locs("QR", color=label_color, name_specs=name_specs)
-    else:
-        layout.nm_submatrix_locs()
+        callouts = _qr_name_specs_to_callouts(
+            name_specs,
+            color=label_color,
+            angle_deg=-35.0,
+            length_mm=6.0,
+        )
 
-    layout.tex_repr(blockseps=r"\noalign{\vskip3mm} ")
-
-    return ge_tex(
-        mat_rep="\n".join(layout.tex_list),
-        mat_format=layout.format,
+    return ge_grid_tex(
+        matrices=grid,
+        formatter=formatter,
         preamble=preamble,
         extension=extension,
-        nice_options=(nice_options or "").strip(),
-        submatrix_locs=layout.locs,
-        submatrix_names=layout.array_names,
-        txt_with_locs=txt_with_locs or None,
+        nice_options=nice_options,
         fig_scale=fig_scale,
+        decorators=qr_decorators or None,
+        label_rows=label_rows or None,
+        label_cols=label_cols or None,
+        callouts=callouts,
         landscape=landscape,
         create_cell_nodes=create_cell_nodes,
         create_extra_nodes=create_extra_nodes,
         create_medium_nodes=create_medium_nodes,
+        strict=bool(strict),
     )
 
 

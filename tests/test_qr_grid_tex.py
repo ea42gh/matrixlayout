@@ -10,4 +10,5 @@ def test_qr_grid_tex_smoke():
     tex = qr_grid_tex(matrices=matrices, preamble="")
     assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
-    assert "QR0x2" in tex
+    assert "W^T W" in tex
+    assert "v_1" in tex
