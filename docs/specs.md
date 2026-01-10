@@ -11,6 +11,7 @@ dictionaries passed to `*_tex` or `*_svg` helpers.
 | GE | `Nrhs` | int | RHS column count for augmented matrices. |
 | GE | `block_align` | str | Align narrower blocks within a column (`left/right/center/auto`). |
 | GE | `block_valign` | str | Align shorter blocks within a row (`top/bottom/center/auto`). |
+| GE | `block_vspace_mm` | int | Vertical spacing between block rows (mm). |
 | GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, callouts, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
 | GE | `callouts` | list | Labels attached to submatrix names. |
@@ -30,6 +31,7 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 
 - `Nrhs=0`
 - `outer_hspace_mm=6`
+- `block_vspace_mm=1`
 - `cell_align="r"`
 - `block_align=None` (auto right-align within block columns)
 - `block_valign=None` (auto bottom-align within block rows)
@@ -42,10 +44,11 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 - `Nrhs`: number of RHS columns for augmented matrices.
 - `block_align`: align narrower blocks within a block column (`left`, `right`, `center`, `auto`).
 - `block_valign`: align shorter blocks within a block row (`top`, `bottom`, `center`, `auto`).
+- `block_vspace_mm`: vertical spacing between block rows (mm).
 - `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
-unless the grid has a single matrix, in which case `grid` defaults to `(0,0)`.
+unless the grid has a single matrix, in which case `grid` defaults to `(0,0)`,
 and one of: `background`, `hlines`/`vlines`, `label`, or entry styling (`box`, `color`, `bold`).
 Row/col selection supports ranges, lists, or slices via `rows`/`cols` or `submatrix`.
 

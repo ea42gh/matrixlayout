@@ -853,6 +853,7 @@ def ge_grid_tex(
     Nrhs: Any = 0,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
+    block_vspace_mm: int = 1,
     cell_align: str = "r",
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
@@ -912,6 +913,7 @@ def ge_grid_tex(
         if grid_spec.formatter is not None:
             formatter = grid_spec.formatter
         outer_hspace_mm = int(grid_spec.outer_hspace_mm)
+        block_vspace_mm = int(grid_spec.block_vspace_mm)
         cell_align = str(grid_spec.cell_align)
         block_align = grid_spec.block_align if grid_spec.block_align is not None else block_align
         block_valign = grid_spec.block_valign if grid_spec.block_valign is not None else block_valign
@@ -1133,6 +1135,8 @@ def ge_grid_tex(
                     out_cells[pad_left + j] = tex
                 row_cells.extend(out_cells)
             lines.append(" & ".join(row_cells) + r" \\")
+        if block_vspace_mm and br < n_block_rows - 1:
+            lines[-1] += rf"\noalign{{\vskip{int(block_vspace_mm)}mm}}"
 
     mat_rep = "\n".join(lines)
 
