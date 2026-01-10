@@ -26,6 +26,16 @@ dictionaries passed to `*_tex` or `*_svg` helpers.
 Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 `formatter=latexify`). See `matrixlayout.formatting` for decorator helpers.
 
+## Defaults (GE)
+
+- `Nrhs=0`
+- `outer_hspace_mm=6`
+- `cell_align="r"`
+- `block_align=None` (auto right-align within block columns)
+- `block_valign=None` (auto bottom-align within block rows)
+- `decorations=None`
+- `grid` defaults to `(0,0)` when the input is a single matrix
+
 ## GE specs
 
 - `matrices`: grid of matrices (list of rows).
@@ -35,6 +45,7 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 - `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
+unless the grid has a single matrix, in which case `grid` defaults to `(0,0)`.
 and one of: `background`, `hlines`/`vlines`, `label`, or entry styling (`box`, `color`, `bold`).
 Row/col selection supports ranges, lists, or slices via `rows`/`cols` or `submatrix`.
 

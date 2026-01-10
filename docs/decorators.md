@@ -33,6 +33,12 @@ Background highlights enable `create_medium_nodes` automatically.
 `entries` overrides `rows`/`cols`/`submatrix`. The same selectors work for
 entry styles and backgrounds.
 
+Selector semantics:
+
+- Ranges are inclusive: `"0:2"` selects rows 0, 1, 2.
+- `None` selects the full axis.
+- `"bounds"` uses interior boundary lines for the selected rows/cols.
+
 ### Action keys (choose one)
 
 | Action | Key(s) | Notes |
@@ -43,8 +49,9 @@ entry styles and backgrounds.
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
 | Callout | `label` | Optional `side`, `angle`, `length`, `anchor`, `color`. |
 
-Selection keys apply to `background`, `box`, `color`, and `bold`. Line and label
-specs ignore `rows`/`cols`/`submatrix`.
+Selection keys apply to `background`, `box`, `color`, and `bold`. Line specs use
+`rows`/`cols`/`submatrix` to decide where lines are placed. Label specs ignore
+row/col selectors.
 
 ### One-liners
 

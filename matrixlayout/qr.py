@@ -241,19 +241,19 @@ class QRGridLayout:
 
         if name_specs is not None:
             array_names: List[str] = []
-            ar = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north east) + (0.02,0.02) $) -- +(0.6cm,0.3cm)    node[COLOR, above right=-3pt]{TXT};".replace(
+            ar = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north east) + (0.02,0.02) $) -- +(40:0.6cm)    node[COLOR, above right=-3pt]{TXT};".replace(
                 "COLOR", color
             )
-            al = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north west) + (-0.02,0.02) $) -- +(-0.6cm,0.3cm) node[COLOR, above left=-3pt] {TXT};".replace(
+            al = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north west) + (-0.02,0.02) $) -- +(140:0.6cm) node[COLOR, above left=-3pt] {TXT};".replace(
                 "COLOR", color
             )
             a = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north) + (0,0) $) -- +(0cm,0.6cm) node[COLOR, above=1pt] {TXT};".replace(
                 "COLOR", color
             )
-            bl = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south west) + (-0.02,-0.02) $) -- +(-0.6cm,-0.3cm)  node[COLOR, below left=-3pt]{TXT};".replace(
+            bl = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south west) + (-0.02,-0.02) $) -- +(220:0.6cm)  node[COLOR, below left=-3pt]{TXT};".replace(
                 "COLOR", color
             )
-            br = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south east) + (0.02,-0.02) $) -- +(0.6cm,-0.3cm)   node[COLOR, below right=-3pt]{TXT};".replace(
+            br = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south east) + (0.02,-0.02) $) -- +(-40:0.6cm)   node[COLOR, below right=-3pt]{TXT};".replace(
                 "COLOR", color
             )
             b = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south) + (0,0) $) -- +(0cm,-0.6cm) node[COLOR, below=1pt] {TXT};".replace(
@@ -538,9 +538,9 @@ def qr_grid_tex(
             ge_grid_text_specs(
                 layout.matrices,
                 [
-                    {"grid": (0, 2), "side": "above", "labels": v_labels, "offset_mm": 1.0},
-                    {"grid": (0, 3), "side": "above", "labels": w_labels, "offset_mm": 1.0},
-                    {"grid": (1, 1), "side": "left", "labels": wt_labels, "offset_mm": 1.0},
+                    {"grid": (0, 2), "side": "above", "labels": v_labels, "offset_mm": 3.0},
+                    {"grid": (0, 3), "side": "above", "labels": w_labels, "offset_mm": 3.0},
+                    {"grid": (1, 1), "side": "left", "labels": wt_labels, "offset_mm": 3.0},
                 ],
             )
         )
