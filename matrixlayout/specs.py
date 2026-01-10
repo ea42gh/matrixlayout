@@ -183,6 +183,10 @@ class GEGridSpec:
     layout: Optional[Any] = None
     legacy_submatrix_names: bool = False
     legacy_format: bool = False
+    label_rows: Optional[Sequence[Any]] = None
+    label_cols: Optional[Sequence[Any]] = None
+    label_gap_mm: Optional[float] = 0.8
+    variable_labels: Optional[Sequence[Any]] = None
     decorators: Optional[Sequence[Any]] = None
     decorations: Optional[Sequence[Any]] = None
     strict: Optional[bool] = None

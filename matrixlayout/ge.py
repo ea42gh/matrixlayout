@@ -864,6 +864,10 @@ def ge_grid_tex(
     strict: bool = False,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
+    label_rows: Optional[Sequence[Any]] = None,
+    label_cols: Optional[Sequence[Any]] = None,
+    label_gap_mm: Optional[float] = 0.8,
+    variable_labels: Optional[Sequence[Any]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -923,6 +927,14 @@ def ge_grid_tex(
             kwargs["layout"] = grid_spec.layout
         kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
         kwargs["legacy_format"] = bool(grid_spec.legacy_format)
+        if grid_spec.label_rows is not None:
+            label_rows = grid_spec.label_rows
+        if grid_spec.label_cols is not None:
+            label_cols = grid_spec.label_cols
+        if grid_spec.label_gap_mm is not None:
+            label_gap_mm = float(grid_spec.label_gap_mm)
+        if grid_spec.variable_labels is not None:
+            variable_labels = grid_spec.variable_labels
         if grid_spec.decorators is not None:
             decorators = grid_spec.decorators
         if grid_spec.decorations is not None:
@@ -988,43 +1000,6 @@ def ge_grid_tex(
 
     legacy_format = bool(kwargs.pop("legacy_format", False))
 
-    # Build a single NiceArray format string.
-    fmt_parts: List[str] = []
-    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
-    if legacy_format:
-        fmt_parts.append(spacer)
-
-    sep = "I" if legacy_format else "|"
-    for bc, w in enumerate(block_widths):
-        if bc > 0:
-            fmt_parts.append(spacer)
-
-        # Apply Nrhs only to the last block-column (A-block in the legacy layout).
-        if Nrhs and bc == n_block_cols - 1:
-            if isinstance(Nrhs, (list, tuple)):
-                rhs = [int(x) for x in Nrhs]
-                left = w - sum(rhs)
-                cuts: List[int] = [left]
-                for cut in rhs[:-1]:
-                    cuts.append(cuts[-1] + cut)
-                cur = 0
-                fmt = ""
-                for cut in cuts:
-                    fmt += (cell_align * (cut - cur)) + sep
-                    cur = cut
-                if cur < w:
-                    fmt += cell_align * (w - cur)
-                fmt_parts.append(fmt)
-            elif 0 < int(Nrhs) < w:
-                left = w - int(Nrhs)
-                fmt_parts.append((cell_align * left) + sep + (cell_align * int(Nrhs)))
-            else:
-                fmt_parts.append(cell_align * w)
-        else:
-            fmt_parts.append(cell_align * w)
-
-    mat_format = "".join(fmt_parts)
-
     # Use nicematrix's semantic marker for "this cell is not empty" so that
     # `create-cell-nodes` reliably creates nodes without introducing spacing.
     blank = r"\NotEmpty"
@@ -1081,6 +1056,191 @@ def ge_grid_tex(
                 raise ValueError("decorator selector did not match any entries")
             decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
 
+    def _normalize_label_rows(val: Any) -> List[List[Any]]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+            return [list(val)]
+        if isinstance(val, (list, tuple)):
+            out: List[List[Any]] = []
+            for row in val:
+                if isinstance(row, (list, tuple)):
+                    out.append(list(row))
+                else:
+                    out.append([row])
+            return out
+        return [[val]]
+
+    def _normalize_label_cols(val: Any) -> List[List[Any]]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+            return [list(val)]
+        if isinstance(val, (list, tuple)):
+            out: List[List[Any]] = []
+            for col in val:
+                if isinstance(col, (list, tuple)):
+                    out.append(list(col))
+                else:
+                    out.append([col])
+            return out
+        return [[val]]
+
+    def _coerce_label_text(val: Any) -> str:
+        if isinstance(val, dict):
+            return str(val.get("text", ""))
+        if isinstance(val, (tuple, list)) and len(val) == 2:
+            return str(val[1])
+        return str(val)
+
+    def _split_dollar_segments(s: str) -> Optional[Tuple[str, bool]]:
+        parts = s.split("$")
+        if len(parts) < 3 or len(parts) % 2 == 0:
+            return None
+        expr_parts: List[str] = []
+        for idx, part in enumerate(parts):
+            if idx % 2 == 0:
+                if part:
+                    expr_parts.append(rf"\text{{{part}}}")
+            else:
+                expr_parts.append(part)
+        return "".join(expr_parts), True
+
+    def _format_label_cell(val: Any) -> str:
+        s = _coerce_label_text(val)
+        stripped = s.strip()
+        if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
+            return stripped[1:-1]
+        mixed = _split_dollar_segments(s)
+        if mixed:
+            return mixed[0]
+        return rf"\text{{{s}}}"
+
+    def _pad_label_col(text: str, side: str) -> str:
+        if not label_gap_mm:
+            return text
+        gap = rf"\hspace{{{float(label_gap_mm)}mm}}"
+        return f"{text}{gap}" if side == "left" else f"{gap}{text}"
+
+    if variable_labels:
+        if label_rows is None:
+            label_rows = []
+        else:
+            label_rows = list(label_rows)
+        for item in variable_labels:
+            if not isinstance(item, dict):
+                continue
+            spec_item = dict(item)
+            if "side" not in spec_item:
+                spec_item["side"] = "below"
+            if "rows" not in spec_item and "labels" in spec_item:
+                spec_item["rows"] = spec_item["labels"]
+            label_rows.append(spec_item)
+
+    label_rows_map: Dict[Tuple[int, int, str], List[List[str]]] = {}
+    label_cols_map: Dict[Tuple[int, int, str], List[List[str]]] = {}
+
+    for spec_item in label_rows or []:
+        if not isinstance(spec_item, dict):
+            continue
+        grid_pos = spec_item.get("grid")
+        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+            grid_pos = (0, 0)
+        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+            continue
+        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        side = str(spec_item.get("side", "above")).strip().lower()
+        if side not in ("above", "below"):
+            continue
+        rows = _normalize_label_rows(spec_item.get("rows", spec_item.get("labels")))
+        if not rows:
+            continue
+        label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
+
+    for spec_item in label_cols or []:
+        if not isinstance(spec_item, dict):
+            continue
+        grid_pos = spec_item.get("grid")
+        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+            grid_pos = (0, 0)
+        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+            continue
+        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        side = str(spec_item.get("side", "left")).strip().lower()
+        if side not in ("left", "right"):
+            continue
+        cols = _normalize_label_cols(spec_item.get("cols", spec_item.get("labels")))
+        if not cols:
+            continue
+        label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
+
+    extra_rows_above = [0] * n_block_rows
+    extra_rows_below = [0] * n_block_rows
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            rows_above = label_rows_map.get((br, bc, "above"), [])
+            rows_below = label_rows_map.get((br, bc, "below"), [])
+            extra_rows_above[br] = max(extra_rows_above[br], len(rows_above))
+            extra_rows_below[br] = max(extra_rows_below[br], len(rows_below))
+
+    extra_cols_left = [0] * n_block_cols
+    extra_cols_right = [0] * n_block_cols
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            cols_left = label_cols_map.get((br, bc, "left"), [])
+            cols_right = label_cols_map.get((br, bc, "right"), [])
+            extra_cols_left[bc] = max(extra_cols_left[bc], len(cols_left))
+            extra_cols_right[bc] = max(extra_cols_right[bc], len(cols_right))
+
+    total_block_heights = [
+        extra_rows_above[br] + block_heights[br] + extra_rows_below[br] for br in range(n_block_rows)
+    ]
+    total_block_widths = [
+        extra_cols_left[bc] + block_widths[bc] + extra_cols_right[bc] for bc in range(n_block_cols)
+    ]
+
+    # Build a single NiceArray format string (including label columns).
+    fmt_parts: List[str] = []
+    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
+    if legacy_format:
+        fmt_parts.append(spacer)
+
+    sep = "I" if legacy_format else "|"
+    for bc, base_w in enumerate(block_widths):
+        if bc > 0:
+            fmt_parts.append(spacer)
+
+        left_extra = extra_cols_left[bc]
+        right_extra = extra_cols_right[bc]
+
+        # Apply Nrhs only to the last block-column (A-block in the legacy layout).
+        if Nrhs and bc == n_block_cols - 1:
+            if isinstance(Nrhs, (list, tuple)):
+                rhs = [int(x) for x in Nrhs]
+                left = base_w - sum(rhs)
+                cuts: List[int] = [left]
+                for cut in rhs[:-1]:
+                    cuts.append(cuts[-1] + cut)
+                cur = 0
+                fmt = cell_align * left_extra
+                for cut in cuts:
+                    fmt += (cell_align * (cut - cur)) + sep
+                    cur = cut
+                if cur < base_w:
+                    fmt += cell_align * (base_w - cur)
+                fmt += cell_align * right_extra
+                fmt_parts.append(fmt)
+            elif 0 < int(Nrhs) < base_w:
+                left = base_w - int(Nrhs)
+                fmt = (cell_align * left_extra) + (cell_align * left) + sep + (cell_align * int(Nrhs)) + (cell_align * right_extra)
+                fmt_parts.append(fmt)
+            else:
+                fmt_parts.append(cell_align * (left_extra + base_w + right_extra))
+        else:
+            fmt_parts.append(cell_align * (left_extra + base_w + right_extra))
+
+    mat_format = "".join(fmt_parts)
+
     # Flatten all blocks into one scalar matrix representation.
     lines: List[str] = []
     block_pad_left: List[List[int]] = [
@@ -1101,44 +1261,112 @@ def ge_grid_tex(
 
     for br in range(n_block_rows):
         H = block_heights[br]
-        for i in range(H):
+        Htot = total_block_heights[br]
+        for i in range(Htot):
+            in_matrix = extra_rows_above[br] <= i < (extra_rows_above[br] + H)
+            src_i = i - extra_rows_above[br]
+            above_rows = extra_rows_above[br]
+            below_rows = extra_rows_below[br]
             row_cells: List[str] = []
             for bc in range(n_block_cols):
                 W = block_widths[bc]
+                Wtot = total_block_widths[bc]
                 rows, h, w = cell_cache[br][bc]
                 if h == 0 or w == 0:
-                    row_cells.extend([blank] * W)
+                    row_cells.extend([blank] * Wtot)
                     continue
+                out_cells: List[str] = [blank] * Wtot
+                left_cols = extra_cols_left[bc]
+                right_cols = extra_cols_right[bc]
+                matrix_start = left_cols
+                matrix_end = left_cols + W
                 pad_top = block_pad_top[br][bc]
-                src_i = i - pad_top
-                if src_i < 0 or src_i >= h:
-                    row_cells.extend([blank] * W)
+                pad_left = block_pad_left[br][bc]
+                matrix_i = src_i - pad_top
+
+                # Label rows (above/below) within matrix columns only.
+                if not in_matrix:
+                    if i < above_rows:
+                        rows_above = label_rows_map.get((br, bc, "above"), [])
+                        if rows_above:
+                            start_row = above_rows - len(rows_above)
+                            label_idx = i - start_row
+                            if 0 <= label_idx < len(rows_above):
+                                row_vals = list(rows_above[label_idx])
+                                if len(row_vals) < W:
+                                    row_vals.extend([""] * (W - len(row_vals)))
+                                for j, v in enumerate(row_vals[:W]):
+                                    out_cells[matrix_start + pad_left + j] = _format_label_cell(v)
+                    else:
+                        rows_below = label_rows_map.get((br, bc, "below"), [])
+                        if rows_below:
+                            label_idx = i - (above_rows + H)
+                            if 0 <= label_idx < len(rows_below):
+                                row_vals = list(rows_below[label_idx])
+                                if len(row_vals) < W:
+                                    row_vals.extend([""] * (W - len(row_vals)))
+                                for j, v in enumerate(row_vals[:W]):
+                                    out_cells[matrix_start + pad_left + j] = _format_label_cell(v)
+                    row_cells.extend(out_cells)
                     continue
 
-                src = list(rows[src_i]) if src_i < len(rows) else []
+                if matrix_i < 0 or matrix_i >= h:
+                    row_cells.extend(out_cells)
+                    continue
+
+                src = list(rows[matrix_i]) if matrix_i < len(rows) else []
                 if len(src) < w:
                     src.extend([None] * (w - len(src)))
-                pad_left = block_pad_left[br][bc]
-                out_cells: List[str] = [blank] * W
+
+                # Label columns (left/right) within matrix rows.
+                cols_left = label_cols_map.get((br, bc, "left"), [])
+                if cols_left:
+                    start_col = max(left_cols - len(cols_left), 0)
+                    for cj, col_vals in enumerate(cols_left):
+                        if matrix_i < len(col_vals):
+                            out_cells[start_col + cj] = _pad_label_col(
+                                _format_label_cell(col_vals[matrix_i]),
+                                "left",
+                            )
+                cols_right = label_cols_map.get((br, bc, "right"), [])
+                if cols_right:
+                    start_col = matrix_end
+                    for cj, col_vals in enumerate(cols_right):
+                        if matrix_i < len(col_vals):
+                            if start_col + cj < Wtot:
+                                out_cells[start_col + cj] = _pad_label_col(
+                                    _format_label_cell(col_vals[matrix_i]),
+                                    "right",
+                                )
+
                 dec_specs = decorator_map.get((br, bc), [])
                 for j, v in enumerate(src[:w]):
                     if not dec_specs:
-                        out_cells[pad_left + j] = _fmt(v)
+                        out_cells[matrix_start + pad_left + j] = _fmt(v)
                         continue
                     tex = _fmt(v)
                     for dec, sel, fmt in dec_specs:
-                        if (src_i, j) in sel and v is not None:
+                        if (matrix_i, j) in sel and v is not None:
                             base = fmt(v)
                             if not (isinstance(base, str) and base.strip()):
                                 base = blank
-                            tex = apply_decorator(dec, src_i, j, v, base)
-                    out_cells[pad_left + j] = tex
+                            tex = apply_decorator(dec, matrix_i, j, v, base)
+                    out_cells[matrix_start + pad_left + j] = tex
                 row_cells.extend(out_cells)
-            lines.append(" & ".join(row_cells) + r" \\")
+            line = " & ".join(row_cells) + r" \\"
+            if not in_matrix and above_rows and i == above_rows - 1 and label_gap_mm:
+                line += rf"\noalign{{\vskip{float(label_gap_mm)}mm}}"
+            if in_matrix and matrix_i == H - 1 and below_rows and label_gap_mm:
+                line += rf"\noalign{{\vskip{float(label_gap_mm)}mm}}"
+            lines.append(line)
         if block_vspace_mm and br < n_block_rows - 1:
             lines[-1] += rf"\noalign{{\vskip{int(block_vspace_mm)}mm}}"
 
     mat_rep = "\n".join(lines)
+
+    # Ensure node coordinates exist when text nodes are requested.
+    if "txt_with_locs" in kwargs and kwargs.get("create_cell_nodes") is None:
+        kwargs["create_cell_nodes"] = True
 
     # Emit \SubMatrix spans for each non-empty block to draw parentheses.
     # Merge with any user-provided spans passed via **kwargs.
@@ -1149,12 +1377,12 @@ def ge_grid_tex(
     # Precompute offsets (1-based nicematrix coordinates).
     row_starts: List[int] = []
     acc = 1
-    for H in block_heights:
+    for H in total_block_heights:
         row_starts.append(acc)
         acc += H
     col_starts: List[int] = []
     acc = 1
-    for W in block_widths:
+    for W in total_block_widths:
         col_starts.append(acc)
         acc += W
 
@@ -1164,8 +1392,8 @@ def ge_grid_tex(
             _, h, w = cell_cache[br][bc]
             if h == 0 or w == 0:
                 continue
-            r0 = row_starts[br] + block_pad_top[br][bc]
-            c0 = col_starts[bc] + block_pad_left[br][bc]
+            r0 = row_starts[br] + extra_rows_above[br] + block_pad_top[br][bc]
+            c0 = col_starts[bc] + extra_cols_left[bc] + block_pad_left[br][bc]
             r1 = r0 + h - 1
             c1 = c0 + w - 1
             # Name matrices by their column role when in the legacy 2-column layout.
@@ -1791,6 +2019,19 @@ def ge_grid_text_specs(
 
     from collections.abc import Mapping as _Mapping
 
+    def _split_dollar_segments(s: str) -> Optional[str]:
+        parts = s.split("$")
+        if len(parts) < 3 or len(parts) % 2 == 0:
+            return None
+        expr_parts: List[str] = []
+        for idx, part in enumerate(parts):
+            if idx % 2 == 0:
+                if part:
+                    expr_parts.append(rf"\text{{{part}}}")
+            else:
+                expr_parts.append(part)
+        return "".join(expr_parts)
+
     for item in targets:
         if not isinstance(item, _Mapping):
             continue
@@ -1801,39 +2042,101 @@ def ge_grid_text_specs(
         span = span_map.get(key)
         if span is None:
             continue
-        labels = list(item.get("labels") or [])
+        labels_raw = item.get("labels") or []
+        labels = list(labels_raw) if isinstance(labels_raw, (list, tuple)) else [labels_raw]
         side = str(item.get("side", "right")).strip().lower()
-        offset = float(item.get("offset_mm", 0.0))
+        if side == "top":
+            side = "above"
+        elif side == "bottom":
+            side = "below"
+        offset_raw = item.get("offset_mm")
+        if offset_raw is None and "label_gap_mm" in item:
+            offset_raw = item.get("label_gap_mm")
+        if offset_raw is None:
+            if side == "above":
+                offset_raw = 3.0
+            elif side == "below":
+                offset_raw = 3.5
+        offset = float(offset_raw) if offset_raw is not None else 0.0
         style = str(item.get("style", "")).strip()
 
+        def _wrap_math(text: Any) -> str:
+            if isinstance(text, dict):
+                s = str(text.get("text", ""))
+            elif isinstance(text, (tuple, list)) and len(text) == 2:
+                s = str(text[1])
+            else:
+                s = str(text)
+            stripped = s.strip()
+            if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
+                return stripped
+            mixed = _split_dollar_segments(s)
+            if mixed:
+                return f"${mixed}$"
+            return s
+
         if side in ("right", "left"):
+            if offset_raw is None:
+                offset = 2.0
             col = span.col_end if side == "right" else span.col_start
             anchor = "west" if side == "right" else "east"
-            xshift = offset if side == "right" else -offset
-            for i, text in enumerate(labels):
-                row = span.row_start + i
-                coord = f"({row}-{col}.{anchor})"
-                opts = f"anchor={anchor}"
-                if xshift:
-                    opts += f", xshift={xshift}mm"
-                if style:
-                    opts += f", {style}"
-                out.append((coord, str(text), opts))
+            base_shift = offset if side == "right" else -offset
+            edge = "east" if side == "right" else "west"
+            line_gap = float(item.get("line_gap_mm", 3.5))
+            if labels and isinstance(labels[0], (list, tuple)):
+                for col_offset, col_vals in enumerate(labels):
+                    xshift = base_shift + (col_offset * line_gap if side == "right" else -col_offset * line_gap)
+                    for i, text in enumerate(col_vals):
+                        row = span.row_start + i
+                        coord = f"({row}-{col}.{edge})"
+                        opts = f"anchor={anchor}"
+                        if xshift:
+                            opts += f", xshift={xshift}mm"
+                        if style:
+                            opts += f", {style}"
+                        out.append((coord, _wrap_math(text), opts))
+            else:
+                for i, text in enumerate(labels):
+                    row = span.row_start + i
+                    coord = f"({row}-{col}.{edge})"
+                    opts = f"anchor={anchor}"
+                    if base_shift:
+                        opts += f", xshift={base_shift}mm"
+                    if style:
+                        opts += f", {style}"
+                    out.append((coord, _wrap_math(text), opts))
             continue
 
         if side in ("above", "below"):
+            if offset_raw is None:
+                offset = 2.0
             row = span.row_start if side == "above" else span.row_end
             anchor = "south" if side == "above" else "north"
-            yshift = offset if side == "above" else -offset
-            for j, text in enumerate(labels):
-                col = span.col_start + j
-                coord = f"({row}-{col}.{anchor})"
-                opts = f"anchor={anchor}"
-                if yshift:
-                    opts += f", yshift={yshift}mm"
-                if style:
-                    opts += f", {style}"
-                out.append((coord, str(text), opts))
+            base_shift = offset if side == "above" else -offset
+            default_gap = 3.5 if side == "above" else 4.5
+            line_gap = float(item.get("line_gap_mm", default_gap))
+            if labels and isinstance(labels[0], (list, tuple)):
+                for row_offset, row_vals in enumerate(labels):
+                    yshift = base_shift + (row_offset * line_gap if side == "above" else -row_offset * line_gap)
+                    for j, text in enumerate(row_vals):
+                        col = span.col_start + j
+                        coord = f"({row}-{col}.{anchor})"
+                        opts = f"anchor={anchor}"
+                        if yshift:
+                            opts += f", yshift={yshift}mm"
+                        if style:
+                            opts += f", {style}"
+                        out.append((coord, _wrap_math(text), opts))
+            else:
+                for j, text in enumerate(labels):
+                    col = span.col_start + j
+                    coord = f"({row}-{col}.{anchor})"
+                    opts = f"anchor={anchor}"
+                    if base_shift:
+                        opts += f", yshift={base_shift}mm"
+                    if style:
+                        opts += f", {style}"
+                    out.append((coord, _wrap_math(text), opts))
             continue
 
     return out

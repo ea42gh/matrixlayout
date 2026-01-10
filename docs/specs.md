@@ -12,6 +12,10 @@ dictionaries passed to `*_tex` or `*_svg` helpers.
 | GE | `block_align` | str | Align narrower blocks within a column (`left/right/center/auto`). |
 | GE | `block_valign` | str | Align shorter blocks within a row (`top/bottom/center/auto`). |
 | GE | `block_vspace_mm` | int | Vertical spacing between block rows (mm). |
+| GE | `label_rows` | list | Extra label rows attached to blocks. |
+| GE | `label_cols` | list | Extra label columns attached to blocks. |
+| GE | `label_gap_mm` | float | Gap between labels and blocks (mm). |
+| GE | `variable_labels` | list | Shorthand for multiline annotations below a block. |
 | GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, callouts, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
 | GE | `callouts` | list | Labels attached to submatrix names. |
@@ -45,6 +49,10 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 - `block_align`: align narrower blocks within a block column (`left`, `right`, `center`, `auto`).
 - `block_valign`: align shorter blocks within a block row (`top`, `bottom`, `center`, `auto`).
 - `block_vspace_mm`: vertical spacing between block rows (mm).
+- `label_rows`: add label rows above/below a block.
+- `label_cols`: add label columns left/right of a block.
+- `label_gap_mm`: gap between label rows/cols and blocks (mm).
+- `variable_labels`: convenience alias for `label_rows` with `side="below"`.
 - `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
