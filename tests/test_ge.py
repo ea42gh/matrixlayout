@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from matrixlayout.ge import ge_tex
+from matrixlayout.ge import tex
 
 
 def _pick_toolchain_name_or_skip() -> str:
@@ -28,24 +28,24 @@ def _pick_toolchain_name_or_skip() -> str:
 
 
 def test_ge_tex_contains_SubMatrix_when_requested():
-    tex = ge_tex(
+    tex_out = tex(
         mat_rep="1 & 0 \\\\ 0 & 1",
         mat_format="cc",
         outer_delims=True,
         outer_delims_span=(2, 2),
         landscape=False,
     )
-    assert r"\begin{NiceArray}" in tex
-    assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex
+    assert r"\begin{NiceArray}" in tex_out
+    assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex_out
 
 
 @pytest.mark.render
 def test_ge_svg_smoke():
     pytest.importorskip("jupyter_tikz")
 
-    from matrixlayout.ge import ge_svg
+    from matrixlayout.ge import svg
 
-    svg = ge_svg(
+    svg_out = svg(
         mat_rep="1 & 0 \\\\ 0 & 1",
         mat_format="cc",
         outer_delims=True,
@@ -55,4 +55,4 @@ def test_ge_svg_smoke():
         crop="tight",
         padding=(2, 2, 2, 2),
     )
-    assert "<svg" in svg
+    assert "<svg" in svg_out

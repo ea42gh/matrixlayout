@@ -9,7 +9,7 @@ def _sample_grid():
     return [[None, A0], [E1, A1]]
 
 
-def test_ge_grid_tex_accepts_spec_object():
+def test_grid_tex_accepts_spec_object():
     matrices = _sample_grid()
     spec = GEGridSpec(
         matrices=matrices,
@@ -17,12 +17,12 @@ def test_ge_grid_tex_accepts_spec_object():
         outer_hspace_mm=9,
         legacy_submatrix_names=True,
     )
-    tex_direct = matrixlayout.ge_grid_tex(matrices=matrices, outer_hspace_mm=9, legacy_submatrix_names=True)
-    tex_spec = matrixlayout.ge_grid_tex(spec=spec)
+    tex_direct = matrixlayout.grid_tex(matrices=matrices, outer_hspace_mm=9, legacy_submatrix_names=True)
+    tex_spec = matrixlayout.grid_tex(spec=spec)
     assert tex_direct == tex_spec
 
 
-def test_ge_grid_tex_accepts_spec_dict_with_layout():
+def test_grid_tex_accepts_spec_dict_with_layout():
     matrices = _sample_grid()
     spec = {
         "matrices": matrices,
@@ -31,5 +31,5 @@ def test_ge_grid_tex_accepts_spec_dict_with_layout():
         "legacy_submatrix_names": True,
         "layout": {"preamble": "%spec-preamble"},
     }
-    tex = matrixlayout.ge_grid_tex(spec=spec)
+    tex = matrixlayout.grid_tex(spec=spec)
     assert "%spec-preamble" in tex

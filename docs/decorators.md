@@ -82,7 +82,7 @@ decorations = [
     {"grid": (2, 1), "entries": [(0, 0)], "box": True},
     {"grid": (0, 1), "label": r"\\mathbf{C}", "side": "right", "angle": -35, "length": 8},
 ]
-svg = ge_grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
+svg = grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
 ## Selectors

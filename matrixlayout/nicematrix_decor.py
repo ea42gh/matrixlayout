@@ -1,7 +1,7 @@
 r"""Descriptor-based nicematrix decorations.
 
 This module provides *data-only* decoration descriptors intended to be rendered
-into TikZ snippets by layout routines (e.g., :func:`matrixlayout.ge.ge_tex`).
+into TikZ snippets by layout routines (e.g., :func:`matrixlayout.ge.tex`).
 
 Why descriptors?
 ----------------
@@ -293,7 +293,7 @@ def infer_ge_matrix_labels(
     Parameters
     ----------
     matrices:
-        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.ge_grid_tex`,
+        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.grid_tex`,
         typically ``[[None, A0], [E1, A1], [E2, A2], ...]``.
 
     Returns

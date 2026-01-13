@@ -1,7 +1,7 @@
 import pytest
 
 
-from matrixlayout.ge import ge_grid_tex, ge_tex
+from matrixlayout.ge import grid_tex, tex
 from matrixlayout.specs import GELayoutSpec
 
 
@@ -19,18 +19,18 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
         txt_with_locs=[((1, 1), "x", SymLike(":red"))],
     )
 
-    tex = ge_tex(
+    tex_out = tex(
         mat_rep="1",
         mat_format="c",
         layout=layout,
     )
 
-    assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex
-    assert r"fit=(1-1)(1-1)" in tex
-    assert r"\node[red] at (1-1)" in tex
+    assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex_out
+    assert r"fit=(1-1)(1-1)" in tex_out
+    assert r"\node[red] at (1-1)" in tex_out
 
 
-def test_ge_grid_tex_merges_layout_spec_callouts():
+def test_grid_tex_merges_layout_spec_callouts():
     # One GE layer in the legacy 2-column layout: [[None, A0]]
     matrices = [[None, [[1, 2], [3, 4]]]]
 
@@ -38,16 +38,16 @@ def test_ge_grid_tex_merges_layout_spec_callouts():
         callouts=[{"name": "A0", "label": "A_0", "side": "right"}],
     )
 
-    tex = ge_grid_tex(matrices=matrices, layout=layout)
-    assert "A0-right" in tex
-    assert r"\draw[" in tex
+    tex_out = grid_tex(matrices=matrices, layout=layout)
+    assert "A0-right" in tex_out
+    assert r"\draw[" in tex_out
 
 
 
 
 def test_ge_tex_layout_sets_outer_delims_without_conflict_when_not_explicit():
-    # layout sets outer_delims, and ge_tex should treat its own defaults as "unset"
-    tex = ge_tex(
+    # layout sets outer_delims, and tex should treat its own defaults as "unset"
+    tex_out = tex(
         mat_rep=r"1 & 2 \\ 3 & 4",
         mat_format="cc",
         layout={
@@ -56,9 +56,9 @@ def test_ge_tex_layout_sets_outer_delims_without_conflict_when_not_explicit():
             "outer_delims_name": "Z0",
         },
     )
-    assert r"\SubMatrix({1-1}{2-2})[name=Z0]" in tex
+    assert r"\SubMatrix({1-1}{2-2})[name=Z0]" in tex_out
 
 def test_ge_tex_layout_conflict_raises():
     layout = GELayoutSpec(landscape=True)
     with pytest.raises(ValueError):
-        ge_tex(mat_rep="1", mat_format="c", landscape=False, layout=layout)
+        tex(mat_rep="1", mat_format="c", landscape=False, layout=layout)

@@ -8,11 +8,11 @@ la_figures; this module focuses on layout + formatting only.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable, Mapping
 import re
 
 from .formatting import latexify
-from .ge import ge_grid_tex
+from .ge import grid_tex
 from .render import render_svg
 from .specs import QRGridSpec
 
@@ -451,6 +451,7 @@ def qr_grid_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
@@ -495,6 +496,8 @@ def qr_grid_tex(
         create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes)
         decorators = _merge_scalar("decorators", decorators, spec_obj.decorators)
         strict = _merge_scalar("strict", strict, spec_obj.strict)
+        if spec_obj.specs is not None:
+            specs = _merge_scalar("specs", specs, spec_obj.specs)
 
     if matrices is None:
         raise ValueError("qr_grid_tex requires `matrices`")
@@ -545,7 +548,7 @@ def qr_grid_tex(
             length_mm=6.0,
         )
 
-    return ge_grid_tex(
+    return grid_tex(
         matrices=grid,
         formatter=formatter,
         preamble=preamble,
@@ -561,6 +564,7 @@ def qr_grid_tex(
         create_extra_nodes=create_extra_nodes,
         create_medium_nodes=create_medium_nodes,
         strict=bool(strict),
+        specs=specs,
     )
 
 
@@ -568,6 +572,7 @@ def qr_grid_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
@@ -607,6 +612,7 @@ def qr_grid_svg(
         create_medium_nodes=create_medium_nodes,
         decorators=decorators,
         strict=strict,
+        specs=specs,
     )
     return render_svg(
         tex,

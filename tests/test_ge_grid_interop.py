@@ -1,11 +1,11 @@
-from matrixlayout.ge import ge_grid_tex, ge_tex
+from matrixlayout.ge import grid_tex, tex
 
 
-def test_ge_grid_tex_inserts_rhs_partition_bar():
+def test_grid_tex_inserts_rhs_partition_bar():
     # One GE layer with an augmented matrix [A|b] (2x3, Nrhs=1).
     matrices = [[None, [[1, 0, 3], [0, 2, 4]]]]
-    tex = ge_grid_tex(matrices, Nrhs=1)
-    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
+    tex_out = grid_tex(matrices, Nrhs=1)
+    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex_out
 
 
 def test_ge_tex_normalizes_julia_style_inputs():
@@ -16,7 +16,7 @@ def test_ge_tex_normalizes_julia_style_inputs():
         def __str__(self) -> str:
             return self.s
 
-    tex = ge_tex(
+    tex_out = tex(
         mat_rep="1",
         mat_format="c",
         submatrix_locs=[(SymLike(":name=Z"), (1, 1), (1, 1))],
@@ -24,6 +24,6 @@ def test_ge_tex_normalizes_julia_style_inputs():
         txt_with_locs=[((1, 1), "x", SymLike("Symbol(:red)"))],
     )
 
-    assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex
-    assert r"fit=(1-1)(1-1)" in tex
-    assert r"\node[red] at (1-1)" in tex
+    assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex_out
+    assert r"fit=(1-1)(1-1)" in tex_out
+    assert r"\node[red] at (1-1)" in tex_out

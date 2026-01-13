@@ -1,4 +1,4 @@
-from matrixlayout.ge import ge_grid_submatrix_spans
+from matrixlayout.ge import grid_submatrix_spans
 
 
 def test_ge_grid_submatrix_spans_default_names_and_coords():
@@ -8,7 +8,7 @@ def test_ge_grid_submatrix_spans_default_names_and_coords():
         [[[1, 0], [0, 1]], [[5, 6], [7, 8]]],
     ]
 
-    spans = ge_grid_submatrix_spans(matrices)
+    spans = grid_submatrix_spans(matrices)
     names = [s.name for s in spans]
 
     # Row 0 has only an A-block; row 1 has E and A blocks.
@@ -31,7 +31,7 @@ def test_ge_grid_submatrix_spans_delimiter_node_names():
     matrices = [[[1]], [[2]]]
 
     # Single-column grid => names are M0r (block-col based).
-    spans = ge_grid_submatrix_spans(matrices)
+    spans = grid_submatrix_spans(matrices)
 
     assert [s.name for s in spans] == ["M00", "M01"]
     assert spans[0].left_delim_node == "M00-left"

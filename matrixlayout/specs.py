@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Mapping
 
 
 @dataclass(frozen=True)
@@ -230,6 +230,7 @@ class QRGridSpec:
     create_cell_nodes: Optional[bool] = True
     create_extra_nodes: Optional[bool] = True
     create_medium_nodes: Optional[bool] = True
+    specs: Optional[Sequence[Mapping[str, Any]]] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "QRGridSpec":

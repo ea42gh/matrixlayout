@@ -9,24 +9,24 @@ Prerequisite: install `matrixlayout` (and `la_figures` for eigen/SVD specs).
 
 ```python
 import sympy as sym
-from matrixlayout.ge import ge_grid_svg
+from matrixlayout.ge import grid_svg
 
 matrices = [[None, sym.Matrix([[1, 2], [3, 4]])]]
-svg = ge_grid_svg(matrices=matrices)
+svg = grid_svg(matrices=matrices)
 ```
 
 You can also pass a single matrix directly (it is wrapped as `[[A]]`):
 
 ```python
-svg = ge_grid_svg(matrices=sym.Matrix([[1, 2], [3, 4]]))
+svg = grid_svg(matrices=sym.Matrix([[1, 2], [3, 4]]))
 ```
 
 To inspect the TeX instead of rendering SVG:
 
 ```python
-from matrixlayout.ge import ge_grid_tex
+from matrixlayout.ge import grid_tex
 
-tex = ge_grid_tex(matrices=matrices)
+tex = grid_tex(matrices=matrices)
 ```
 
 Quick decorations (one-line specs):
@@ -37,7 +37,7 @@ decorations = [
     {"grid": (0, 1), "hlines": 1},
     {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length": 8},
 ]
-svg = ge_grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
+svg = grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
 ## QR grid
@@ -48,6 +48,8 @@ from matrixlayout.qr import qr_grid_svg
 
 matrices = [[None, None, sym.Matrix([[1, 2], [3, 4]]), sym.eye(2)]]
 svg = qr_grid_svg(matrices=matrices)
+
+You can also pass `specs` to attach labels/callouts without manual label rows/cols.
 ```
 
 ## Eigen/SVD tables
@@ -62,7 +64,7 @@ svg = eigproblem_svg(spec, case="S")
 ```
 
 The rendering backend is `jupyter_tikz`; toolchain configuration lives there.
-For repeated workflows, prefer `ge_grid_tex` and render explicitly.
+For repeated workflows, prefer `grid_tex` and render explicitly.
 
 ## Output inspection
 

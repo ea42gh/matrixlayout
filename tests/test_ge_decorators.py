@@ -1,8 +1,8 @@
-from matrixlayout.ge import ge_grid_tex
+from matrixlayout.ge import grid_tex
 from matrixlayout.formatting import make_decorator
 
 
-def test_ge_grid_tex_decorators_apply():
+def test_grid_tex_decorators_apply():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorators = [
         {
@@ -12,11 +12,11 @@ def test_ge_grid_tex_decorators_apply():
         }
     ]
 
-    tex = ge_grid_tex(matrices=matrices, decorators=decorators, formatter=str)
+    tex = grid_tex(matrices=matrices, decorators=decorators, formatter=str)
     assert r"\color{red}{\mathbf{2}}" in tex
 
 
-def test_ge_grid_tex_decorators_resolve_matrix_name():
+def test_grid_tex_decorators_resolve_matrix_name():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorators = [
         {
@@ -26,16 +26,16 @@ def test_ge_grid_tex_decorators_resolve_matrix_name():
         }
     ]
 
-    tex = ge_grid_tex(matrices=matrices, decorators=decorators, formatter=str)
+    tex = grid_tex(matrices=matrices, decorators=decorators, formatter=str)
     assert r"\boxed{1}" in tex
 
 
-def test_ge_grid_tex_decorators_strict_raises_on_empty():
+def test_grid_tex_decorators_strict_raises_on_empty():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorators = [{"grid": (0, 1), "entries": [(9, 9)], "decorator": make_decorator(boxed=True)}]
 
     try:
-        ge_grid_tex(matrices=matrices, decorators=decorators, formatter=str, strict=True)
+        grid_tex(matrices=matrices, decorators=decorators, formatter=str, strict=True)
     except ValueError:
         return
     raise AssertionError("strict decorator selection should raise")
@@ -49,10 +49,10 @@ def test_resolve_ge_grid_name():
     assert resolve_ge_grid_name("A0x1", matrices=matrices) == (0, 1)
 
 
-def test_ge_grid_tex_respects_explicit_matrices_over_spec():
-    from matrixlayout.ge import ge_grid_tex
+def test_grid_tex_respects_explicit_matrices_over_spec():
+    from matrixlayout.ge import grid_tex
 
     spec = {"matrices": [[None, [[9]]]]}
-    tex = ge_grid_tex(matrices=[[None, [[1]]]], spec=spec, formatter=lambda x: f"v{x}")
+    tex = grid_tex(matrices=[[None, [[1]]]], spec=spec, formatter=lambda x: f"v{x}")
     assert "v1" in tex
     assert "v9" not in tex

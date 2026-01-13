@@ -10,8 +10,8 @@ Rendering requires a LaTeX toolchain and a PDF/DVI-to-SVG converter
 ## SVG output
 
 ```python
-from matrixlayout.ge import ge_grid_svg
-svg = ge_grid_svg(matrices=[[None, [[1]]]])
+from matrixlayout.ge import grid_svg
+svg = grid_svg(matrices=[[None, [[1]]]])
 ```
 
 ## Toolchains

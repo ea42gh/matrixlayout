@@ -52,14 +52,14 @@ def _normalize_label_entries(val: Any) -> List[List[str]]:
         return [[_coerce_label_text_for_layout(x) for x in val]]
     return [[_coerce_label_text_for_layout(val)]]
 
-def ge_grid_label_layouts(
+def grid_label_layouts(
     targets: Sequence[Mapping[str, Any]],
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     r"""Convert label targets into ``label_rows``/``label_cols`` specs.
 
-    The input accepts the same ``targets`` dicts that drive :func:`ge_grid_text_specs`.
+    The input accepts the same ``targets`` dicts that drive :func:`grid_tex_specs`.
     Returns two lists suitable for ``label_rows`` and ``label_cols`` arguments of
-    :func:`ge_grid_tex` / :func:`ge_grid_svg`.
+    :func:`grid_tex` / :func:`grid_svg`.
     """
     label_rows: List[Dict[str, Any]] = []
     label_cols: List[Dict[str, Any]] = []
@@ -87,6 +87,65 @@ def ge_grid_label_layouts(
                 {"grid": (gM, gN), "side": side, "rows": labels}
             )
     return label_rows, label_cols
+
+
+def _label_targets_from_specs(
+    specs: Optional[Sequence[Mapping[str, Any]]]
+) -> List[Dict[str, Any]]:
+    """Extract ``grid_tex_specs``-style label targets from generic specs."""
+    if not specs:
+        return []
+    label_targets: List[Dict[str, Any]] = []
+    for item in specs:
+        if not isinstance(item, Mapping):
+            continue
+        grid = item.get("grid")
+        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+            continue
+        side = str(item.get("side", "right")).strip().lower()
+        if side == "top":
+            side = "above"
+        elif side == "bottom":
+            side = "below"
+        label_values = item.get("labels")
+        if label_values is None:
+            if side in ("left", "right"):
+                label_values = item.get("cols")
+            else:
+                label_values = item.get("rows")
+        if label_values is None:
+            continue
+        target: Dict[str, Any] = {
+            key: value
+            for key, value in item.items()
+            if key not in ("rows", "cols", "labels")
+        }
+        target["grid"] = (int(grid[0]), int(grid[1]))
+        target["side"] = side
+        target["labels"] = label_values
+        label_targets.append(target)
+    return label_targets
+
+
+def _blank_label_specs(
+    specs: Sequence[Dict[str, Any]],
+    key: str,
+) -> List[Dict[str, Any]]:
+    """Return copies of ``specs`` with their ``key`` entries replaced by blanks."""
+    out: List[Dict[str, Any]] = []
+    for item in specs:
+        new_item = dict(item)
+        values = item.get(key)
+        if isinstance(values, list):
+            blank_values: List[List[Any]] = []
+            for row in values:
+                if isinstance(row, (list, tuple)):
+                    blank_values.append([{"text": r"\NotEmpty"} for _ in row])
+                else:
+                    blank_values.append([{"text": r"\NotEmpty"}])
+            new_item[key] = blank_values
+        out.append(new_item)
+    return out
 
 
 def _julia_str(x: Any) -> str:
@@ -524,7 +583,7 @@ def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optiona
         return explicit
     return _merge_list(explicit, spec_val)
 
-def ge_tex(
+def tex(
     *,
     mat_rep: str,
     mat_format: str,
@@ -695,7 +754,7 @@ def ge_tex(
     return render_template("ge.tex.j2", ctx)
 
 
-def ge_svg(
+def svg(
     *,
     mat_rep: str,
     mat_format: str,
@@ -726,7 +785,7 @@ def ge_svg(
     output_stem: str = "output",
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
-    tex = ge_tex(
+    tex_doc = tex(
         mat_rep=mat_rep,
         mat_format=mat_format,
         preamble=preamble,
@@ -752,14 +811,14 @@ def ge_svg(
     )
     if toolchain_name:
         return _render_svg(
-            tex,
+            tex_doc,
             toolchain_name=toolchain_name,
             crop=crop,
             padding=padding,
             output_dir=output_dir,
             output_stem=output_stem,
         )
-    return _render_svg(tex, crop=crop, padding=padding, output_dir=output_dir, output_stem=output_stem)
+    return _render_svg(tex_doc, crop=crop, padding=padding, output_dir=output_dir, output_stem=output_stem)
 
 
 # -----------------------------------------------------------------------------
@@ -861,6 +920,65 @@ def _block_pad_top(height: int, actual: int, block_valign: Optional[str]) -> int
     raise ValueError(f"Invalid block_valign: {block_valign!r} (expected top/bottom/center/auto)")
 
 
+def _grid_block_padding(
+    matrices: Sequence[Sequence[Any]],
+    *,
+    block_align: Optional[str] = None,
+    block_valign: Optional[str] = None,
+) -> Tuple[List[List[Any]], List[List[Tuple[List[List[Any]], int, int]]], List[int], List[int], List[List[int]], List[List[int]]]:
+    grid: List[List[Any]] = _normalize_grid_input(matrices)
+    if not grid:
+        raise ValueError("matrices must be a non-empty nested list")
+
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+    if n_block_cols == 0:
+        raise ValueError("matrices must contain at least one column")
+
+    for r in range(n_block_rows):
+        if len(grid[r]) < n_block_cols:
+            grid[r].extend([None] * (n_block_cols - len(grid[r])))
+
+    block_heights: List[int] = [0] * n_block_rows
+    block_widths: List[int] = [0] * n_block_cols
+    cell_cache: List[List[Tuple[List[List[Any]], int, int]]] = [
+        [([], 0, 0) for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            rows, h, w = _as_2d_list(grid[br][bc])
+            cell_cache[br][bc] = (rows, h, w)
+            block_heights[br] = max(block_heights[br], h)
+            block_widths[bc] = max(block_widths[bc], w)
+
+    max_h = max(block_heights) if block_heights else 0
+    for bc in range(n_block_cols):
+        if block_widths[bc] == 0 and max_h > 0:
+            block_widths[bc] = max_h
+
+    if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
+        raise ValueError("Could not infer matrix block sizes from `matrices`.")
+
+    block_pad_left: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    block_pad_top: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+            W = block_widths[bc]
+            H = block_heights[br]
+            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
+            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
+
+    return grid, cell_cache, block_heights, block_widths, block_pad_left, block_pad_top
+
+
 def _matrix_body_tex(M: Any, *, formatter: LatexFormatter) -> str:
     """Format a matrix-like object into a TeX body: ``a & b \\ c & d``."""
     rows, nrows, ncols = _as_2d_list(M)
@@ -900,7 +1018,7 @@ def _pnicearray_tex(
     return f"\\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\\end{{pNiceArray}}"
 
 
-def ge_grid_tex(
+def grid_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: Any = 0,
     formatter: LatexFormatter = latexify,
@@ -916,6 +1034,7 @@ def ge_grid_tex(
     strict: bool = False,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
+    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = 0.8,
@@ -947,11 +1066,14 @@ def ge_grid_tex(
         Horizontal spacing between adjacent matrix blocks.
     decorations:
         One-line dicts for backgrounds, separators, callouts, and entry styles.
+    specs:
+        Optional decoration/label specs. Label entries are merged into
+        ``label_rows``/``label_cols``; callout labels are merged into decorations.
 
     Returns
     -------
     str
-        TeX document (via :func:`ge_tex`).
+        TeX document (via :func:`tex`).
 
     Examples
     --------
@@ -959,7 +1081,7 @@ def ge_grid_tex(
 
         def box(tex): return rf"\\boxed{{{tex}}}"
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
-        tex = ge_grid_tex(matrices=matrices, decorators=decorators)
+        tex = grid_tex(matrices=matrices, decorators=decorators)
     """
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
@@ -993,6 +1115,165 @@ def ge_grid_tex(
             decorations = grid_spec.decorations
         if grid_spec.strict is not None:
             strict = bool(grid_spec.strict)
+
+    if specs:
+        def _collect_items(val: Any) -> List[Mapping[str, Any]]:
+            if not val:
+                return []
+            if isinstance(val, Mapping):
+                return [val]
+            return [item for item in val if isinstance(item, Mapping)]
+
+        label_specs = _label_targets_from_specs(specs)
+        callout_specs = [item for item in _collect_items(specs) if "label" in item]
+        if callout_specs:
+            decorations = list(decorations or [])
+            decorations.extend(callout_specs)
+
+        if label_specs:
+            label_rows_from_targets, label_cols_from_targets = grid_label_layouts(label_specs)
+
+            def _norm_side(side: Any) -> str:
+                txt = str(side or "").strip().lower()
+                if txt == "top":
+                    return "above"
+                if txt == "bottom":
+                    return "below"
+                return txt
+
+            def _normalize_label_rows_for_merge(val: Any) -> List[List[Any]]:
+                if val is None:
+                    return []
+                if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+                    return [list(val)]
+                if isinstance(val, (list, tuple)):
+                    out: List[List[Any]] = []
+                    for row in val:
+                        if isinstance(row, (list, tuple)):
+                            out.append(list(row))
+                        else:
+                            out.append([row])
+                    return out
+                return [[val]]
+
+            def _normalize_label_cols_for_merge(val: Any) -> List[List[Any]]:
+                if val is None:
+                    return []
+                if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+                    return [list(val)]
+                if isinstance(val, (list, tuple)):
+                    out: List[List[Any]] = []
+                    for col in val:
+                        if isinstance(col, (list, tuple)):
+                            out.append(list(col))
+                        else:
+                            out.append([col])
+                    return out
+                return [[val]]
+
+            def _row_is_blank(row: Sequence[Any]) -> bool:
+                for item in row:
+                    if isinstance(item, dict):
+                        txt = str(item.get("text", "")).strip()
+                    else:
+                        txt = str(item or "").strip()
+                    if txt and txt != r"\NotEmpty":
+                        return False
+                return True
+
+            def _col_is_blank(col: Sequence[Any]) -> bool:
+                for item in col:
+                    if isinstance(item, dict):
+                        txt = str(item.get("text", "")).strip()
+                    else:
+                        txt = str(item or "").strip()
+                    if txt and txt != r"\NotEmpty":
+                        return False
+                return True
+
+            if label_rows_from_targets:
+                existing_rows = list(label_rows or [])
+                for spec_item in label_rows_from_targets:
+                    grid = spec_item.get("grid")
+                    if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                        continue
+                    side = _norm_side(spec_item.get("side"))
+                    rows = _normalize_label_rows_for_merge(spec_item.get("rows", spec_item.get("labels")))
+                    if not rows:
+                        continue
+                    matched = False
+                    for existing in existing_rows:
+                        if not isinstance(existing, Mapping):
+                            continue
+                        if tuple(existing.get("grid", ())) != tuple(grid):
+                            continue
+                        if _norm_side(existing.get("side")) != side:
+                            continue
+                        ex_rows = _normalize_label_rows_for_merge(existing.get("rows", existing.get("labels")))
+                        if not ex_rows:
+                            existing["rows"] = rows
+                            matched = True
+                            break
+                        blank_idxs = [idx for idx, row in enumerate(ex_rows) if _row_is_blank(row)]
+                        if blank_idxs:
+                            for i, row in enumerate(rows):
+                                if i >= len(blank_idxs):
+                                    break
+                                ex_rows[blank_idxs[i]] = row
+                            if len(rows) > len(blank_idxs):
+                                ex_rows.extend(rows[len(blank_idxs):])
+                            existing["rows"] = ex_rows
+                            matched = True
+                            break
+                        ex_rows.extend(rows)
+                        existing["rows"] = ex_rows
+                        matched = True
+                        break
+                    if not matched:
+                        existing_rows.append(dict(spec_item))
+                label_rows = existing_rows
+
+            if label_cols_from_targets:
+                existing_cols = list(label_cols or [])
+                for spec_item in label_cols_from_targets:
+                    grid = spec_item.get("grid")
+                    if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                        continue
+                    side = _norm_side(spec_item.get("side"))
+                    cols = _normalize_label_cols_for_merge(spec_item.get("cols", spec_item.get("labels")))
+                    if not cols:
+                        continue
+                    matched = False
+                    for existing in existing_cols:
+                        if not isinstance(existing, Mapping):
+                            continue
+                        if tuple(existing.get("grid", ())) != tuple(grid):
+                            continue
+                        if _norm_side(existing.get("side")) != side:
+                            continue
+                        ex_cols = _normalize_label_cols_for_merge(existing.get("cols", existing.get("labels")))
+                        if not ex_cols:
+                            existing["cols"] = cols
+                            matched = True
+                            break
+                        blank_idxs = [idx for idx, col in enumerate(ex_cols) if _col_is_blank(col)]
+                        if blank_idxs:
+                            for i, col in enumerate(cols):
+                                if i >= len(blank_idxs):
+                                    break
+                                ex_cols[blank_idxs[i]] = col
+                            if len(cols) > len(blank_idxs):
+                                ex_cols.extend(cols[len(blank_idxs):])
+                            existing["cols"] = ex_cols
+                            matched = True
+                            break
+                        ex_cols.extend(cols)
+                        existing["cols"] = ex_cols
+                        matched = True
+                        break
+                    if not matched:
+                        existing_cols.append(dict(spec_item))
+                label_cols = existing_cols
 
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
@@ -1229,6 +1510,146 @@ def ge_grid_tex(
             continue
         label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
 
+    block_pad_left: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    block_pad_top: List[List[int]] = [
+        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
+    ]
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, h, w = cell_cache[br][bc]
+            if h == 0 or w == 0:
+                continue
+            W = block_widths[bc]
+            H = block_heights[br]
+            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
+            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
+
+    embedded_row_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]] = {}
+    embedded_col_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]] = {}
+
+    def _is_empty_block(br: int, bc: int) -> bool:
+        _, h, w = cell_cache[br][bc]
+        return h == 0 or w == 0
+
+    def _row_label_target_width(gM: int, gN: int) -> int:
+        return cell_cache[gM][gN][2]
+
+    def _col_label_target_height(gM: int, gN: int) -> int:
+        return cell_cache[gM][gN][1]
+
+    for (gM, gN, side), rows in list(label_rows_map.items()):
+        if not rows:
+            continue
+        remaining = list(rows)
+        if side == "above":
+            idx = len(remaining) - 1
+            pad_left = block_pad_left[gM][gN]
+            tgt_w = _row_label_target_width(gM, gN)
+            for br in range(gM - 1, -1, -1):
+                if not _is_empty_block(br, gN):
+                    continue
+                H = block_heights[br]
+                for offset in range(H - 1, -1, -1):
+                    if idx < 0:
+                        break
+                    row_vals = remaining[idx]
+                    embedded_row_labels.setdefault((br, gN), []).append(
+                        (offset, pad_left, row_vals, tgt_w)
+                    )
+                    idx -= 1
+                if idx < 0:
+                    break
+            remaining = remaining[: idx + 1]
+        elif side == "below":
+            idx = 0
+            pad_left = block_pad_left[gM][gN]
+            tgt_w = _row_label_target_width(gM, gN)
+            for br in range(gM + 1, n_block_rows):
+                if not _is_empty_block(br, gN):
+                    continue
+                H = block_heights[br]
+                for offset in range(0, H):
+                    if idx >= len(remaining):
+                        break
+                    row_vals = remaining[idx]
+                    embedded_row_labels.setdefault((br, gN), []).append(
+                        (offset, pad_left, row_vals, tgt_w)
+                    )
+                    idx += 1
+                if idx >= len(remaining):
+                    break
+            remaining = remaining[idx:]
+        if remaining:
+            label_rows_map[(gM, gN, side)] = remaining
+        else:
+            label_rows_map.pop((gM, gN, side), None)
+
+    col_counts: Dict[Tuple[int, str], Dict[int, int]] = {}
+    for (gM, gN, side), cols in label_cols_map.items():
+        col_counts.setdefault((gN, side), {})[gM] = len(cols)
+
+    for (gM, gN, side), cols in list(label_cols_map.items()):
+        if not cols:
+            continue
+        remaining = list(cols)
+        other_rows = col_counts.get((gN, side), {})
+        other_max = 0
+        if other_rows:
+            other_max = max(
+                (count for br, count in other_rows.items() if br != gM),
+                default=0,
+            )
+        if other_max > 0:
+            keep = list(remaining)
+            embed_queue = []
+        else:
+            keep = []
+            embed_queue = remaining
+        pad_top = block_pad_top[gM][gN]
+        tgt_h = _col_label_target_height(gM, gN)
+        if side == "left":
+            idx = len(embed_queue) - 1
+            for bc in range(gN - 1, -1, -1):
+                if not _is_empty_block(gM, bc):
+                    continue
+                W = block_widths[bc]
+                for offset in range(W - 1, -1, -1):
+                    if idx < 0:
+                        break
+                    col_vals = embed_queue[idx]
+                    embedded_col_labels.setdefault((gM, bc), []).append(
+                        (offset, pad_top, col_vals[:tgt_h], side)
+                    )
+                    idx -= 1
+                if idx < 0:
+                    break
+            leftover = embed_queue[: idx + 1]
+            remaining = leftover + keep
+        elif side == "right":
+            idx = 0
+            for bc in range(gN + 1, n_block_cols):
+                if not _is_empty_block(gM, bc):
+                    continue
+                W = block_widths[bc]
+                for offset in range(0, W):
+                    if idx >= len(embed_queue):
+                        break
+                    col_vals = embed_queue[idx]
+                    embedded_col_labels.setdefault((gM, bc), []).append(
+                        (offset, pad_top, col_vals[:tgt_h], side)
+                    )
+                    idx += 1
+                if idx >= len(embed_queue):
+                    break
+            leftover = embed_queue[idx:]
+            remaining = keep + leftover
+        if remaining:
+            label_cols_map[(gM, gN, side)] = remaining
+        else:
+            label_cols_map.pop((gM, gN, side), None)
+
     extra_rows_above = [0] * n_block_rows
     extra_rows_below = [0] * n_block_rows
     for br in range(n_block_rows):
@@ -1298,22 +1719,6 @@ def ge_grid_tex(
 
     # Flatten all blocks into one scalar matrix representation.
     lines: List[str] = []
-    block_pad_left: List[List[int]] = [
-        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
-    ]
-    block_pad_top: List[List[int]] = [
-        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
-    ]
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            _, h, w = cell_cache[br][bc]
-            if h == 0 or w == 0:
-                continue
-            W = block_widths[bc]
-            H = block_heights[br]
-            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
-            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
-
     for br in range(n_block_rows):
         H = block_heights[br]
         Htot = total_block_heights[br]
@@ -1328,7 +1733,28 @@ def ge_grid_tex(
                 Wtot = total_block_widths[bc]
                 rows, h, w = cell_cache[br][bc]
                 if h == 0 or w == 0:
-                    row_cells.extend([blank] * Wtot)
+                    out_cells: List[str] = [blank] * Wtot
+                    if in_matrix:
+                        matrix_i = src_i
+                        for row_idx, start_col, row_vals, tgt_w in embedded_row_labels.get((br, bc), []):
+                            if matrix_i != row_idx:
+                                continue
+                            vals = list(row_vals)
+                            if len(vals) < tgt_w:
+                                vals.extend([""] * (tgt_w - len(vals)))
+                            for j, v in enumerate(vals[:tgt_w]):
+                                idx = start_col + j
+                                if 0 <= idx < Wtot:
+                                    out_cells[idx] = _format_label_cell(v)
+                        for col_idx, start_row, col_vals, side in embedded_col_labels.get((br, bc), []):
+                            rel = matrix_i - start_row
+                            if 0 <= rel < len(col_vals):
+                                if 0 <= col_idx < Wtot:
+                                    out_cells[col_idx] = _pad_label_col(
+                                        _format_label_cell(col_vals[rel]),
+                                        side,
+                                    )
+                    row_cells.extend(out_cells)
                     continue
                 out_cells: List[str] = [blank] * Wtot
                 left_cols = extra_cols_left[bc]
@@ -1399,14 +1825,14 @@ def ge_grid_tex(
                     if not dec_specs:
                         out_cells[matrix_start + pad_left + j] = _fmt(v)
                         continue
-                    tex = _fmt(v)
+                    cell_tex = _fmt(v)
                     for dec, sel, fmt in dec_specs:
                         if (matrix_i, j) in sel and v is not None:
                             base = fmt(v)
                             if not (isinstance(base, str) and base.strip()):
                                 base = blank
-                            tex = apply_decorator(dec, matrix_i, j, v, base)
-                    out_cells[matrix_start + pad_left + j] = tex
+                            cell_tex = apply_decorator(dec, matrix_i, j, v, base)
+                    out_cells[matrix_start + pad_left + j] = cell_tex
                 row_cells.extend(out_cells)
             line = " & ".join(row_cells) + r" \\"
             if not in_matrix and above_rows and i == above_rows - 1 and label_gap_mm:
@@ -1474,7 +1900,7 @@ def ge_grid_tex(
     if user_sub:
         submatrix_locs.extend(list(user_sub))
 
-    return ge_tex(
+    return tex(
         mat_rep=mat_rep,
         mat_format=mat_format,
         extension=extension,
@@ -1487,7 +1913,7 @@ def ge_grid_tex(
     )
 
 
-def ge_grid_submatrix_spans(
+def grid_submatrix_spans(
     matrices: Sequence[Sequence[Any]],
     *,
     Nrhs: int = 0,
@@ -1503,7 +1929,7 @@ def ge_grid_submatrix_spans(
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid.
 
     This helper exposes the same naming and inferred-block-dimension logic used
-    by :func:`ge_grid_tex`, but returns structured metadata rather than a TeX
+    by :func:`grid_tex`, but returns structured metadata rather than a TeX
     document. It exists primarily to support notebook workflows that want to
     attach TikZ paths to delimiter nodes without regex-parsing the generated TeX.
 
@@ -1515,7 +1941,7 @@ def ge_grid_submatrix_spans(
       missing (common for the top E-block in the legacy 2-column layout).
     """
 
-    # Keep this logic intentionally aligned with ge_grid_tex.
+    # Keep this logic intentionally aligned with grid_tex.
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
@@ -1658,7 +2084,7 @@ def ge_grid_submatrix_spans(
     ]
 
     # Build a single NiceArray format string so we keep the same inferred widths
-    # as ge_grid_tex (including Nrhs behavior). We don't return it here, but the
+    # as grid_tex (including Nrhs behavior). We don't return it here, but the
     # computation is intentionally mirrored.
     _ = (Nrhs, outer_hspace_mm, cell_align)  # for signature parity / future use
 
@@ -1726,7 +2152,7 @@ def ge_grid_submatrix_spans(
     return spans
 
 
-def ge_grid_line_specs(
+def grid_line_specs(
     matrices: Sequence[Sequence[Any]],
     *,
     targets: Sequence[Tuple[int, int]],
@@ -1748,7 +2174,7 @@ def ge_grid_line_specs(
         return sorted(set(out))
 
     targets_set = {(int(r), int(c)) for r, c in targets}
-    spans = ge_grid_submatrix_spans(
+    spans = grid_submatrix_spans(
         matrices,
         block_align=block_align,
         block_valign=block_valign,
@@ -1810,7 +2236,7 @@ def _normalize_range(val: Any, max_len: int) -> Tuple[int, int]:
     raise ValueError("rows/cols must be None, a (start,end) pair, or a list of indices")
 
 
-def ge_grid_highlight_specs(
+def grid_highlight_specs(
     matrices: Sequence[Sequence[Any]],
     *,
     blocks: Sequence[Any],
@@ -1835,7 +2261,7 @@ def ge_grid_highlight_specs(
             return d
         raise ValueError("block highlight must be a dict or a (grid, rows, cols) tuple")
 
-    spans = ge_grid_submatrix_spans(
+    spans = grid_submatrix_spans(
         matrices,
         block_align=block_align,
         block_valign=block_valign,
@@ -1994,7 +2420,7 @@ def _parse_ge_decorations(
             hlines = _coerce_line(item.get("hlines"), h, rows)
             vlines = _coerce_line(item.get("vlines"), w, cols)
             sub_locs.extend(
-                ge_grid_line_specs(
+                grid_line_specs(
                     matrices,
                     targets=[key],
                     hlines=hlines,
@@ -2077,14 +2503,14 @@ def _parse_ge_decorations(
             entries = [(r, c) for r in row_idx for c in col_idx]
         dec_specs.append({"grid": key, "entries": entries, "decorator": decorator})
 
-    codebefore = ge_grid_highlight_specs(
+    codebefore = grid_highlight_specs(
         matrices,
         blocks=highlights,
         block_align=block_align,
         block_valign=block_valign,
     )
     if outlines:
-        spans = ge_grid_submatrix_spans(
+        spans = grid_submatrix_spans(
             matrices,
             block_align=block_align,
             block_valign=block_valign,
@@ -2119,7 +2545,7 @@ def _parse_ge_decorations(
     return dec_specs, sub_locs, callouts, codebefore
 
 
-def ge_decorations_help() -> str:
+def decorations_help() -> str:
     """Return a concise help string for the `decorations` dict schema."""
     return (
         "DECORATIONS SPEC (dict entries)\n"
@@ -2164,7 +2590,7 @@ def ge_decorations_help() -> str:
     )
 
 
-def ge_grid_text_specs(
+def grid_tex_specs(
     matrices: Sequence[Sequence[Any]],
     targets: Sequence[Mapping[str, Any]],
     *,
@@ -2188,7 +2614,7 @@ def ge_grid_text_specs(
       - style: extra TikZ node style (e.g. "text=blue,align=left")
     """
 
-    spans = ge_grid_submatrix_spans(
+    spans = grid_submatrix_spans(
         matrices,
         Nrhs=Nrhs,
         outer_hspace_mm=outer_hspace_mm,
@@ -2202,6 +2628,7 @@ def ge_grid_text_specs(
     )
     span_map = {(s.block_row, s.block_col): s for s in spans}
     out: List[Tuple[str, str, str]] = []
+    label_rows_count: Dict[Tuple[int, int, str], int] = {}
 
     from collections.abc import Mapping as _Mapping
 
@@ -2218,6 +2645,33 @@ def ge_grid_text_specs(
                 expr_parts.append(part)
         return "".join(expr_parts)
 
+    def _count_label_blocks(val: Any) -> int:
+        if val is None:
+            return 0
+        if isinstance(val, (list, tuple)):
+            if not val:
+                return 0
+            if isinstance(val[0], (list, tuple)):
+                return len(val)
+            return 1
+        return 1
+
+    for spec_item in label_rows or []:
+        if not isinstance(spec_item, _Mapping):
+            continue
+        grid = spec_item.get("grid")
+        if grid is None and len(spans) == 1:
+            grid = (0, 0)
+        if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+            continue
+        gM, gN = int(grid[0]), int(grid[1])
+        side = str(spec_item.get("side", "above")).strip().lower()
+        if side not in ("above", "below"):
+            continue
+        count = _count_label_blocks(spec_item.get("rows", spec_item.get("labels")))
+        if count:
+            label_rows_count[(gM, gN, side)] = label_rows_count.get((gM, gN, side), 0) + count
+
     for item in targets:
         if not isinstance(item, _Mapping):
             continue
@@ -2228,8 +2682,8 @@ def ge_grid_text_specs(
         span = span_map.get(key)
         if span is None:
             continue
-        base_row_offset = int(item.get("row_offset", 0) or 0)
-        base_col_offset = int(item.get("col_offset", 0) or 0)
+        yshift_mm = float(item.get("yshift_mm", item.get("row_offset", 0)) or 0)
+        xshift_mm = float(item.get("xshift_mm", item.get("col_offset", 0)) or 0)
         labels_raw = item.get("labels") or []
         labels = list(labels_raw) if isinstance(labels_raw, (list, tuple)) else [labels_raw]
         side = str(item.get("side", "right")).strip().lower()
@@ -2241,10 +2695,7 @@ def ge_grid_text_specs(
         if offset_raw is None and "label_gap_mm" in item:
             offset_raw = item.get("label_gap_mm")
         if offset_raw is None:
-            if side == "above":
-                offset_raw = 3.0
-            elif side == "below":
-                offset_raw = 3.5
+            offset_raw = 0.0
         offset = float(offset_raw) if offset_raw is not None else 0.0
         style = str(item.get("style", "")).strip()
 
@@ -2264,51 +2715,71 @@ def ge_grid_text_specs(
             return s
 
         if side in ("right", "left"):
-            if offset_raw is None:
-                offset = 2.0
-            col = span.col_end if side == "right" else span.col_start
-            anchor = "west" if side == "right" else "east"
-            base_shift = offset if side == "right" else -offset
-            edge = "east" if side == "right" else "west"
+            edge = "center"
+            col = span.col_end if side == "right" else max(span.col_start - 1, 1)
             line_gap = float(item.get("line_gap_mm", 3.5))
+            outward_shift = 0
+            base_shift = offset
+            default_xshift = base_shift + outward_shift + xshift_mm
+            direction = 1 if side == "right" else -1
+            anchor = "center"
             if labels and isinstance(labels[0], (list, tuple)):
                 for col_idx, col_vals in enumerate(labels):
-                    xshift = base_shift + (col_idx * line_gap if side == "right" else -col_idx * line_gap)
+                    gap_shift = direction * col_idx * line_gap
                     for i, text in enumerate(col_vals):
-                        row = span.row_start + base_row_offset + i
-                        coord = f"({row}-{col + base_col_offset}.{edge})"
+                        row = span.row_start + i
+                        coord = f"({row}-{col}.{edge})"
                         opts = f"anchor={anchor}"
+                        xshift = default_xshift + gap_shift
                         if xshift:
                             opts += f", xshift={xshift}mm"
+                        if yshift_mm:
+                            opts += f", yshift={yshift_mm}mm"
+                        opts += ", align=center"
                         if style:
                             opts += f", {style}"
                         out.append((coord, _wrap_math(text), opts))
             else:
                 for i, text in enumerate(labels):
-                    row = span.row_start + base_row_offset + i
-                    coord = f"({row}-{col + base_col_offset}.{edge})"
+                    row = span.row_start + i
+                    coord = f"({row}-{col}.{edge})"
                     opts = f"anchor={anchor}"
-                    if base_shift:
-                        opts += f", xshift={base_shift}mm"
+                    if default_xshift:
+                        opts += f", xshift={default_xshift}mm"
+                    if yshift_mm:
+                        opts += f", yshift={yshift_mm}mm"
+                    opts += ", align=center"
                     if style:
                         opts += f", {style}"
                     out.append((coord, _wrap_math(text), opts))
             continue
 
         if side in ("above", "below"):
-            if offset_raw is None:
-                offset = 2.0
+            h_anchor = "center"
+            anchor = h_anchor
             row = span.row_start if side == "above" else span.row_end
-            anchor = "south" if side == "above" else "north"
-            base_shift = offset if side == "above" else -offset
+            base_shift = offset
             default_gap = 3.5 if side == "above" else 4.5
             line_gap = float(item.get("line_gap_mm", default_gap))
+            row_shift = yshift_mm
+            row_count = label_rows_count.get((key[0], key[1], side), 0)
+            if side == "above" and row_count:
+                label_row_start = span.row_start - row_count
+            elif side == "below" and row_count:
+                label_row_start = span.row_end + 1
+            else:
+                label_row_start = row
             if labels and isinstance(labels[0], (list, tuple)):
                 for row_idx, row_vals in enumerate(labels):
-                    yshift = base_shift + (row_idx * line_gap if side == "above" else -row_idx * line_gap)
+                    if row_count:
+                        row = label_row_start + row_idx
+                        yshift = base_shift + row_shift
+                    else:
+                        row = span.row_start if side == "above" else span.row_end
+                        yshift = base_shift + row_shift + (row_idx * line_gap if side == "above" else -row_idx * line_gap)
                     for j, text in enumerate(row_vals):
-                        col = span.col_start + base_col_offset + j
-                        coord = f"({row + base_row_offset}-{col}.{anchor})"
+                        col = span.col_start + j
+                        coord = f"({row}-{col}.{h_anchor})"
                         opts = f"anchor={anchor}"
                         if yshift:
                             opts += f", yshift={yshift}mm"
@@ -2317,11 +2788,13 @@ def ge_grid_text_specs(
                         out.append((coord, _wrap_math(text), opts))
             else:
                 for j, text in enumerate(labels):
-                    col = span.col_start + base_col_offset + j
-                    coord = f"({row + base_row_offset}-{col}.{anchor})"
+                    col = span.col_start + j
+                    row = label_row_start
+                    coord = f"({row}-{col}.{h_anchor})"
                     opts = f"anchor={anchor}"
-                    if base_shift:
-                        opts += f", yshift={base_shift}mm"
+                    yshift = base_shift + row_shift
+                    if yshift:
+                        opts += f", yshift={yshift}mm"
                     if style:
                         opts += f", {style}"
                     out.append((coord, _wrap_math(text), opts))
@@ -2339,7 +2812,7 @@ def resolve_ge_grid_name(
     """Resolve a GE submatrix name to a (block_row, block_col) tuple."""
     if not isinstance(name, str):
         return None
-    spans = ge_grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
+    spans = grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
     name_map: Dict[str, Tuple[int, int]] = {}
     for span in spans:
         name_map[span.name] = (span.block_row, span.block_col)
@@ -2351,7 +2824,7 @@ def resolve_ge_grid_name(
     return name_map.get(name)
 
 
-def ge_grid_bundle(
+def grid_bundle(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     Nrhs: int = 0,
@@ -2369,15 +2842,15 @@ def ge_grid_bundle(
 ) -> GEGridBundle:
     """Return both the GE-grid TeX and the resolved ``\\SubMatrix`` spans.
 
-    This is a notebook-oriented convenience wrapper around :func:`ge_grid_tex`
-    and :func:`ge_grid_submatrix_spans`.
+    This is a notebook-oriented convenience wrapper around :func:`grid_tex`
+    and :func:`grid_submatrix_spans`.
 
-    Unlike :func:`ge_grid_tex`, this function returns structured metadata so
+    Unlike :func:`grid_tex`, this function returns structured metadata so
     callers can attach TikZ paths/callouts to known delimiter nodes without
     regex-parsing the generated TeX.
     """
 
-    tex = ge_grid_tex(
+    tex = grid_tex(
         matrices=matrices,
         Nrhs=Nrhs,
         formatter=formatter,
@@ -2409,7 +2882,7 @@ def ge_grid_bundle(
         label_rows = None
         label_cols = None
         variable_labels = None
-    spans = ge_grid_submatrix_spans(
+    spans = grid_submatrix_spans(
         matrices,
         Nrhs=Nrhs,
         outer_hspace_mm=outer_hspace_mm,
@@ -2424,7 +2897,7 @@ def ge_grid_bundle(
     return GEGridBundle(tex=tex, submatrix_spans=spans)
 
 
-def ge_grid_svg(
+def grid_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: int = 0,
     formatter: LatexFormatter = latexify,
@@ -2444,40 +2917,32 @@ def ge_grid_svg(
     frame: Any = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
-    label_targets: Optional[Sequence[Mapping[str, Any]]] = None,
+    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Render the GE matrix stack to SVG.
 
-    This is a convenience wrapper around :func:`ge_grid_tex` and the strict
+    This is a convenience wrapper around :func:`grid_tex` and the strict
     rendering boundary (:func:`matrixlayout.render.render_svg`).
 
     Parameters
     ----------
     matrices, Nrhs, formatter, outer_hspace_mm, cell_align:
-        See :func:`ge_grid_tex`.
+        See :func:`grid_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
-    label_targets:
-        Optional ``ge_grid_text_specs``-style target dicts that should be
-        converted into ``label_rows``/``label_cols`` so the label text lives in
-        expanded matrix rows/columns instead of floating TikZ nodes.
+    specs:
+        Additional mapping specs that can include ``labels`` entries.
 
     Returns
     -------
     str
         SVG text.
     """
-    if label_targets:
-        rows_from_targets, cols_from_targets = ge_grid_label_layouts(label_targets)
-        user_rows = kwargs.get("label_rows")
-        user_cols = kwargs.get("label_cols")
-        if rows_from_targets:
-            kwargs["label_rows"] = list(user_rows or []) + rows_from_targets
-        if cols_from_targets:
-            kwargs["label_cols"] = list(user_cols or []) + cols_from_targets
+    if "label_targets" in kwargs:
+        raise ValueError("label_targets is removed; use specs instead.")
 
-    tex = ge_grid_tex(
+    tex = grid_tex(
         matrices=matrices,
         Nrhs=Nrhs,
         formatter=formatter,
@@ -2490,6 +2955,7 @@ def ge_grid_svg(
         decorations=decorations,
         strict=strict,
         spec=spec,
+        specs=specs,
         **kwargs,
     )
     return _render_svg(

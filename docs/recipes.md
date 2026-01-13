@@ -5,7 +5,7 @@ Compact examples for common layouts.
 ## GE with callouts and pivots
 
 ```python
-from matrixlayout.ge import ge_grid_svg
+from matrixlayout.ge import grid_svg
 
 spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
@@ -14,7 +14,7 @@ spec = {
         {"name": "A0", "label": r"$A$", "anchor": "right", "angle_deg": -35, "length_mm": 8},
     ],
 }
-svg = ge_grid_svg(**spec)
+svg = grid_svg(**spec)
 ```
 
 ## QR with array names
@@ -27,6 +27,8 @@ spec = {
     "array_names": True,
 }
 svg = qr_grid_svg(**spec)
+
+# Optional: pass label/callout specs via `specs`.
 ```
 
 ## Eigen/SVD with decorators
