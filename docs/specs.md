@@ -1,7 +1,47 @@
 # Specs
 
+Quick reference:
+
+- `grid`: `(block_row, block_col)` index for the target submatrix.
+- `entries`: list of `(i, j)` entry coordinates to decorate.
+- `labels`: list of strings (or list-of-lists) for row/col labels.
+- `label`: single string label for a callout or title.
+- `side`: `left`, `right`, `above`, `below`, `top`, `bottom`.
+- `hlines`/`vlines`: draw block separators.
+- `box`: draw a box around entries or blocks.
+- `angle`/`length_mm`: callout arrow direction/length.
+
+Example:
+
+```python
+specs = [
+    {"grid": (0, 0), "entries": [(0, 0)], "box": True},
+    {"grid": (0, 0), "side": "right", "label": r"\\mathbf{A}", "angle": -35, "length_mm": 8},
+]
+```
+
 This page describes the layout specs consumed by matrixlayout. Specs are plain
 dictionaries passed to `*_tex` or `*_svg` helpers.
+
+## Labels and callouts
+
+Row/column labels (labels are placed in blank rows/cols when available):
+
+```python
+specs = [
+    {"grid": (0, 0), "side": "above", "labels": ["x_1", "x_2", "x_3"]},
+    {"grid": (0, 0), "side": "left", "labels": ["r_1", "r_2"]},
+]
+```
+
+Callouts (arrow labels pointing at a block):
+
+```python
+specs = [
+    {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length_mm": 8},
+    {"grid": (0, 0), "label": r"\\mathbf{B}", "side": "below", "angle": 35, "length_mm": 8},
+]
+```
 
 ## Field summary (core)
 
@@ -117,6 +157,18 @@ spec = {
 - Use `pivot_locs` for explicit pivot boxes rather than manual TikZ rectangles.
 - Keep `callouts` attached to submatrix names when labeling matrices.
 
+## Common mistakes
+
+- Wrong `grid` index: `grid` is `(block_row, block_col)`, not entry coordinates.
+- Mixing `label` and `labels`: use `labels` for row/col lists, `label` for callouts.
+- Forgetting `side`: labels/callouts require a `side` (`left/right/above/below`).
+- Misusing `decorations` when `specs` are intended for labels/callouts.
+
+## Specs vs decorations
+
+Use `specs` for labels/callouts and layout-adjacent annotations. Use
+`decorations` for entry styling, highlights, and lines. Both can coexist.
+
 ## QR specs
 
 - `matrices`: grid of matrices (list of rows).
@@ -130,6 +182,15 @@ spec = {
     "matrices": [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]],
     "array_names": True,
 }
+```
+
+QR spec with labels:
+
+```python
+specs = [
+    {"grid": (0, 2), "side": "above", "labels": ["x_1", "x_2"]},
+    {"grid": (0, 3), "side": "above", "labels": ["w_1", "w_2"]},
+]
 ```
 
 ## Eigen/SVD specs
