@@ -56,6 +56,7 @@ specs = [
 | GE | `label_cols` | list | Extra label columns attached to blocks. |
 | GE | `label_gap_mm` | float | Gap between labels and blocks (mm). |
 | GE | `variable_labels` | list | Shorthand for multiline annotations below a block. |
+| GE | `format_nrhs` | bool | Whether to draw RHS separators in the column format. |
 | GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, callouts, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
 | GE | `callouts` | list | Labels attached to submatrix names. |
@@ -79,6 +80,7 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 - `cell_align="r"`
 - `block_align=None` (auto right-align within block columns)
 - `block_valign=None` (auto bottom-align within block rows)
+- `format_nrhs=True`
 - `decorations=None`
 - `grid` defaults to `(0,0)` when the input is a single matrix
 
@@ -93,6 +95,7 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 - `label_cols`: add label columns left/right of a block.
 - `label_gap_mm`: gap between label rows/cols and blocks (mm).
 - `variable_labels`: convenience alias for `label_rows` with `side="below"`.
+- `format_nrhs`: control whether RHS separators are emitted via the column format.
 - `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`

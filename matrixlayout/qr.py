@@ -393,6 +393,8 @@ def _qr_name_specs_to_callouts(
     color: str,
     angle_deg: float = -35.0,
     length_mm: float = 6.0,
+    label_shift_rules: Optional[Sequence[Tuple[str, float]]] = None,
+    length_rules: Optional[Sequence[Tuple[str, float]]] = None,
 ) -> List[Dict[str, Any]]:
     side_map = {
         "al": ("left", "top"),
@@ -415,17 +417,30 @@ def _qr_name_specs_to_callouts(
         local_angle = angle_deg
         if "Q^T" in label_str or "R =" in label_str:
             local_angle = 40.0
-        out.append(
-            {
-                "grid_pos": (int(grid[0]), int(grid[1])),
-                "label": label_str,
-                "side": side,
-                "anchor": anchor,
-                "color": color,
-                "angle_deg": float(local_angle),
-                "length_mm": float(length_mm),
-            }
-        )
+        label_shift_y_mm = None
+        if label_shift_rules:
+            for needle, shift in label_shift_rules:
+                if needle in label_str:
+                    label_shift_y_mm = float(shift)
+                    break
+        local_length = float(length_mm)
+        if length_rules:
+            for needle, override in length_rules:
+                if needle in label_str:
+                    local_length = float(override)
+                    break
+        callout = {
+            "grid_pos": (int(grid[0]), int(grid[1])),
+            "label": label_str,
+            "side": side,
+            "anchor": anchor,
+            "color": color,
+            "angle_deg": float(local_angle),
+            "length_mm": float(local_length),
+        }
+        if label_shift_y_mm is not None:
+            callout["label_shift_y_mm"] = float(label_shift_y_mm)
+        out.append(callout)
     return out
 
 
@@ -541,11 +556,32 @@ def qr_grid_tex(
     callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
+        label_shift_rules = [
+            (r"\mathbf{W^T W}", 1.0),
+            (r"\mathbf{W^T A}", 1.0),
+            (r"\mathbf{W^T}", 1.0),
+            (r"\mathbf{S = \left( W^T W \right)^{-\tfrac{1}{2}}}", 1.0),
+            (r"\mathbf{W}", 1.0),
+            (r"\mathbf{A}", 1.0),
+            (r"\mathbf{Q^T = S W^T}", -1.0),
+            (r"\mathbf{R = S W^T A}", -1.0),
+        ]
+        length_rules = []
+        a_rows = a_cols = 0
+        if n_block_rows > 0 and n_block_cols > 2:
+            try:
+                a_rows, a_cols = _mat_shape(grid[0][2])
+            except Exception:
+                a_rows = a_cols = 0
+        if a_rows == 2 and a_cols == 2:
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 12.0)]
         callouts = _qr_name_specs_to_callouts(
             name_specs,
             color=label_color,
             angle_deg=-35.0,
             length_mm=6.0,
+            label_shift_rules=label_shift_rules,
+            length_rules=length_rules,
         )
 
     return grid_tex(

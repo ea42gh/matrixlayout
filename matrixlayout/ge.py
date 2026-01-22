@@ -1029,6 +1029,7 @@ def grid_tex(
     block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    format_nrhs: bool = True,
     decorators: Optional[Sequence[Any]] = None,
     decorations: Optional[Sequence[Any]] = None,
     strict: bool = False,
@@ -1060,6 +1061,8 @@ def grid_tex(
         Number of RHS columns in the *A-block* matrices, or a list of RHS block
         widths (legacy partition style). This is used to insert an
         augmented-matrix partition bar in the last block-column's preamble.
+    format_nrhs:
+        Emit RHS separators via the column format when True.
     formatter:
         Scalar formatter for TeX.
     outer_hspace_mm:
@@ -1097,6 +1100,7 @@ def grid_tex(
         block_valign = grid_spec.block_valign if grid_spec.block_valign is not None else block_valign
         extension = str(grid_spec.extension or extension)
         fig_scale = grid_spec.fig_scale if grid_spec.fig_scale is not None else fig_scale
+        format_nrhs = bool(grid_spec.format_nrhs)
         if grid_spec.layout is not None:
             kwargs["layout"] = grid_spec.layout
         kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
@@ -1690,7 +1694,7 @@ def grid_tex(
         right_extra = extra_cols_right[bc]
 
         # Apply Nrhs only to the last block-column (A-block in the legacy layout).
-        if Nrhs and bc == n_block_cols - 1:
+        if Nrhs and format_nrhs and bc == n_block_cols - 1:
             if isinstance(Nrhs, (list, tuple)):
                 rhs = [int(x) for x in Nrhs]
                 left = base_w - sum(rhs)

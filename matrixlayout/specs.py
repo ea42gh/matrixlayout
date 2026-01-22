@@ -187,6 +187,7 @@ class GEGridSpec:
     label_cols: Optional[Sequence[Any]] = None
     label_gap_mm: Optional[float] = 0.8
     variable_labels: Optional[Sequence[Any]] = None
+    format_nrhs: bool = True
     decorators: Optional[Sequence[Any]] = None
     decorations: Optional[Sequence[Any]] = None
     strict: Optional[bool] = None
