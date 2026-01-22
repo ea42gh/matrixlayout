@@ -556,6 +556,15 @@ def qr_grid_tex(
     callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
+        a_rows = a_cols = 0
+        if n_block_rows > 0 and n_block_cols > 2:
+            try:
+                a_rows, a_cols = _mat_shape(grid[0][2])
+            except Exception:
+                a_rows = a_cols = 0
+        r_shift = -1.0
+        if a_cols and a_cols < 3:
+            r_shift = -2.0
         label_shift_rules = [
             (r"\mathbf{W^T W}", 1.0),
             (r"\mathbf{W^T A}", 1.0),
@@ -564,17 +573,13 @@ def qr_grid_tex(
             (r"\mathbf{W}", 1.0),
             (r"\mathbf{A}", 1.0),
             (r"\mathbf{Q^T = S W^T}", -1.0),
-            (r"\mathbf{R = S W^T A}", -1.0),
+            (r"\mathbf{R = S W^T A}", r_shift),
         ]
         length_rules = []
-        a_rows = a_cols = 0
-        if n_block_rows > 0 and n_block_cols > 2:
-            try:
-                a_rows, a_cols = _mat_shape(grid[0][2])
-            except Exception:
-                a_rows = a_cols = 0
+        if a_cols and a_cols < 3:
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 7.0)]
         if a_rows == 2 and a_cols == 2:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 12.0)]
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 13.0)]
         callouts = _qr_name_specs_to_callouts(
             name_specs,
             color=label_color,
