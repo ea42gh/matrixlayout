@@ -577,9 +577,9 @@ def qr_grid_tex(
         ]
         length_rules = []
         if a_cols and a_cols < 3:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 7.0)]
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 8.0)]
         if a_rows == 2 and a_cols == 2:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 13.0)]
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
         callouts = _qr_name_specs_to_callouts(
             name_specs,
             color=label_color,
