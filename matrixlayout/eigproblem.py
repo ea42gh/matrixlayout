@@ -577,6 +577,8 @@ def eigproblem_svg(
     crop: Optional[str] = None,
     padding: Any = None,
     frame: Any = None,
+    tmp_dir: Optional[Any] = None,
+    output_dir: Optional[Any] = None,
 ) -> str:
     """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
     tex = eigproblem_tex(
@@ -592,4 +594,13 @@ def eigproblem_svg(
         decorators=decorators,
         strict=strict,
     )
-    return render_svg(tex, toolchain_name=toolchain_name, crop=crop, padding=padding, frame=frame)
+    if output_dir is None:
+        output_dir = tmp_dir
+    return render_svg(
+        tex,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+    )
