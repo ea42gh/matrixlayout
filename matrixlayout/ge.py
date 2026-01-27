@@ -1101,6 +1101,26 @@ def grid_tex(
         extension = str(grid_spec.extension or extension)
         fig_scale = grid_spec.fig_scale if grid_spec.fig_scale is not None else fig_scale
         format_nrhs = bool(grid_spec.format_nrhs)
+        if grid_spec.preamble is not None:
+            kwargs["preamble"] = grid_spec.preamble
+        if grid_spec.nice_options is not None:
+            kwargs["nice_options"] = grid_spec.nice_options
+        if grid_spec.outer_delims is not None:
+            kwargs["outer_delims"] = bool(grid_spec.outer_delims)
+        if grid_spec.pivot_locs is not None:
+            kwargs["pivot_locs"] = grid_spec.pivot_locs
+        if grid_spec.txt_with_locs is not None:
+            kwargs["txt_with_locs"] = grid_spec.txt_with_locs
+        if grid_spec.rowechelon_paths is not None:
+            kwargs["rowechelon_paths"] = grid_spec.rowechelon_paths
+        if grid_spec.callouts is not None:
+            kwargs["callouts"] = grid_spec.callouts
+        if grid_spec.codebefore is not None:
+            kwargs["codebefore"] = grid_spec.codebefore
+        if grid_spec.create_cell_nodes is not None:
+            kwargs["create_cell_nodes"] = grid_spec.create_cell_nodes
+        if grid_spec.create_medium_nodes is not None:
+            kwargs["create_medium_nodes"] = grid_spec.create_medium_nodes
         if grid_spec.layout is not None:
             kwargs["layout"] = grid_spec.layout
         kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
@@ -2911,6 +2931,8 @@ def grid_svg(
     block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    preamble: Optional[str] = None,
+    nice_options: Optional[str] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -2956,6 +2978,8 @@ def grid_svg(
         block_valign=block_valign,
         extension=extension,
         fig_scale=fig_scale,
+        preamble=preamble,
+        nice_options=nice_options,
         decorations=decorations,
         strict=strict,
         spec=spec,

@@ -180,6 +180,9 @@ class GEGridSpec:
     block_valign: Optional[str] = None
     extension: str = ""
     fig_scale: Optional[Any] = None
+    preamble: Optional[str] = None
+    nice_options: Optional[str] = None
+    outer_delims: Optional[bool] = None
     layout: Optional[Any] = None
     legacy_submatrix_names: bool = False
     legacy_format: bool = False
@@ -190,7 +193,18 @@ class GEGridSpec:
     format_nrhs: bool = True
     decorators: Optional[Sequence[Any]] = None
     decorations: Optional[Sequence[Any]] = None
+    pivot_locs: Optional[Sequence[Any]] = None
+    txt_with_locs: Optional[Sequence[Any]] = None
+    rowechelon_paths: Optional[Sequence[Any]] = None
+    callouts: Optional[Sequence[Any]] = None
+    codebefore: Optional[Sequence[Any]] = None
+    create_cell_nodes: Optional[bool] = None
+    create_medium_nodes: Optional[bool] = None
     strict: Optional[bool] = None
+    array_names: Optional[Any] = None
+    label_color: Optional[str] = None
+    label_text_color: Optional[str] = None
+    known_zero_color: Optional[str] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "GEGridSpec":
