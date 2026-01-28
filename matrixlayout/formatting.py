@@ -77,7 +77,8 @@ def make_decorator(
     coloredbox_decorator = r"\colorboxed{{{color}}}{{{a}}}"
     color_decorator = r"\Block[draw={text_color},fill={bg_color}]<>{{{a}}}"
     txt_color_decorator = r"\color{{{color}}}{{{a}}}"
-    bg_color_decorator = r"\colorbox{{{color}}}{{{a}}}"
+    # Ensure math entries (e.g., \frac) render correctly inside \colorbox.
+    bg_color_decorator = r"\colorbox{{{color}}}{{\ensuremath{{{a}}}}}"
     bf_decorator = r"\mathbf{{{a}}}"
     rlap_decorator = r"\mathrlap{{{a}}}"
     delim_decorator = r"{delim}{a}{delim}"

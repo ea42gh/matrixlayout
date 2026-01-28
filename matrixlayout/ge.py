@@ -1088,57 +1088,48 @@ def grid_tex(
     """
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
-        if matrices is None:
-            matrices = grid_spec.matrices
-        Nrhs = grid_spec.Nrhs
-        if grid_spec.formatter is not None:
-            formatter = grid_spec.formatter
-        outer_hspace_mm = int(grid_spec.outer_hspace_mm)
-        block_vspace_mm = int(grid_spec.block_vspace_mm)
-        cell_align = str(grid_spec.cell_align)
-        block_align = grid_spec.block_align if grid_spec.block_align is not None else block_align
-        block_valign = grid_spec.block_valign if grid_spec.block_valign is not None else block_valign
-        extension = str(grid_spec.extension or extension)
-        fig_scale = grid_spec.fig_scale if grid_spec.fig_scale is not None else fig_scale
-        format_nrhs = bool(grid_spec.format_nrhs)
+        matrices = _merge_scalar("matrices", matrices, grid_spec.matrices)
+        Nrhs = _merge_scalar("Nrhs", Nrhs, grid_spec.Nrhs)
+        formatter = _merge_scalar("formatter", formatter, grid_spec.formatter)
+        outer_hspace_mm = int(_merge_scalar("outer_hspace_mm", outer_hspace_mm, grid_spec.outer_hspace_mm))
+        block_vspace_mm = int(_merge_scalar("block_vspace_mm", block_vspace_mm, grid_spec.block_vspace_mm))
+        cell_align = str(_merge_scalar("cell_align", cell_align, grid_spec.cell_align))
+        block_align = _merge_scalar("block_align", block_align, grid_spec.block_align)
+        block_valign = _merge_scalar("block_valign", block_valign, grid_spec.block_valign)
+        extension = str(_merge_scalar("extension", extension, grid_spec.extension))
+        fig_scale = _merge_scalar("fig_scale", fig_scale, grid_spec.fig_scale)
+        format_nrhs = bool(_merge_scalar("format_nrhs", format_nrhs, grid_spec.format_nrhs))
+        kwargs["legacy_submatrix_names"] = bool(_merge_scalar("legacy_submatrix_names", kwargs.get("legacy_submatrix_names"), grid_spec.legacy_submatrix_names))
+        kwargs["legacy_format"] = bool(_merge_scalar("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format))
         if grid_spec.preamble is not None:
-            kwargs["preamble"] = grid_spec.preamble
+            kwargs["preamble"] = _merge_scalar("preamble", kwargs.get("preamble"), grid_spec.preamble)
         if grid_spec.nice_options is not None:
-            kwargs["nice_options"] = grid_spec.nice_options
+            kwargs["nice_options"] = _merge_scalar("nice_options", kwargs.get("nice_options"), grid_spec.nice_options)
         if grid_spec.outer_delims is not None:
-            kwargs["outer_delims"] = bool(grid_spec.outer_delims)
+            kwargs["outer_delims"] = bool(_merge_scalar("outer_delims", kwargs.get("outer_delims"), grid_spec.outer_delims))
         if grid_spec.pivot_locs is not None:
-            kwargs["pivot_locs"] = grid_spec.pivot_locs
+            kwargs["pivot_locs"] = _merge_scalar("pivot_locs", kwargs.get("pivot_locs"), grid_spec.pivot_locs)
         if grid_spec.txt_with_locs is not None:
-            kwargs["txt_with_locs"] = grid_spec.txt_with_locs
+            kwargs["txt_with_locs"] = _merge_scalar("txt_with_locs", kwargs.get("txt_with_locs"), grid_spec.txt_with_locs)
         if grid_spec.rowechelon_paths is not None:
-            kwargs["rowechelon_paths"] = grid_spec.rowechelon_paths
+            kwargs["rowechelon_paths"] = _merge_scalar("rowechelon_paths", kwargs.get("rowechelon_paths"), grid_spec.rowechelon_paths)
         if grid_spec.callouts is not None:
-            kwargs["callouts"] = grid_spec.callouts
+            kwargs["callouts"] = _merge_scalar("callouts", kwargs.get("callouts"), grid_spec.callouts)
         if grid_spec.codebefore is not None:
-            kwargs["codebefore"] = grid_spec.codebefore
+            kwargs["codebefore"] = _merge_scalar("codebefore", kwargs.get("codebefore"), grid_spec.codebefore)
         if grid_spec.create_cell_nodes is not None:
-            kwargs["create_cell_nodes"] = grid_spec.create_cell_nodes
+            kwargs["create_cell_nodes"] = _merge_scalar("create_cell_nodes", kwargs.get("create_cell_nodes"), grid_spec.create_cell_nodes)
         if grid_spec.create_medium_nodes is not None:
-            kwargs["create_medium_nodes"] = grid_spec.create_medium_nodes
+            kwargs["create_medium_nodes"] = _merge_scalar("create_medium_nodes", kwargs.get("create_medium_nodes"), grid_spec.create_medium_nodes)
         if grid_spec.layout is not None:
-            kwargs["layout"] = grid_spec.layout
-        kwargs["legacy_submatrix_names"] = bool(grid_spec.legacy_submatrix_names)
-        kwargs["legacy_format"] = bool(grid_spec.legacy_format)
-        if grid_spec.label_rows is not None:
-            label_rows = grid_spec.label_rows
-        if grid_spec.label_cols is not None:
-            label_cols = grid_spec.label_cols
-        if grid_spec.label_gap_mm is not None:
-            label_gap_mm = float(grid_spec.label_gap_mm)
-        if grid_spec.variable_labels is not None:
-            variable_labels = grid_spec.variable_labels
-        if grid_spec.decorators is not None:
-            decorators = grid_spec.decorators
-        if grid_spec.decorations is not None:
-            decorations = grid_spec.decorations
-        if grid_spec.strict is not None:
-            strict = bool(grid_spec.strict)
+            kwargs["layout"] = _merge_scalar("layout", kwargs.get("layout"), grid_spec.layout)
+        label_rows = _merge_scalar("label_rows", label_rows, grid_spec.label_rows)
+        label_cols = _merge_scalar("label_cols", label_cols, grid_spec.label_cols)
+        label_gap_mm = _merge_scalar("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm)
+        variable_labels = _merge_scalar("variable_labels", variable_labels, grid_spec.variable_labels)
+        decorators = _merge_scalar("decorators", decorators, grid_spec.decorators)
+        decorations = _merge_scalar("decorations", decorations, grid_spec.decorations)
+        strict = bool(_merge_scalar("strict", strict, grid_spec.strict))
 
     if specs:
         def _collect_items(val: Any) -> List[Mapping[str, Any]]:
