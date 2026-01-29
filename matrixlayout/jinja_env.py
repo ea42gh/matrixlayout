@@ -13,7 +13,7 @@ class JinjaConfig:
     '''
     Configuration for the Jinja2 environment used by matrixlayout.
 
-    This matches the legacy nicematrix.py template conventions:
+    This matches the template conventions:
       - blocks:   {%% ... %%}
       - comments: {## ... ##}
       - variables remain default: {{ ... }}
@@ -52,7 +52,7 @@ def _make_loader(template_dirs: Optional[Sequence[Union[str, Path]]]) -> jinja2.
 
 def make_environment(config: Optional[JinjaConfig] = None) -> jinja2.Environment:
     '''
-    Create a new Jinja2 Environment using matrixlayout's legacy-compatible settings.
+    Create a new Jinja2 Environment using matrixlayout's settings.
 
     Prefer get_environment() unless you need a custom template_dirs.
     '''
@@ -63,7 +63,7 @@ def make_environment(config: Optional[JinjaConfig] = None) -> jinja2.Environment
         loader=_make_loader(config.template_dirs),
         undefined=undefined_cls,
         autoescape=False,
-        # Keep whitespace behavior close to legacy: rely on explicit '-%%' trimming in templates.
+        # Keep whitespace behavior consistent with templates: rely on explicit '-%%' trimming.
         trim_blocks=False,
         lstrip_blocks=False,
         keep_trailing_newline=True,
@@ -110,7 +110,7 @@ def render_string(
 ) -> str:
     '''
     Render a template from an in-memory source string.
-    Useful during migration when templates are still embedded as Python strings.
+    Useful when templates are embedded as Python strings.
     '''
     env = env or get_environment()
     tmpl = env.from_string(template_source)

@@ -1,7 +1,7 @@
-"""Eigen/SVD table layout template (EIGPROBLEM_TEMPLATE migration).
+"""Eigen/SVD table layout template.
 
-This module migrates the legacy ``EIGPROBLEM_TEMPLATE`` from ``itikz.nicematrix``
-into a package template at ``matrixlayout/templates/eigproblem.tex.j2``.
+This module implements the ``EIGPROBLEM_TEMPLATE`` layout using the package
+template at ``matrixlayout/templates/eigproblem.tex.j2``.
 
 Responsibilities (layout-only):
 - Format already-computed eigen/singular values, multiplicities, and vector
@@ -49,7 +49,7 @@ def _is_zero_like(x: Any) -> bool:
 
 
 def _mk_values(values: Sequence[Any], *, formatter: LatexFormatter, zero_blank: bool = False) -> List[str]:
-    """Return interleaved value cells matching the legacy tabular column scheme."""
+    """Return interleaved value cells matching the table column scheme."""
     l: List[str] = []
     for v in values:
         if zero_blank and _is_zero_like(v):
@@ -359,7 +359,7 @@ def eigproblem_tex(
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
 ) -> str:
-    """Render an eigen/QR/SVD table TeX document using the migrated template.
+    """Render an eigen/QR/SVD table TeX document using the package template.
 
     Parameters
     ----------
@@ -378,7 +378,7 @@ def eigproblem_tex(
         Column spacing (mm) for diagonal/matrix blocks.
     fig_scale:
         If provided, wraps the content in ``\\scalebox{<fig_scale>}{% ... }``.
-        This matches the legacy template convention.
+        This matches the template convention.
     preamble:
         TeX inserted after the scale wrapper and before the tabular. Use for
         ``\\NiceMatrixOptions`` etc.
@@ -415,10 +415,9 @@ def eigproblem_tex(
             sz = None
     sz = (n, n) if sz is None else tuple(sz)
 
-    # Value rows in the legacy table use an interleaved "value, gap, value" scheme.
+    # Value rows use an interleaved "value, gap, value" scheme.
     value_cols = max(1, 2 * len(lambdas_distinct) - 1)
-    # Matrix blocks, however, span only the *distinct* value columns (see legacy
-    # itikz.nicematrix.EigenProblemTable).
+    # Matrix blocks span only the *distinct* value columns.
     matrix_span_cols = max(1, len(lambdas_distinct))
 
     # Values rows
@@ -536,7 +535,7 @@ def eigproblem_tex(
     else:
         matrix_names = [r"\Sigma", "V", "U"]
 
-    # Figure scaling wrapper string (legacy convention)
+    # Figure scaling wrapper string (table convention)
     fig_scale_cmd = None
     if fig_scale is not None:
         fig_scale_cmd = r"\scalebox{" + str(fig_scale) + r"}{%"

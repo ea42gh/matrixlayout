@@ -72,7 +72,7 @@ def make_decorator(
     move_right: bool = False,
     delim: Optional[str] = None,
 ) -> Callable[[str], str]:
-    """Return a decorator function for TeX strings (legacy-compatible)."""
+    """Return a decorator function for TeX strings."""
     box_decorator = r"\boxed{{{a}}}"
     coloredbox_decorator = r"\colorboxed{{{color}}}{{{a}}}"
     color_decorator = r"\Block[draw={text_color},fill={bg_color}]<>{{{a}}}"

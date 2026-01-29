@@ -1,7 +1,6 @@
 """Back-substitution layout template.
 
-This module migrates BACKSUBST_TEMPLATE from the legacy ``itikz.nicematrix``
-implementation.
+This module implements the BACKSUBST_TEMPLATE layout.
 
 The template is treated as a layout/presentation artifact only:
 

@@ -17,4 +17,4 @@ A short list of issues that commonly appear when first using matrixlayout.
 ## Callouts and names
 
 - Callouts attach to submatrix names; ensure names are present.
-- When using legacy submatrix naming, enable `legacy_submatrix_names=True`.
+- When using alternate submatrix naming, enable `legacy_submatrix_names=True`.

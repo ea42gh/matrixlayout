@@ -260,7 +260,7 @@ def _normalize_submatrix_locs(
     r"""Normalize submatrix descriptors to ``(options, span)``.
 
     Accepted input forms:
-    - ``(opts, "{1-1}{2-2}")`` (legacy span encoding)
+    - ``(opts, "{1-1}{2-2}")`` (alternate span encoding)
     - ``(opts, "(1-1)(2-2)")`` (two parenthesized tokens)
     - ``(opts, "(1-1)", "(2-2)")`` (explicit first/last, with parentheses)
     - ``(opts, "1-1", "2-2")`` (explicit first/last)
@@ -293,10 +293,10 @@ def _normalize_submatrix_locs(
             loc_s = str(loc).strip()
 
             if "{" in loc_s and "}" in loc_s:
-                # legacy "{r1-c1}{r2-c2}"
+                # "{r1-c1}{r2-c2}" span encoding
                 parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
                 if len(parts) != 2:
-                    raise ValueError(f"Bad legacy span for submatrix_locs: {item!r}")
+                    raise ValueError(f"Bad span for submatrix_locs: {item!r}")
                 first, last = parts[0], parts[1]
             else:
                 # "(r1-c1)(r2-c2)"
@@ -340,7 +340,7 @@ def _normalize_submatrix_locs(
                 if "{" in loc_s and "}" in loc_s:
                     parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
                     if len(parts) != 2:
-                        raise ValueError(f"Bad legacy span for submatrix_locs: {item!r}")
+                        raise ValueError(f"Bad span for submatrix_locs: {item!r}")
                     first, last = parts[0], parts[1]
                 else:
                     parts = re.findall(r"\(\s*([^)]+?)\s*\)", loc_s)
@@ -1059,7 +1059,7 @@ def grid_tex(
         ``[[None, A0], [E1, A1], [E2, A2], ...]``.
     Nrhs:
         Number of RHS columns in the *A-block* matrices, or a list of RHS block
-        widths (legacy partition style). This is used to insert an
+        widths (partition style). This is used to insert an
         augmented-matrix partition bar in the last block-column's preamble.
     format_nrhs:
         Emit RHS separators via the column format when True.
@@ -1704,7 +1704,7 @@ def grid_tex(
         left_extra = extra_cols_left[bc]
         right_extra = extra_cols_right[bc]
 
-        # Apply Nrhs only to the last block-column (A-block in the legacy layout).
+        # Apply Nrhs only to the last block-column (A-block in the standard layout).
         if Nrhs and format_nrhs and bc == n_block_cols - 1:
             if isinstance(Nrhs, (list, tuple)):
                 rhs = [int(x) for x in Nrhs]
@@ -1892,7 +1892,7 @@ def grid_tex(
             c0 = col_starts[bc] + extra_cols_left[bc] + block_pad_left[br][bc]
             r1 = r0 + h - 1
             c1 = c0 + w - 1
-            # Name matrices by their column role when in the legacy 2-column layout.
+            # Name matrices by their column role when in the 2-column layout.
             if use_legacy_names:
                 base = "A"
                 name = f"{base}{br}x{bc}"
@@ -1953,7 +1953,7 @@ def grid_submatrix_spans(
     * Coordinates are 1-based nicematrix coordinates.
     * Blocks that are ``None`` (or empty) are omitted.
     * The first block-column width is inferred as square when it is entirely
-      missing (common for the top E-block in the legacy 2-column layout).
+      missing (common for the top E-block in the 2-column layout).
     """
 
     # Keep this logic intentionally aligned with grid_tex.

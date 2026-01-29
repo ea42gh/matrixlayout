@@ -1,9 +1,8 @@
 """QR (Gram–Schmidt) layout helpers using the GE template.
 
-This module mirrors the legacy MatrixGridLayout-based QR rendering by building
-the same grid layout (matrix-of-matrices) and emitting TeX through the
-GE template. The algorithmic inputs (A, W, etc.) are handled upstream in
-la_figures; this module focuses on layout + formatting only.
+This module builds the QR grid layout (matrix-of-matrices) and emits TeX
+through the GE template. The algorithmic inputs (A, W, etc.) are handled
+upstream in la_figures; this module focuses on layout + formatting only.
 """
 
 from __future__ import annotations
@@ -66,7 +65,7 @@ def _set_extra(extra: Optional[Union[int, Sequence[int]]], n: int) -> List[int]:
 
 
 class QRGridLayout:
-    """Compute the grid layout used in the legacy QR figure."""
+    """Compute the grid layout used in the QR figure."""
 
     def __init__(self, matrices: Sequence[Sequence[Any]], *, extra_rows: Any = None, extra_cols: Any = None):
         self.matrices = _as_grid(matrices)

@@ -4,12 +4,11 @@ This module is intentionally **layout-only**. It does not compute row-reduction,
 RREF, pivots, free variables, or substitutions.
 
 Instead, it formats a *back-substitution trace* (typically produced by an
-algorithmic package) into TeX lines suitable for inclusion in the migrated
+algorithmic package) into TeX lines suitable for inclusion in the
 ``BACKSUBST_TEMPLATE``.
 
-The legacy ``nicematrix.py`` implementation generated nested ``\\ShortCascade``
-expressions programmatically, then injected them into the Jinja template
-verbatim. ``matrixlayout`` preserves that separation:
+The implementation generates nested ``\\ShortCascade`` expressions and injects
+them into the Jinja template verbatim. ``matrixlayout`` preserves that separation:
 
 - Algorithmic package: produces the trace (what the equations are)
 - matrixlayout: formats the trace (how the equations look)
@@ -130,8 +129,7 @@ def mk_shortcascade_lines(trace: Union[BackSubTrace, Mapping[str, Any], Sequence
     """Format a back-substitution trace as nested ``\\ShortCascade`` lines.
 
     Returns a list of TeX strings. The caller typically injects these into a
-    Jinja template via a simple loop (one line per list element), mirroring the
-    legacy ``nicematrix.py`` behavior.
+    Jinja template via a simple loop (one line per list element).
     """
 
     base, steps = normalize_backsub_trace(trace)

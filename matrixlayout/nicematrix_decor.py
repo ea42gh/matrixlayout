@@ -5,7 +5,7 @@ into TikZ snippets by layout routines (e.g., :func:`matrixlayout.ge.tex`).
 
 Why descriptors?
 ----------------
-For migration and Julia interop, decorations should not require constructing TeX
+For Julia interop, decorations should not require constructing TeX
 strings at the call site. Instead, callers provide structured data (plain dicts)
 that can be serialized and generated from other languages.
 
@@ -80,7 +80,7 @@ class DelimCallout:
     tip: str = r"-{Stealth[length=2.4mm]}"
     extra_style: str = ""
     math_mode: bool = True
-    # Deprecated: use label_shift_y_mm instead.
+    # Prefer label_shift_y_mm instead.
     label_shift_mm: float = 0.0
     label_shift_y_mm: float = 0.0
     label_shift_x_mm: float = 0.0
@@ -224,7 +224,7 @@ def render_delim_callouts(
     """Render multiple callouts, optionally validating submatrix names."""
 
     avail = set(available_names or []) if available_names is not None else None
-    # Backward-compat and notebook ergonomics: allow `callouts=True` to mean
+    # Notebook ergonomics: allow `callouts=True` to mean
     # "auto-generate a default callout for every available SubMatrix name".
     if callouts is True:
         if available_names is None:
@@ -345,7 +345,7 @@ def infer_ge_layer_callouts(
     label_E: str = r"E_{%d}",
     **style: Any,
 ) -> List[DelimCalloutDict]:
-    """Backward-compatible alias for :func:`infer_ge_matrix_labels`."""
+    """Alias for :func:`infer_ge_matrix_labels`."""
     return infer_ge_matrix_labels(
         matrices,
         include_A=include_A,
