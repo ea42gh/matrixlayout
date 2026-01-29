@@ -635,6 +635,7 @@ def qr_grid_svg(
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     frame: Any = None,
 ) -> str:
+    """Render a QR grid layout to SVG via the configured TeX toolchain."""
     tex = qr_grid_tex(
         matrices=matrices,
         spec=spec,
