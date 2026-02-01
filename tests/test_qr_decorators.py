@@ -1,5 +1,5 @@
-def test_qr_grid_tex_decorators_apply():
-    from matrixlayout.qr import qr_grid_tex
+def test_render_qr_tex_decorators_apply():
+    from matrixlayout.qr import render_qr_tex
 
     matrices = [
         [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
@@ -10,7 +10,7 @@ def test_qr_grid_tex_decorators_apply():
     def dec(tex: str) -> str:
         return rf"\boxed{{{tex}}}"
 
-    tex = qr_grid_tex(
+    tex = render_qr_tex(
         matrices=matrices,
         formatter=str,
         preamble="",
@@ -20,8 +20,8 @@ def test_qr_grid_tex_decorators_apply():
     assert r"\boxed{1}" in tex
 
 
-def test_qr_grid_tex_decorators_resolve_matrix_name():
-    from matrixlayout.qr import qr_grid_tex
+def test_render_qr_tex_decorators_resolve_matrix_name():
+    from matrixlayout.qr import render_qr_tex
 
     matrices = [
         [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
@@ -32,7 +32,7 @@ def test_qr_grid_tex_decorators_resolve_matrix_name():
     def dec(tex: str) -> str:
         return rf"\boxed{{{tex}}}"
 
-    tex = qr_grid_tex(
+    tex = render_qr_tex(
         matrices=matrices,
         formatter=str,
         preamble="",
@@ -42,8 +42,8 @@ def test_qr_grid_tex_decorators_resolve_matrix_name():
     assert r"\boxed{1}" in tex
 
 
-def test_qr_grid_tex_decorators_strict_raises_on_empty():
-    from matrixlayout.qr import qr_grid_tex
+def test_render_qr_tex_decorators_strict_raises_on_empty():
+    from matrixlayout.qr import render_qr_tex
 
     matrices = [
         [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
@@ -55,7 +55,7 @@ def test_qr_grid_tex_decorators_strict_raises_on_empty():
         return rf"\boxed{{{tex}}}"
 
     try:
-        qr_grid_tex(
+        render_qr_tex(
             matrices=matrices,
             formatter=str,
             preamble="",

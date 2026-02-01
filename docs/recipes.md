@@ -5,7 +5,7 @@ Compact examples for common layouts.
 ## GE with callouts and pivots
 
 ```python
-from matrixlayout.ge import grid_svg
+from matrixlayout.ge import render_ge_svg
 
 spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
@@ -14,19 +14,30 @@ spec = {
         {"name": "A0", "label": r"$A$", "anchor": "right", "angle_deg": -35, "length_mm": 8},
     ],
 }
-svg = grid_svg(**spec)
+svg = render_ge_svg(**spec)
+```
+
+## GE with explicit labels overriding specs
+
+```python
+specs = [{"grid": (0, 1), "side": "above", "labels": ["spec"]}]
+svg = render_ge_svg(
+    matrices=[[None, [[1, 2], [3, 4]]]],
+    specs=specs,
+    label_rows=[{"grid": (0, 1), "side": "above", "rows": [["explicit"]]}],
+)
 ```
 
 ## QR with array names
 
 ```python
-from matrixlayout.qr import qr_grid_svg
+from matrixlayout.qr import render_qr_svg
 
 spec = {
     "matrices": [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]],
     "array_names": True,
 }
-svg = qr_grid_svg(**spec)
+svg = render_qr_svg(**spec)
 
 # Optional: pass label/callout specs via `specs`.
 ```
@@ -34,7 +45,7 @@ svg = qr_grid_svg(**spec)
 ## Eigen/SVD with decorators
 
 ```python
-from matrixlayout import eigproblem_svg
+from matrixlayout import render_eig_svg
 from matrixlayout.formatting import decorator_color, sel_vec
 
 spec = {
@@ -45,5 +56,5 @@ spec = {
         {"block": "evecs", "entries": [sel_vec(0, 0, 0)], "decorator": decorator_color("red")},
     ],
 }
-svg = eigproblem_svg(spec, case="S")
+svg = render_eig_svg(spec, case="S")
 ```

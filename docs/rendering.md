@@ -10,9 +10,28 @@ Rendering requires a LaTeX toolchain and a PDF/DVI-to-SVG converter
 ## SVG output
 
 ```python
-from matrixlayout.ge import grid_svg
-svg = grid_svg(matrices=[[None, [[1]]]])
+from matrixlayout.ge import render_ge_svg
+svg = render_ge_svg(matrices=[[None, [[1]]]])
 ```
+
+`render_ge_svg` forwards its inputs to `render_ge_tex` before rendering. If you pass both
+`spec`/`specs` and explicit kwargs, explicit kwargs take precedence.
+
+## Keep artifacts for debugging
+
+```python
+from matrixlayout.ge import render_ge_svg
+
+svg = render_ge_svg(
+    matrices=[[None, [[1, 2], [3, 4]]]],
+    output_dir="./_out",
+    output_stem="ge_debug",
+    crop="tight",
+    padding=(2, 2, 2, 2),
+)
+```
+
+Inspect `./_out/ge_debug.tex` when debugging layout issues.
 
 ## Toolchains
 

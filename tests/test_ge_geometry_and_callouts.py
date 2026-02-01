@@ -29,10 +29,10 @@ def test_ge_template_geometry_has_large_canvas():
     assert "east/.style={anchor=east}" in tex_out
 
 
-def test_grid_tex_renders_delim_callouts_as_draw_commands():
+def test_render_ge_tex_renders_delim_callouts_as_draw_commands():
     """Callouts must render as valid TikZ inside the template's tikzpicture."""
 
-    from matrixlayout.ge import grid_tex
+    from matrixlayout.ge import render_ge_tex
     from matrixlayout.nicematrix_decor import infer_ge_layer_callouts
 
     # Two-layer GE stack: first has no E-block; second has E and A.
@@ -49,7 +49,7 @@ def test_grid_tex_renders_delim_callouts_as_draw_commands():
         color="blue",
     )
 
-    tex = grid_tex(matrices=matrices, Nrhs=1, callouts=callouts)
+    tex = render_ge_tex(matrices=matrices, Nrhs=1, callouts=callouts)
 
     # Callouts are inserted into the tikzpicture.
     assert "\\begin{tikzpicture}" in tex
@@ -72,28 +72,28 @@ def test_grid_tex_renders_delim_callouts_as_draw_commands():
     assert "_{ (" not in tex
 
 
-def test_grid_tex_strict_callouts_reject_unknown_submatrix_name():
+def test_render_ge_tex_strict_callouts_reject_unknown_submatrix_name():
     """Strict mode should fail fast when a callout references an unknown name."""
 
-    from matrixlayout.ge import grid_tex
+    from matrixlayout.ge import render_ge_tex
 
     matrices = [[None, [[1, 2], [3, 4]]]]
 
     with pytest.raises(ValueError):
-        grid_tex(
+        render_ge_tex(
             matrices=matrices,
             callouts=[{"name": "NO_SUCH_NAME", "label": "X", "side": "right"}],
         )
 
 
-def test_grid_tex_threads_extension_and_fig_scale():
-    """grid_tex/tex should expose extension+fig_scale end-to-end."""
+def test_render_ge_tex_threads_extension_and_fig_scale():
+    """render_ge_tex/tex should expose extension+fig_scale end-to-end."""
 
-    from matrixlayout.ge import grid_tex
+    from matrixlayout.ge import render_ge_tex
 
     matrices = [[None, [[1, 2], [3, 4]]]]
 
-    tex = grid_tex(
+    tex = render_ge_tex(
         matrices=matrices,
         Nrhs=0,
         extension=r"\usepackage{newtxtext,newtxmath}",

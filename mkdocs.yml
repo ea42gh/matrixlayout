@@ -20,8 +20,9 @@ nav:
   - API: api.md
   - Notebooks:
       - Overview: notebooks/README.md
-      - GE minimal: notebooks/01_ge_minimal.ipynb
-      - QR layout: notebooks/02_qr_layout.ipynb
-      - Eigen/SVD table: notebooks/03_eig_svd_table.ipynb
-      - Decorators gallery: notebooks/04_decorators_gallery.ipynb
-      - GE stack overview: notebooks/05_ge_stack_overview.ipynb
+      - GE grids: notebooks/01_ge_grids.ipynb
+      - QR grids: notebooks/02_qr_grids.ipynb
+      - Eigen/SVD tables: notebooks/03_eig_svd_tables.ipynb
+      - Backsubstitution: notebooks/04_backsubstitution.ipynb
+      - Formatting and selectors: notebooks/05_formatting_selectors.ipynb
+      - Rendering templates: notebooks/06_rendering_templates.ipynb

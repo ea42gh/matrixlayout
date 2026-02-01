@@ -43,6 +43,15 @@ specs = [
 ]
 ```
 
+## Precedence and merging
+
+- When a spec and explicit kwargs are both provided, explicit kwargs win.
+- `specs` (label/callout targets) are merged into `label_rows`/`label_cols`.
+- `variable_labels` are appended to `label_rows` with `side="below"`.
+
+If labels are attached to a block that has adjacent empty blocks, the labels are
+placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.
+
 ## Field summary (core)
 
 | Spec | Field | Type | Notes |
@@ -68,6 +77,80 @@ specs = [
 | EIG/SVD | `evecs` | list | Eigenvector groups. |
 | EIG/SVD | `sigma` | list | Singular values. |
 | EIG/SVD | `sz` | tuple | SVD matrix size. |
+
+## Spec schema (informal)
+
+GE grid spec (core fields):
+
+```text
+{
+  "matrices": list[list[matrix|None]],
+  "Nrhs": int | list[int],
+  "outer_hspace_mm": int,
+  "block_vspace_mm": int,
+  "cell_align": str,
+  "block_align": str | None,
+  "block_valign": str | None,
+  "label_rows": list[LabelSpec],
+  "label_cols": list[LabelSpec],
+  "label_gap_mm": float,
+  "variable_labels": list[LabelSpec],
+  "decorations": list[DecorationSpec],
+  "decorators": list[DecoratorSpec],
+  "callouts": list[CalloutSpec],
+  "pivot_locs": list,
+  "rowechelon_paths": list,
+}
+```
+
+LabelSpec (row/column labels):
+
+```text
+{
+  "grid": (block_row, block_col),
+  "side": "above" | "below" | "left" | "right",
+  "rows": list[list[str]]  # for row labels
+  "cols": list[list[str]]  # for column labels
+}
+```
+
+DecorationSpec (one-line shorthand):
+
+```text
+{
+  "grid": (block_row, block_col),
+  "entries": [(i,j), ...] | None,
+  "rows": range | None,
+  "cols": range | None,
+  "submatrix": (rows, cols) | None,
+  "background": "color" | None,
+  "hlines": int | list | "all" | "bounds" | "submatrix" | None,
+  "vlines": int | list | "all" | "bounds" | "submatrix" | None,
+  "label": "text" | None,
+}
+```
+
+DecoratorSpec:
+
+```text
+{
+  "grid": (block_row, block_col),
+  "entries": [(i,j), ...],
+  "decorator": callable,
+}
+```
+
+CalloutSpec:
+
+```text
+{
+  "name": "A0" | "E1" | ...,
+  "label": "text",
+  "side": "left" | "right",
+  "angle_deg": float,
+  "length_mm": float,
+}
+```
 
 Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 `formatter=latexify`). See `matrixlayout.formatting` for decorator helpers.

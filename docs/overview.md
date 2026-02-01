@@ -15,6 +15,17 @@ Terms used here are summarized in `glossary.md`.
 Specs are plain dictionaries; convenience helpers in `la_figures` construct them
 from algorithmic traces.
 
+### Precedence
+
+When both a spec and explicit keyword arguments are provided, explicit arguments
+take precedence. This lets you reuse a spec while overriding a few fields.
+
+### Labels
+
+Row/column labels are attached to a block and then placed into available blank
+rows/cols (if adjacent blocks are empty). If there are no empty blocks, the
+labels are inserted by adding padding rows/cols to the block.
+
 ## Rendering boundary
 
 Matrixlayout renders through `jupyter_tikz`. The rendering layer is external;

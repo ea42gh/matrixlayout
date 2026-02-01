@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, 
 import re
 
 from .formatting import latexify
-from .ge import grid_tex
+from .ge import render_ge_tex
 from .render import render_svg
 from .specs import QRGridSpec
 
@@ -461,7 +461,7 @@ def _coerce_qr_spec(spec: Optional[Union[Dict[str, Any], QRGridSpec]]) -> Option
     return QRGridSpec.from_dict(spec)
 
 
-def qr_grid_tex(
+def render_qr_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
@@ -490,7 +490,7 @@ def qr_grid_tex(
 
         def box(tex): return rf"\\boxed{{{tex}}}"
         decorators = [{"grid": (0, 2), "entries": [(0, 0)], "decorator": box}]
-        tex = qr_grid_tex(matrices=matrices, decorators=decorators)
+        tex = render_qr_tex(matrices=matrices, decorators=decorators)
     """
     spec_obj = _coerce_qr_spec(spec)
     if spec_obj is not None:
@@ -514,7 +514,7 @@ def qr_grid_tex(
             specs = _merge_scalar("specs", specs, spec_obj.specs)
 
     if matrices is None:
-        raise ValueError("qr_grid_tex requires `matrices`")
+        raise ValueError("render_qr_tex requires `matrices`")
     if formatter is None:
         formatter = latexify
 
@@ -588,7 +588,7 @@ def qr_grid_tex(
             length_rules=length_rules,
         )
 
-    return grid_tex(
+    return render_ge_tex(
         matrices=grid,
         formatter=formatter,
         preamble=preamble,
@@ -608,7 +608,7 @@ def qr_grid_tex(
     )
 
 
-def qr_grid_svg(
+def render_qr_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
@@ -635,7 +635,7 @@ def qr_grid_svg(
     frame: Any = None,
 ) -> str:
     """Render a QR grid layout to SVG via the configured TeX toolchain."""
-    tex = qr_grid_tex(
+    tex = render_qr_tex(
         matrices=matrices,
         spec=spec,
         formatter=formatter,

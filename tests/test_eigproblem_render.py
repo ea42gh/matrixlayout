@@ -19,10 +19,10 @@ def _pick_toolchain_name_or_skip() -> str:
 
 
 @pytest.mark.render
-def test_eigproblem_svg_svd_smoke():
+def test_render_eig_svg_svd_smoke():
     pytest.importorskip("jupyter_tikz")
 
-    from matrixlayout import eigproblem_svg
+    from matrixlayout import render_eig_svg
 
     spec = {
         "lambda": [4, 1],
@@ -44,7 +44,7 @@ def test_eigproblem_svg_svd_smoke():
         "sz": (3, 2),
     }
 
-    svg = eigproblem_svg(
+    svg = render_eig_svg(
         spec,
         case="SVD",
         toolchain_name=_pick_toolchain_name_or_skip(),
@@ -56,10 +56,10 @@ def test_eigproblem_svg_svd_smoke():
 
 
 @pytest.mark.render
-def test_eigproblem_svg_svd_smoke_wide():
+def test_render_eig_svg_svd_smoke_wide():
     pytest.importorskip("jupyter_tikz")
 
-    from matrixlayout import eigproblem_svg
+    from matrixlayout import render_eig_svg
 
     spec = {
         "lambda": [9, 4],
@@ -80,7 +80,7 @@ def test_eigproblem_svg_svd_smoke_wide():
         "sz": (2, 3),
     }
 
-    svg = eigproblem_svg(
+    svg = render_eig_svg(
         spec,
         case="SVD",
         toolchain_name=_pick_toolchain_name_or_skip(),

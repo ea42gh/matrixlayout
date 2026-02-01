@@ -30,8 +30,8 @@ def _sample_eig():
     }
 
 
-def test_eigproblem_tex_case_S():
-    tex = matrixlayout.eigproblem_tex(_sample_eig(), case="S", formatter=str, fig_scale=None)
+def test_render_eig_tex_case_S():
+    tex = matrixlayout.render_eig_tex(_sample_eig(), case="S", formatter=str, fig_scale=None)
     assert r"\begin{tabular}" in tex
     assert r"$\color" in tex
     assert r"\sigma" not in tex  # sigma row is SVD-only
@@ -40,21 +40,21 @@ def test_eigproblem_tex_case_S():
     assert re.search(r"\\color\{[^}]+\}\{\s*S\s*=\s*\}", tex) is not None
 
 
-def test_eigproblem_tex_case_Q_includes_orthonormal():
-    tex = matrixlayout.eigproblem_tex(_sample_eig(), case="Q", formatter=str, fig_scale=None)
+def test_render_eig_tex_case_Q_includes_orthonormal():
+    tex = matrixlayout.render_eig_tex(_sample_eig(), case="Q", formatter=str, fig_scale=None)
     assert "orthonormal basis for $E_\\lambda$" in tex
     # In Q case, matrix label should be Q
     assert re.search(r"\\color\{[^}]+\}\{\s*Q\s*=\s*\}", tex) is not None
 
 
-def test_eigproblem_tex_case_SVD_includes_sigma_and_U():
-    tex = matrixlayout.eigproblem_tex(_sample_eig(), case="SVD", formatter=str, fig_scale=1.2, sz=(2, 2))
+def test_render_eig_tex_case_SVD_includes_sigma_and_U():
+    tex = matrixlayout.render_eig_tex(_sample_eig(), case="SVD", formatter=str, fig_scale=1.2, sz=(2, 2))
     assert r"\sigma" in tex
     assert re.search(r"\\color\{[^}]+\}\{\s*\\Sigma\s*=\s*\}", tex) is not None
     assert re.search(r"\\color\{[^}]+\}\{\s*U\s*=\s*\}", tex) is not None
 
 
-def test_eigproblem_tex_svd_uses_spec_size_when_sz_missing():
+def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():
     spec = {
         "lambda": [4],
         "ma": [1],
@@ -64,6 +64,6 @@ def test_eigproblem_tex_svd_uses_spec_size_when_sz_missing():
         "uvecs": [[[1, 0, 0]]],
         "sz": (3, 2),
     }
-    tex = matrixlayout.eigproblem_tex(spec, case="SVD", formatter=str, fig_scale=None)
+    tex = matrixlayout.render_eig_tex(spec, case="SVD", formatter=str, fig_scale=None)
     assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex
     assert r"2 & 0 \\ 0 & 0 \\ 0 & 0 \\" in tex

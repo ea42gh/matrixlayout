@@ -119,7 +119,10 @@ def decorator_color(color: str) -> Callable[[str], str]:
 
 def decorator_bg(color: str) -> Callable[[str], str]:
     """Return a decorator that adds a background color."""
-    return make_decorator(bg_color=color)
+    def _bg(tex: str) -> str:
+        return rf"\colorbox{{{color}}}{{{tex}}}"
+
+    return _bg
 
 
 def decorator_bf() -> Callable[[str], str]:

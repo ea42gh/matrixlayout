@@ -2,24 +2,29 @@
 matrixlayout: layout-only TeX generators for matrix-themed figures.
 
 Rendering is strictly delegated to jupyter_tikz via :func:`matrixlayout.render.render_svg`.
+
+Public API
+----------
+Functions exported via ``__all__`` are the supported public entry points.
+Helpers prefixed with ``_`` are internal and subject to change.
 """
 
 from .jinja_env import get_environment
 from .backsubst import backsubst_tex, backsubst_svg
-from .eigproblem import eigproblem_tex, eigproblem_svg
+from .eigproblem import render_eig_tex, render_eig_svg
 from .ge import (
     tex,
     svg,
-    grid_tex,
-    grid_svg,
+    render_ge_tex,
+    render_ge_svg,
     resolve_ge_grid_name,
     grid_line_specs,
     grid_highlight_specs,
-    grid_tex_specs,
+    render_ge_tex_specs,
     grid_label_layouts,
     decorations_help,
 )
-from .qr import qr_grid_tex, qr_grid_svg, resolve_qr_grid_name
+from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name
 from .specs import GEGridSpec, QRGridSpec
 from .formatting import (
     decorate_tex_entries,
@@ -52,20 +57,20 @@ __all__ = [
     "get_environment",
     "backsubst_tex",
     "backsubst_svg",
-    "eigproblem_tex",
-    "eigproblem_svg",
+    "render_eig_tex",
+    "render_eig_svg",
     "tex",
     "svg",
-    "grid_tex",
-    "grid_svg",
+    "render_ge_tex",
+    "render_ge_svg",
     "grid_line_specs",
     "grid_highlight_specs",
-    "grid_tex_specs",
+    "render_ge_tex_specs",
     "grid_label_layouts",
     "decorations_help",
     "resolve_ge_grid_name",
-    "qr_grid_tex",
-    "qr_grid_svg",
+    "render_qr_tex",
+    "render_qr_svg",
     "resolve_qr_grid_name",
     "GEGridSpec",
     "QRGridSpec",

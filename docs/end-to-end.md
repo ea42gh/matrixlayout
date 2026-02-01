@@ -4,12 +4,12 @@ A compact example that emits TeX, renders SVG, and retains artifacts.
 
 ```python
 import sympy as sym
-from matrixlayout.ge import grid_tex, grid_svg
+from matrixlayout.ge import render_ge_tex, render_ge_svg
 
 matrices = [[None, sym.Matrix([[1, 2], [3, 4]])]]
-tex = grid_tex(matrices=matrices)
+tex = render_ge_tex(matrices=matrices)
 
-svg = grid_svg(
+svg = render_ge_svg(
     matrices=matrices,
     output_dir="./_out",
     output_stem="ge_min",

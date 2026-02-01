@@ -24,5 +24,11 @@ matrices.
 - See `getting-started.md` for minimal runnable examples.
 - See `decorators.md` for selector and decorator usage.
 - See `rendering.md` for toolchains, crop, and padding.
-- See `notebooks/` for runnable JupyterLab examples.
+- See `notebooks/` for runnable JupyterLab examples:
+  - `notebooks/01_ge_grids.ipynb`
+  - `notebooks/02_qr_grids.ipynb`
+  - `notebooks/03_eig_svd_tables.ipynb`
+  - `notebooks/04_backsubstitution.ipynb`
+  - `notebooks/05_formatting_selectors.ipynb`
+  - `notebooks/06_rendering_templates.ipynb`
 - See `glossary.md` for terminology.

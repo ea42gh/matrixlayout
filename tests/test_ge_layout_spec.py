@@ -1,7 +1,7 @@
 import pytest
 
 
-from matrixlayout.ge import grid_tex, tex
+from matrixlayout.ge import render_ge_tex, tex
 from matrixlayout.specs import GELayoutSpec
 
 
@@ -30,7 +30,7 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
     assert r"\node[red] at (1-1)" in tex_out
 
 
-def test_grid_tex_merges_layout_spec_callouts():
+def test_render_ge_tex_merges_layout_spec_callouts():
     # One GE layer in the legacy 2-column layout: [[None, A0]]
     matrices = [[None, [[1, 2], [3, 4]]]]
 
@@ -38,7 +38,7 @@ def test_grid_tex_merges_layout_spec_callouts():
         callouts=[{"name": "A0", "label": "A_0", "side": "right"}],
     )
 
-    tex_out = grid_tex(matrices=matrices, layout=layout)
+    tex_out = render_ge_tex(matrices=matrices, layout=layout)
     assert "A0-right" in tex_out
     assert r"\draw[" in tex_out
 

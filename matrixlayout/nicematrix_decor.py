@@ -293,7 +293,7 @@ def infer_ge_matrix_labels(
     Parameters
     ----------
     matrices:
-        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.grid_tex`,
+        The GE "matrix-of-matrices" stack as consumed by :func:`matrixlayout.ge.render_ge_tex`,
         typically ``[[None, A0], [E1, A1], [E2, A2], ...]``.
 
     Returns

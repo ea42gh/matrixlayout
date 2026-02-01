@@ -27,6 +27,11 @@ def test_decorator_presets_wrap_tex():
     assert r"\color{red}{a}" in out[1]
     assert r"\colorbox{yellow}{a}" in out[2]
     assert r"\mathbf{a}" in out[3]
+
+
+def test_decorator_bg_is_minimal_wrapper():
+    out = decorator_bg("yellow")("x")
+    assert out == r"\colorbox{yellow}{x}"
     for s in out:
         assert s and "None" not in s
 

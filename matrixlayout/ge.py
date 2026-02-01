@@ -57,9 +57,9 @@ def grid_label_layouts(
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     r"""Convert label targets into ``label_rows``/``label_cols`` specs.
 
-    The input accepts the same ``targets`` dicts that drive :func:`grid_tex_specs`.
+    The input accepts the same ``targets`` dicts that drive :func:`render_ge_tex_specs`.
     Returns two lists suitable for ``label_rows`` and ``label_cols`` arguments of
-    :func:`grid_tex` / :func:`grid_svg`.
+    :func:`render_ge_tex` / :func:`render_ge_svg`.
     """
     label_rows: List[Dict[str, Any]] = []
     label_cols: List[Dict[str, Any]] = []
@@ -92,7 +92,7 @@ def grid_label_layouts(
 def _label_targets_from_specs(
     specs: Optional[Sequence[Mapping[str, Any]]]
 ) -> List[Dict[str, Any]]:
-    """Extract ``grid_tex_specs``-style label targets from generic specs."""
+    """Extract ``render_ge_tex_specs``-style label targets from generic specs."""
     if not specs:
         return []
     label_targets: List[Dict[str, Any]] = []
@@ -549,7 +549,10 @@ def _append_nicematrix_option(nice_options: Optional[str], opt: str) -> str:
 
 
 def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
-    """Merge a scalar field from explicit kwargs and layout spec."""
+    """Merge a scalar field from explicit kwargs and layout spec.
+
+    Raise on conflicting values when both are explicitly provided.
+    """
     if spec_val is None:
         return explicit
     if explicit is None:
@@ -557,6 +560,308 @@ def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
     if explicit != spec_val:
         raise ValueError(f"Conflicting values for {field}: explicit={explicit!r} spec={spec_val!r}")
     return explicit
+
+
+def _merge_scalar_prefer_explicit(field: str, explicit: Any, spec_val: Any) -> Any:
+    """Merge a scalar field, preferring explicit kwargs when provided."""
+    if explicit is None:
+        return spec_val
+    return explicit
+
+
+def _grid_spec_defaults(outer_hspace_mm: Optional[int], block_vspace_mm: Optional[int]) -> Tuple[Optional[int], Optional[int]]:
+    """Treat default spacing values as unset when a grid spec is provided."""
+    if outer_hspace_mm == 6:
+        outer_hspace_mm = None
+    if block_vspace_mm == 1:
+        block_vspace_mm = None
+    return outer_hspace_mm, block_vspace_mm
+
+
+def _merge_grid_spec_inputs(
+    *,
+    grid_spec: GEGridSpec,
+    matrices: Optional[Sequence[Sequence[Any]]],
+    Nrhs: Any,
+    formatter: LatexFormatter,
+    outer_hspace_mm: int,
+    block_vspace_mm: int,
+    cell_align: str,
+    block_align: Optional[str],
+    block_valign: Optional[str],
+    extension: str,
+    fig_scale: Optional[Union[float, int, str]],
+    format_nrhs: bool,
+    decorators: Optional[Sequence[Any]],
+    decorations: Optional[Sequence[Any]],
+    strict: bool,
+    label_rows: Optional[Sequence[Any]],
+    label_cols: Optional[Sequence[Any]],
+    label_gap_mm: Optional[float],
+    variable_labels: Optional[Sequence[Any]],
+    kwargs: Dict[str, Any],
+) -> Tuple[
+    Optional[Sequence[Sequence[Any]]],
+    Any,
+    LatexFormatter,
+    int,
+    int,
+    str,
+    Optional[str],
+    Optional[str],
+    str,
+    Optional[Union[float, int, str]],
+    bool,
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    bool,
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[float],
+    Optional[Sequence[Any]],
+    Dict[str, Any],
+]:
+    """Merge grid spec values into explicit kwargs (explicit wins)."""
+    outer_hspace_mm, block_vspace_mm = _grid_spec_defaults(outer_hspace_mm, block_vspace_mm)
+
+    matrices = _merge_scalar_prefer_explicit("matrices", matrices, grid_spec.matrices)
+    Nrhs = _merge_scalar_prefer_explicit("Nrhs", Nrhs, grid_spec.Nrhs)
+    formatter = _merge_scalar_prefer_explicit("formatter", formatter, grid_spec.formatter)
+    outer_hspace_mm = int(_merge_scalar_prefer_explicit("outer_hspace_mm", outer_hspace_mm, grid_spec.outer_hspace_mm))
+    block_vspace_mm = int(_merge_scalar_prefer_explicit("block_vspace_mm", block_vspace_mm, grid_spec.block_vspace_mm))
+    cell_align = str(_merge_scalar_prefer_explicit("cell_align", cell_align, grid_spec.cell_align))
+    block_align = _merge_scalar_prefer_explicit("block_align", block_align, grid_spec.block_align)
+    block_valign = _merge_scalar_prefer_explicit("block_valign", block_valign, grid_spec.block_valign)
+    extension = str(_merge_scalar_prefer_explicit("extension", extension, grid_spec.extension))
+    fig_scale = _merge_scalar_prefer_explicit("fig_scale", fig_scale, grid_spec.fig_scale)
+    format_nrhs = bool(_merge_scalar_prefer_explicit("format_nrhs", format_nrhs, grid_spec.format_nrhs))
+    kwargs["legacy_submatrix_names"] = bool(_merge_scalar_prefer_explicit("legacy_submatrix_names", kwargs.get("legacy_submatrix_names"), grid_spec.legacy_submatrix_names))
+    kwargs["legacy_format"] = bool(_merge_scalar_prefer_explicit("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format))
+    if grid_spec.preamble is not None:
+        kwargs["preamble"] = _merge_scalar_prefer_explicit("preamble", kwargs.get("preamble"), grid_spec.preamble)
+    if grid_spec.nice_options is not None:
+        kwargs["nice_options"] = _merge_scalar_prefer_explicit("nice_options", kwargs.get("nice_options"), grid_spec.nice_options)
+    if grid_spec.outer_delims is not None:
+        kwargs["outer_delims"] = bool(_merge_scalar_prefer_explicit("outer_delims", kwargs.get("outer_delims"), grid_spec.outer_delims))
+    if grid_spec.pivot_locs is not None:
+        kwargs["pivot_locs"] = _merge_scalar_prefer_explicit("pivot_locs", kwargs.get("pivot_locs"), grid_spec.pivot_locs)
+    if grid_spec.txt_with_locs is not None:
+        kwargs["txt_with_locs"] = _merge_scalar_prefer_explicit("txt_with_locs", kwargs.get("txt_with_locs"), grid_spec.txt_with_locs)
+    if grid_spec.rowechelon_paths is not None:
+        kwargs["rowechelon_paths"] = _merge_scalar_prefer_explicit("rowechelon_paths", kwargs.get("rowechelon_paths"), grid_spec.rowechelon_paths)
+    if grid_spec.callouts is not None:
+        kwargs["callouts"] = _merge_scalar_prefer_explicit("callouts", kwargs.get("callouts"), grid_spec.callouts)
+    if grid_spec.codebefore is not None:
+        kwargs["codebefore"] = _merge_scalar_prefer_explicit("codebefore", kwargs.get("codebefore"), grid_spec.codebefore)
+    if grid_spec.create_cell_nodes is not None:
+        kwargs["create_cell_nodes"] = _merge_scalar_prefer_explicit("create_cell_nodes", kwargs.get("create_cell_nodes"), grid_spec.create_cell_nodes)
+    if grid_spec.create_medium_nodes is not None:
+        kwargs["create_medium_nodes"] = _merge_scalar_prefer_explicit("create_medium_nodes", kwargs.get("create_medium_nodes"), grid_spec.create_medium_nodes)
+    if grid_spec.layout is not None:
+        kwargs["layout"] = _merge_scalar_prefer_explicit("layout", kwargs.get("layout"), grid_spec.layout)
+    label_rows = _merge_scalar_prefer_explicit("label_rows", label_rows, grid_spec.label_rows)
+    label_cols = _merge_scalar_prefer_explicit("label_cols", label_cols, grid_spec.label_cols)
+    label_gap_mm = _merge_scalar_prefer_explicit("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm)
+    variable_labels = _merge_scalar_prefer_explicit("variable_labels", variable_labels, grid_spec.variable_labels)
+    decorators = _merge_scalar_prefer_explicit("decorators", decorators, grid_spec.decorators)
+    decorations = _merge_scalar_prefer_explicit("decorations", decorations, grid_spec.decorations)
+    strict = bool(_merge_scalar_prefer_explicit("strict", strict, grid_spec.strict))
+
+    return (
+        matrices,
+        Nrhs,
+        formatter,
+        outer_hspace_mm,
+        block_vspace_mm,
+        cell_align,
+        block_align,
+        block_valign,
+        extension,
+        fig_scale,
+        format_nrhs,
+        decorators,
+        decorations,
+        strict,
+        label_rows,
+        label_cols,
+        label_gap_mm,
+        variable_labels,
+        kwargs,
+    )
+
+
+def _merge_label_specs(
+    *,
+    specs: Sequence[Mapping[str, Any]],
+    label_rows: Optional[Sequence[Any]],
+    label_cols: Optional[Sequence[Any]],
+    decorations: Optional[Sequence[Any]],
+) -> Tuple[Optional[List[Any]], Optional[List[Any]], Optional[List[Any]]]:
+    """Merge label specs derived from ``specs`` into explicit label rows/cols."""
+    if not specs:
+        return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
+
+    def _collect_items(val: Any) -> List[Mapping[str, Any]]:
+        if not val:
+            return []
+        if isinstance(val, Mapping):
+            return [val]
+        return [item for item in val if isinstance(item, Mapping)]
+
+    label_specs = _label_targets_from_specs(specs)
+    callout_specs = [item for item in _collect_items(specs) if "label" in item]
+    if callout_specs:
+        decorations = list(decorations or [])
+        decorations.extend(callout_specs)
+
+    if not label_specs:
+        return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
+
+    label_rows_from_targets, label_cols_from_targets = grid_label_layouts(label_specs)
+
+    def _norm_side(side: Any) -> str:
+        txt = str(side or "").strip().lower()
+        if txt == "top":
+            return "above"
+        if txt == "bottom":
+            return "below"
+        return txt
+
+    def _normalize_label_rows_for_merge(val: Any) -> List[List[Any]]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+            return [list(val)]
+        if isinstance(val, (list, tuple)):
+            out: List[List[Any]] = []
+            for row in val:
+                if isinstance(row, (list, tuple)):
+                    out.append(list(row))
+                else:
+                    out.append([row])
+            return out
+        return [[val]]
+
+    def _normalize_label_cols_for_merge(val: Any) -> List[List[Any]]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+            return [list(val)]
+        if isinstance(val, (list, tuple)):
+            out: List[List[Any]] = []
+            for col in val:
+                if isinstance(col, (list, tuple)):
+                    out.append(list(col))
+                else:
+                    out.append([col])
+            return out
+        return [[val]]
+
+    def _row_is_blank(row: Sequence[Any]) -> bool:
+        for item in row:
+            if isinstance(item, dict):
+                txt = str(item.get("text", "")).strip()
+            else:
+                txt = str(item or "").strip()
+            if txt and txt != r"\NotEmpty":
+                return False
+        return True
+
+    def _col_is_blank(col: Sequence[Any]) -> bool:
+        for item in col:
+            if isinstance(item, dict):
+                txt = str(item.get("text", "")).strip()
+            else:
+                txt = str(item or "").strip()
+            if txt and txt != r"\NotEmpty":
+                return False
+        return True
+
+    if label_rows_from_targets:
+        existing_rows = list(label_rows or [])
+        for spec_item in label_rows_from_targets:
+            grid = spec_item.get("grid")
+            if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                continue
+            side = _norm_side(spec_item.get("side"))
+            rows = _normalize_label_rows_for_merge(spec_item.get("rows", spec_item.get("labels")))
+            if not rows:
+                continue
+            matched = False
+            for existing in existing_rows:
+                if not isinstance(existing, Mapping):
+                    continue
+                if tuple(existing.get("grid", ())) != tuple(grid):
+                    continue
+                if _norm_side(existing.get("side")) != side:
+                    continue
+                ex_rows = _normalize_label_rows_for_merge(existing.get("rows", existing.get("labels")))
+                if not ex_rows:
+                    existing["rows"] = rows
+                    matched = True
+                    break
+                blank_idxs = [idx for idx, row in enumerate(ex_rows) if _row_is_blank(row)]
+                if blank_idxs:
+                    for i, row in enumerate(rows):
+                        if i >= len(blank_idxs):
+                            break
+                        ex_rows[blank_idxs[i]] = row
+                    if len(rows) > len(blank_idxs):
+                        ex_rows.extend(rows[len(blank_idxs):])
+                    existing["rows"] = ex_rows
+                    matched = True
+                    break
+                ex_rows.extend(rows)
+                existing["rows"] = ex_rows
+                matched = True
+                break
+            if not matched:
+                existing_rows.append(dict(spec_item))
+        label_rows = existing_rows
+
+    if label_cols_from_targets:
+        existing_cols = list(label_cols or [])
+        for spec_item in label_cols_from_targets:
+            grid = spec_item.get("grid")
+            if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
+                continue
+            side = _norm_side(spec_item.get("side"))
+            cols = _normalize_label_cols_for_merge(spec_item.get("cols", spec_item.get("labels")))
+            if not cols:
+                continue
+            matched = False
+            for existing in existing_cols:
+                if not isinstance(existing, Mapping):
+                    continue
+                if tuple(existing.get("grid", ())) != tuple(grid):
+                    continue
+                if _norm_side(existing.get("side")) != side:
+                    continue
+                ex_cols = _normalize_label_cols_for_merge(existing.get("cols", existing.get("labels")))
+                if not ex_cols:
+                    existing["cols"] = cols
+                    matched = True
+                    break
+                blank_idxs = [idx for idx, col in enumerate(ex_cols) if _col_is_blank(col)]
+                if blank_idxs:
+                    for i, col in enumerate(cols):
+                        if i >= len(blank_idxs):
+                            break
+                        ex_cols[blank_idxs[i]] = col
+                    if len(cols) > len(blank_idxs):
+                        ex_cols.extend(cols[len(blank_idxs):])
+                    existing["cols"] = ex_cols
+                    matched = True
+                    break
+                ex_cols.extend(cols)
+                existing["cols"] = ex_cols
+                matched = True
+                break
+            if not matched:
+                existing_cols.append(dict(spec_item))
+        label_cols = existing_cols
+
+    return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
 
 
 def _merge_list(explicit: Optional[Sequence[Any]], spec_val: Optional[Sequence[Any]]) -> Optional[List[Any]]:
@@ -582,6 +887,316 @@ def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optiona
             raise ValueError(f"Conflicting values for callouts: explicit={explicit!r} spec={spec_val!r}")
         return explicit
     return _merge_list(explicit, spec_val)
+
+
+def _normalize_label_rows(val: Any) -> List[List[Any]]:
+    """Normalize label row input into a list of row lists."""
+    if val is None:
+        return []
+    if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+        return [list(val)]
+    if isinstance(val, (list, tuple)):
+        out: List[List[Any]] = []
+        for row in val:
+            if isinstance(row, (list, tuple)):
+                out.append(list(row))
+            else:
+                out.append([row])
+        return out
+    return [[val]]
+
+
+def _normalize_label_cols(val: Any) -> List[List[Any]]:
+    """Normalize label column input into a list of column lists."""
+    if val is None:
+        return []
+    if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
+        return [list(val)]
+    if isinstance(val, (list, tuple)):
+        out: List[List[Any]] = []
+        for col in val:
+            if isinstance(col, (list, tuple)):
+                out.append(list(col))
+            else:
+                out.append([col])
+        return out
+    return [[val]]
+
+
+def _append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels: Optional[Sequence[Any]]) -> List[Any]:
+    """Append variable label specs onto label row specs, normalizing shape."""
+    if not variable_labels:
+        return list(label_rows or [])
+    out = list(label_rows or [])
+    for item in variable_labels:
+        if not isinstance(item, dict):
+            continue
+        spec_item = dict(item)
+        if "side" not in spec_item:
+            spec_item["side"] = "below"
+        if "rows" not in spec_item and "labels" in spec_item:
+            spec_item["rows"] = spec_item["labels"]
+        out.append(spec_item)
+    return out
+
+
+def _build_label_maps(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    label_rows: Optional[Sequence[Any]],
+    label_cols: Optional[Sequence[Any]],
+    variable_labels: Optional[Sequence[Any]] = None,
+    allow_overlay: bool = False,
+    strict: bool = False,
+) -> Tuple[Dict[Tuple[int, int, str], List[List[Any]]], Dict[Tuple[int, int, str], List[List[Any]]], List[Dict[str, Any]]]:
+    """Build label-row/label-col maps and collect overlay label specs."""
+    label_rows = _append_variable_labels(label_rows, variable_labels)
+    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
+    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
+    overlay_label_specs: List[Dict[str, Any]] = []
+
+    for spec_item in label_rows or []:
+        if not isinstance(spec_item, dict):
+            if strict:
+                raise ValueError("label_rows entries must be dict specs")
+            continue
+        grid_pos = spec_item.get("grid")
+        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+            grid_pos = (0, 0)
+        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+            if strict:
+                raise ValueError("label_rows grid must be a (row,col) pair")
+            continue
+        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+            if strict:
+                raise ValueError("label_rows grid position out of range")
+            continue
+        side = str(spec_item.get("side", "above")).strip().lower()
+        if side not in ("above", "below"):
+            if strict:
+                raise ValueError("label_rows side must be 'above' or 'below'")
+            continue
+        rows = _normalize_label_rows(spec_item.get("rows", spec_item.get("labels")))
+        if not rows:
+            continue
+        label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
+
+    for spec_item in label_cols or []:
+        if not isinstance(spec_item, dict):
+            if strict:
+                raise ValueError("label_cols entries must be dict specs")
+            continue
+        grid_pos = spec_item.get("grid")
+        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+            grid_pos = (0, 0)
+        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+            if strict:
+                raise ValueError("label_cols grid must be a (row,col) pair")
+            continue
+        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+            if strict:
+                raise ValueError("label_cols grid position out of range")
+            continue
+        side = str(spec_item.get("side", "left")).strip().lower()
+        if side not in ("left", "right"):
+            if strict:
+                raise ValueError("label_cols side must be 'left' or 'right'")
+            continue
+        if allow_overlay and spec_item.get("overlay"):
+            overlay_label_specs.append(spec_item)
+            continue
+        cols = _normalize_label_cols(spec_item.get("cols", spec_item.get("labels")))
+        if not cols:
+            continue
+        label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
+
+    return label_rows_map, label_cols_map, overlay_label_specs
+
+
+def _compute_label_extras(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]],
+) -> Tuple[List[int], List[int], List[int], List[int]]:
+    """Compute extra row/column counts needed for label padding."""
+    extra_rows_above = [0] * n_block_rows
+    extra_rows_below = [0] * n_block_rows
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            rows_above = label_rows_map.get((br, bc, "above"), [])
+            rows_below = label_rows_map.get((br, bc, "below"), [])
+            extra_rows_above[br] = max(extra_rows_above[br], len(rows_above))
+            extra_rows_below[br] = max(extra_rows_below[br], len(rows_below))
+
+    extra_cols_left = [0] * n_block_cols
+    extra_cols_right = [0] * n_block_cols
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            cols_left = label_cols_map.get((br, bc, "left"), [])
+            cols_right = label_cols_map.get((br, bc, "right"), [])
+            extra_cols_left[bc] = max(extra_cols_left[bc], len(cols_left))
+            extra_cols_right[bc] = max(extra_cols_right[bc], len(cols_right))
+
+    return extra_rows_above, extra_rows_below, extra_cols_left, extra_cols_right
+
+
+def _embed_row_labels(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    block_heights: Sequence[int],
+    block_pad_left: Sequence[Sequence[int]],
+    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+) -> Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]]:
+    """Embed label rows into empty blocks above/below target blocks."""
+    embedded_row_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]] = {}
+
+    def _is_empty_block(br: int, bc: int) -> bool:
+        _, h, w = cell_cache[br][bc]
+        return h == 0 or w == 0
+
+    def _row_label_target_width(gM: int, gN: int) -> int:
+        return cell_cache[gM][gN][2]
+
+    for (gM, gN, side), rows in list(label_rows_map.items()):
+        if not rows:
+            continue
+        remaining = list(rows)
+        pad_left = block_pad_left[gM][gN]
+        tgt_w = _row_label_target_width(gM, gN)
+        if side == "above":
+            idx = len(remaining) - 1
+            for br in range(gM - 1, -1, -1):
+                if not _is_empty_block(br, gN):
+                    continue
+                H = block_heights[br]
+                for offset in range(H - 1, -1, -1):
+                    if idx < 0:
+                        break
+                    row_vals = remaining[idx]
+                    embedded_row_labels.setdefault((br, gN), []).append(
+                        (offset, pad_left, row_vals, tgt_w)
+                    )
+                    idx -= 1
+                if idx < 0:
+                    break
+            remaining = remaining[: idx + 1]
+        elif side == "below":
+            idx = 0
+            for br in range(gM + 1, n_block_rows):
+                if not _is_empty_block(br, gN):
+                    continue
+                H = block_heights[br]
+                for offset in range(0, H):
+                    if idx >= len(remaining):
+                        break
+                    row_vals = remaining[idx]
+                    embedded_row_labels.setdefault((br, gN), []).append(
+                        (offset, pad_left, row_vals, tgt_w)
+                    )
+                    idx += 1
+                if idx >= len(remaining):
+                    break
+            remaining = remaining[idx:]
+
+        if remaining:
+            label_rows_map[(gM, gN, side)] = remaining
+        else:
+            label_rows_map.pop((gM, gN, side), None)
+
+    return embedded_row_labels
+
+
+def _embed_col_labels(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    block_widths: Sequence[int],
+    block_pad_top: Sequence[Sequence[int]],
+    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+) -> Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]]:
+    """Embed label columns into empty blocks left/right of target blocks."""
+    embedded_col_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]] = {}
+
+    def _is_empty_block(br: int, bc: int) -> bool:
+        _, h, w = cell_cache[br][bc]
+        return h == 0 or w == 0
+
+    def _col_label_target_height(gM: int, gN: int) -> int:
+        return cell_cache[gM][gN][1]
+
+    col_counts: Dict[Tuple[int, str], Dict[int, int]] = {}
+    for (gM, gN, side), cols in label_cols_map.items():
+        col_counts.setdefault((gN, side), {})[gM] = len(cols)
+
+    for (gM, gN, side), cols in list(label_cols_map.items()):
+        if not cols:
+            continue
+        remaining = list(cols)
+        other_rows = col_counts.get((gN, side), {})
+        other_max = 0
+        if other_rows:
+            other_max = max(
+                (count for br, count in other_rows.items() if br != gM),
+                default=0,
+            )
+        if other_max > 0:
+            keep = list(remaining)
+            embed_queue = []
+        else:
+            keep = []
+            embed_queue = remaining
+        pad_top = block_pad_top[gM][gN]
+        tgt_h = _col_label_target_height(gM, gN)
+        if side == "left":
+            idx = len(embed_queue) - 1
+            for bc in range(gN - 1, -1, -1):
+                if not _is_empty_block(gM, bc):
+                    continue
+                W = block_widths[bc]
+                for offset in range(W - 1, -1, -1):
+                    if idx < 0:
+                        break
+                    col_vals = embed_queue[idx]
+                    embedded_col_labels.setdefault((gM, bc), []).append(
+                        (offset, pad_top, col_vals[:tgt_h], side)
+                    )
+                    idx -= 1
+                if idx < 0:
+                    break
+            leftover = embed_queue[: idx + 1]
+            remaining = leftover + keep
+        elif side == "right":
+            idx = 0
+            for bc in range(gN + 1, n_block_cols):
+                if not _is_empty_block(gM, bc):
+                    continue
+                W = block_widths[bc]
+                for offset in range(0, W):
+                    if idx >= len(embed_queue):
+                        break
+                    col_vals = embed_queue[idx]
+                    embedded_col_labels.setdefault((gM, bc), []).append(
+                        (offset, pad_top, col_vals[:tgt_h], side)
+                    )
+                    idx += 1
+                if idx >= len(embed_queue):
+                    break
+            leftover = embed_queue[idx:]
+            remaining = keep + leftover
+        if remaining:
+            label_cols_map[(gM, gN, side)] = remaining
+        else:
+            label_cols_map.pop((gM, gN, side), None)
+
+    return embedded_col_labels
 
 def tex(
     *,
@@ -1018,7 +1633,7 @@ def _pnicearray_tex(
     return f"\\begin{{pNiceArray}}{{{fmt}}}%\n{body}\n\\end{{pNiceArray}}"
 
 
-def grid_tex(
+def render_ge_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: Any = 0,
     formatter: LatexFormatter = latexify,
@@ -1084,211 +1699,60 @@ def grid_tex(
 
         def box(tex): return rf"\\boxed{{{tex}}}"
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
-        tex = grid_tex(matrices=matrices, decorators=decorators)
+        tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
-        matrices = _merge_scalar("matrices", matrices, grid_spec.matrices)
-        Nrhs = _merge_scalar("Nrhs", Nrhs, grid_spec.Nrhs)
-        formatter = _merge_scalar("formatter", formatter, grid_spec.formatter)
-        outer_hspace_mm = int(_merge_scalar("outer_hspace_mm", outer_hspace_mm, grid_spec.outer_hspace_mm))
-        block_vspace_mm = int(_merge_scalar("block_vspace_mm", block_vspace_mm, grid_spec.block_vspace_mm))
-        cell_align = str(_merge_scalar("cell_align", cell_align, grid_spec.cell_align))
-        block_align = _merge_scalar("block_align", block_align, grid_spec.block_align)
-        block_valign = _merge_scalar("block_valign", block_valign, grid_spec.block_valign)
-        extension = str(_merge_scalar("extension", extension, grid_spec.extension))
-        fig_scale = _merge_scalar("fig_scale", fig_scale, grid_spec.fig_scale)
-        format_nrhs = bool(_merge_scalar("format_nrhs", format_nrhs, grid_spec.format_nrhs))
-        kwargs["legacy_submatrix_names"] = bool(_merge_scalar("legacy_submatrix_names", kwargs.get("legacy_submatrix_names"), grid_spec.legacy_submatrix_names))
-        kwargs["legacy_format"] = bool(_merge_scalar("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format))
-        if grid_spec.preamble is not None:
-            kwargs["preamble"] = _merge_scalar("preamble", kwargs.get("preamble"), grid_spec.preamble)
-        if grid_spec.nice_options is not None:
-            kwargs["nice_options"] = _merge_scalar("nice_options", kwargs.get("nice_options"), grid_spec.nice_options)
-        if grid_spec.outer_delims is not None:
-            kwargs["outer_delims"] = bool(_merge_scalar("outer_delims", kwargs.get("outer_delims"), grid_spec.outer_delims))
-        if grid_spec.pivot_locs is not None:
-            kwargs["pivot_locs"] = _merge_scalar("pivot_locs", kwargs.get("pivot_locs"), grid_spec.pivot_locs)
-        if grid_spec.txt_with_locs is not None:
-            kwargs["txt_with_locs"] = _merge_scalar("txt_with_locs", kwargs.get("txt_with_locs"), grid_spec.txt_with_locs)
-        if grid_spec.rowechelon_paths is not None:
-            kwargs["rowechelon_paths"] = _merge_scalar("rowechelon_paths", kwargs.get("rowechelon_paths"), grid_spec.rowechelon_paths)
-        if grid_spec.callouts is not None:
-            kwargs["callouts"] = _merge_scalar("callouts", kwargs.get("callouts"), grid_spec.callouts)
-        if grid_spec.codebefore is not None:
-            kwargs["codebefore"] = _merge_scalar("codebefore", kwargs.get("codebefore"), grid_spec.codebefore)
-        if grid_spec.create_cell_nodes is not None:
-            kwargs["create_cell_nodes"] = _merge_scalar("create_cell_nodes", kwargs.get("create_cell_nodes"), grid_spec.create_cell_nodes)
-        if grid_spec.create_medium_nodes is not None:
-            kwargs["create_medium_nodes"] = _merge_scalar("create_medium_nodes", kwargs.get("create_medium_nodes"), grid_spec.create_medium_nodes)
-        if grid_spec.layout is not None:
-            kwargs["layout"] = _merge_scalar("layout", kwargs.get("layout"), grid_spec.layout)
-        label_rows = _merge_scalar("label_rows", label_rows, grid_spec.label_rows)
-        label_cols = _merge_scalar("label_cols", label_cols, grid_spec.label_cols)
-        label_gap_mm = _merge_scalar("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm)
-        variable_labels = _merge_scalar("variable_labels", variable_labels, grid_spec.variable_labels)
-        decorators = _merge_scalar("decorators", decorators, grid_spec.decorators)
-        decorations = _merge_scalar("decorations", decorations, grid_spec.decorations)
-        strict = bool(_merge_scalar("strict", strict, grid_spec.strict))
+        (
+            matrices,
+            Nrhs,
+            formatter,
+            outer_hspace_mm,
+            block_vspace_mm,
+            cell_align,
+            block_align,
+            block_valign,
+            extension,
+            fig_scale,
+            format_nrhs,
+            decorators,
+            decorations,
+            strict,
+            label_rows,
+            label_cols,
+            label_gap_mm,
+            variable_labels,
+            kwargs,
+        ) = _merge_grid_spec_inputs(
+            grid_spec=grid_spec,
+            matrices=matrices,
+            Nrhs=Nrhs,
+            formatter=formatter,
+            outer_hspace_mm=outer_hspace_mm,
+            block_vspace_mm=block_vspace_mm,
+            cell_align=cell_align,
+            block_align=block_align,
+            block_valign=block_valign,
+            extension=extension,
+            fig_scale=fig_scale,
+            format_nrhs=format_nrhs,
+            decorators=decorators,
+            decorations=decorations,
+            strict=strict,
+            label_rows=label_rows,
+            label_cols=label_cols,
+            label_gap_mm=label_gap_mm,
+            variable_labels=variable_labels,
+            kwargs=kwargs,
+        )
 
     if specs:
-        def _collect_items(val: Any) -> List[Mapping[str, Any]]:
-            if not val:
-                return []
-            if isinstance(val, Mapping):
-                return [val]
-            return [item for item in val if isinstance(item, Mapping)]
-
-        label_specs = _label_targets_from_specs(specs)
-        callout_specs = [item for item in _collect_items(specs) if "label" in item]
-        if callout_specs:
-            decorations = list(decorations or [])
-            decorations.extend(callout_specs)
-
-        if label_specs:
-            label_rows_from_targets, label_cols_from_targets = grid_label_layouts(label_specs)
-
-            def _norm_side(side: Any) -> str:
-                txt = str(side or "").strip().lower()
-                if txt == "top":
-                    return "above"
-                if txt == "bottom":
-                    return "below"
-                return txt
-
-            def _normalize_label_rows_for_merge(val: Any) -> List[List[Any]]:
-                if val is None:
-                    return []
-                if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-                    return [list(val)]
-                if isinstance(val, (list, tuple)):
-                    out: List[List[Any]] = []
-                    for row in val:
-                        if isinstance(row, (list, tuple)):
-                            out.append(list(row))
-                        else:
-                            out.append([row])
-                    return out
-                return [[val]]
-
-            def _normalize_label_cols_for_merge(val: Any) -> List[List[Any]]:
-                if val is None:
-                    return []
-                if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-                    return [list(val)]
-                if isinstance(val, (list, tuple)):
-                    out: List[List[Any]] = []
-                    for col in val:
-                        if isinstance(col, (list, tuple)):
-                            out.append(list(col))
-                        else:
-                            out.append([col])
-                    return out
-                return [[val]]
-
-            def _row_is_blank(row: Sequence[Any]) -> bool:
-                for item in row:
-                    if isinstance(item, dict):
-                        txt = str(item.get("text", "")).strip()
-                    else:
-                        txt = str(item or "").strip()
-                    if txt and txt != r"\NotEmpty":
-                        return False
-                return True
-
-            def _col_is_blank(col: Sequence[Any]) -> bool:
-                for item in col:
-                    if isinstance(item, dict):
-                        txt = str(item.get("text", "")).strip()
-                    else:
-                        txt = str(item or "").strip()
-                    if txt and txt != r"\NotEmpty":
-                        return False
-                return True
-
-            if label_rows_from_targets:
-                existing_rows = list(label_rows or [])
-                for spec_item in label_rows_from_targets:
-                    grid = spec_item.get("grid")
-                    if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
-                        continue
-                    side = _norm_side(spec_item.get("side"))
-                    rows = _normalize_label_rows_for_merge(spec_item.get("rows", spec_item.get("labels")))
-                    if not rows:
-                        continue
-                    matched = False
-                    for existing in existing_rows:
-                        if not isinstance(existing, Mapping):
-                            continue
-                        if tuple(existing.get("grid", ())) != tuple(grid):
-                            continue
-                        if _norm_side(existing.get("side")) != side:
-                            continue
-                        ex_rows = _normalize_label_rows_for_merge(existing.get("rows", existing.get("labels")))
-                        if not ex_rows:
-                            existing["rows"] = rows
-                            matched = True
-                            break
-                        blank_idxs = [idx for idx, row in enumerate(ex_rows) if _row_is_blank(row)]
-                        if blank_idxs:
-                            for i, row in enumerate(rows):
-                                if i >= len(blank_idxs):
-                                    break
-                                ex_rows[blank_idxs[i]] = row
-                            if len(rows) > len(blank_idxs):
-                                ex_rows.extend(rows[len(blank_idxs):])
-                            existing["rows"] = ex_rows
-                            matched = True
-                            break
-                        ex_rows.extend(rows)
-                        existing["rows"] = ex_rows
-                        matched = True
-                        break
-                    if not matched:
-                        existing_rows.append(dict(spec_item))
-                label_rows = existing_rows
-
-            if label_cols_from_targets:
-                existing_cols = list(label_cols or [])
-                for spec_item in label_cols_from_targets:
-                    grid = spec_item.get("grid")
-                    if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
-                        continue
-                    side = _norm_side(spec_item.get("side"))
-                    cols = _normalize_label_cols_for_merge(spec_item.get("cols", spec_item.get("labels")))
-                    if not cols:
-                        continue
-                    matched = False
-                    for existing in existing_cols:
-                        if not isinstance(existing, Mapping):
-                            continue
-                        if tuple(existing.get("grid", ())) != tuple(grid):
-                            continue
-                        if _norm_side(existing.get("side")) != side:
-                            continue
-                        ex_cols = _normalize_label_cols_for_merge(existing.get("cols", existing.get("labels")))
-                        if not ex_cols:
-                            existing["cols"] = cols
-                            matched = True
-                            break
-                        blank_idxs = [idx for idx, col in enumerate(ex_cols) if _col_is_blank(col)]
-                        if blank_idxs:
-                            for i, col in enumerate(cols):
-                                if i >= len(blank_idxs):
-                                    break
-                                ex_cols[blank_idxs[i]] = col
-                            if len(cols) > len(blank_idxs):
-                                ex_cols.extend(cols[len(blank_idxs):])
-                            existing["cols"] = ex_cols
-                            matched = True
-                            break
-                        ex_cols.extend(cols)
-                        existing["cols"] = ex_cols
-                        matched = True
-                        break
-                    if not matched:
-                        existing_cols.append(dict(spec_item))
-                label_cols = existing_cols
+        label_rows, label_cols, decorations = _merge_label_specs(
+            specs=specs,
+            label_rows=label_rows,
+            label_cols=label_cols,
+            decorations=decorations,
+        )
 
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
@@ -1404,36 +1868,6 @@ def grid_tex(
                 raise ValueError("decorator selector did not match any entries")
             decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
 
-    def _normalize_label_rows(val: Any) -> List[List[Any]]:
-        if val is None:
-            return []
-        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-            return [list(val)]
-        if isinstance(val, (list, tuple)):
-            out: List[List[Any]] = []
-            for row in val:
-                if isinstance(row, (list, tuple)):
-                    out.append(list(row))
-                else:
-                    out.append([row])
-            return out
-        return [[val]]
-
-    def _normalize_label_cols(val: Any) -> List[List[Any]]:
-        if val is None:
-            return []
-        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-            return [list(val)]
-        if isinstance(val, (list, tuple)):
-            out: List[List[Any]] = []
-            for col in val:
-                if isinstance(col, (list, tuple)):
-                    out.append(list(col))
-                else:
-                    out.append([col])
-            return out
-        return [[val]]
-
     def _coerce_label_text(val: Any) -> str:
         if isinstance(val, dict):
             return str(val.get("text", ""))
@@ -1470,60 +1904,15 @@ def grid_tex(
         gap = rf"\hspace{{{float(label_gap_mm)}mm}}"
         return f"{text}{gap}" if side == "left" else f"{gap}{text}"
 
-    if variable_labels:
-        if label_rows is None:
-            label_rows = []
-        else:
-            label_rows = list(label_rows)
-        for item in variable_labels:
-            if not isinstance(item, dict):
-                continue
-            spec_item = dict(item)
-            if "side" not in spec_item:
-                spec_item["side"] = "below"
-            if "rows" not in spec_item and "labels" in spec_item:
-                spec_item["rows"] = spec_item["labels"]
-            label_rows.append(spec_item)
-
-    label_rows_map: Dict[Tuple[int, int, str], List[List[str]]] = {}
-    label_cols_map: Dict[Tuple[int, int, str], List[List[str]]] = {}
-
-    for spec_item in label_rows or []:
-        if not isinstance(spec_item, dict):
-            continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        side = str(spec_item.get("side", "above")).strip().lower()
-        if side not in ("above", "below"):
-            continue
-        rows = _normalize_label_rows(spec_item.get("rows", spec_item.get("labels")))
-        if not rows:
-            continue
-        label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
-
-    for spec_item in label_cols or []:
-        if not isinstance(spec_item, dict):
-            continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        side = str(spec_item.get("side", "left")).strip().lower()
-        if side not in ("left", "right"):
-            continue
-        if spec_item.get("overlay"):
-            overlay_label_specs.append(spec_item)
-            continue
-        cols = _normalize_label_cols(spec_item.get("cols", spec_item.get("labels")))
-        if not cols:
-            continue
-        label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
+    label_rows_map, label_cols_map, overlay_label_specs = _build_label_maps(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        label_rows=label_rows,
+        label_cols=label_cols,
+        variable_labels=variable_labels,
+        allow_overlay=True,
+        strict=strict,
+    )
 
     block_pad_left: List[List[int]] = [
         [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
@@ -1541,147 +1930,29 @@ def grid_tex(
             block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
             block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
 
-    embedded_row_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]] = {}
-    embedded_col_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]] = {}
+    embedded_row_labels = _embed_row_labels(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        label_rows_map=label_rows_map,
+        block_heights=block_heights,
+        block_pad_left=block_pad_left,
+        cell_cache=cell_cache,
+    )
+    embedded_col_labels = _embed_col_labels(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        label_cols_map=label_cols_map,
+        block_widths=block_widths,
+        block_pad_top=block_pad_top,
+        cell_cache=cell_cache,
+    )
 
-    def _is_empty_block(br: int, bc: int) -> bool:
-        _, h, w = cell_cache[br][bc]
-        return h == 0 or w == 0
-
-    def _row_label_target_width(gM: int, gN: int) -> int:
-        return cell_cache[gM][gN][2]
-
-    def _col_label_target_height(gM: int, gN: int) -> int:
-        return cell_cache[gM][gN][1]
-
-    for (gM, gN, side), rows in list(label_rows_map.items()):
-        if not rows:
-            continue
-        remaining = list(rows)
-        if side == "above":
-            idx = len(remaining) - 1
-            pad_left = block_pad_left[gM][gN]
-            tgt_w = _row_label_target_width(gM, gN)
-            for br in range(gM - 1, -1, -1):
-                if not _is_empty_block(br, gN):
-                    continue
-                H = block_heights[br]
-                for offset in range(H - 1, -1, -1):
-                    if idx < 0:
-                        break
-                    row_vals = remaining[idx]
-                    embedded_row_labels.setdefault((br, gN), []).append(
-                        (offset, pad_left, row_vals, tgt_w)
-                    )
-                    idx -= 1
-                if idx < 0:
-                    break
-            remaining = remaining[: idx + 1]
-        elif side == "below":
-            idx = 0
-            pad_left = block_pad_left[gM][gN]
-            tgt_w = _row_label_target_width(gM, gN)
-            for br in range(gM + 1, n_block_rows):
-                if not _is_empty_block(br, gN):
-                    continue
-                H = block_heights[br]
-                for offset in range(0, H):
-                    if idx >= len(remaining):
-                        break
-                    row_vals = remaining[idx]
-                    embedded_row_labels.setdefault((br, gN), []).append(
-                        (offset, pad_left, row_vals, tgt_w)
-                    )
-                    idx += 1
-                if idx >= len(remaining):
-                    break
-            remaining = remaining[idx:]
-        if remaining:
-            label_rows_map[(gM, gN, side)] = remaining
-        else:
-            label_rows_map.pop((gM, gN, side), None)
-
-    col_counts: Dict[Tuple[int, str], Dict[int, int]] = {}
-    for (gM, gN, side), cols in label_cols_map.items():
-        col_counts.setdefault((gN, side), {})[gM] = len(cols)
-
-    for (gM, gN, side), cols in list(label_cols_map.items()):
-        if not cols:
-            continue
-        remaining = list(cols)
-        other_rows = col_counts.get((gN, side), {})
-        other_max = 0
-        if other_rows:
-            other_max = max(
-                (count for br, count in other_rows.items() if br != gM),
-                default=0,
-            )
-        if other_max > 0:
-            keep = list(remaining)
-            embed_queue = []
-        else:
-            keep = []
-            embed_queue = remaining
-        pad_top = block_pad_top[gM][gN]
-        tgt_h = _col_label_target_height(gM, gN)
-        if side == "left":
-            idx = len(embed_queue) - 1
-            for bc in range(gN - 1, -1, -1):
-                if not _is_empty_block(gM, bc):
-                    continue
-                W = block_widths[bc]
-                for offset in range(W - 1, -1, -1):
-                    if idx < 0:
-                        break
-                    col_vals = embed_queue[idx]
-                    embedded_col_labels.setdefault((gM, bc), []).append(
-                        (offset, pad_top, col_vals[:tgt_h], side)
-                    )
-                    idx -= 1
-                if idx < 0:
-                    break
-            leftover = embed_queue[: idx + 1]
-            remaining = leftover + keep
-        elif side == "right":
-            idx = 0
-            for bc in range(gN + 1, n_block_cols):
-                if not _is_empty_block(gM, bc):
-                    continue
-                W = block_widths[bc]
-                for offset in range(0, W):
-                    if idx >= len(embed_queue):
-                        break
-                    col_vals = embed_queue[idx]
-                    embedded_col_labels.setdefault((gM, bc), []).append(
-                        (offset, pad_top, col_vals[:tgt_h], side)
-                    )
-                    idx += 1
-                if idx >= len(embed_queue):
-                    break
-            leftover = embed_queue[idx:]
-            remaining = keep + leftover
-        if remaining:
-            label_cols_map[(gM, gN, side)] = remaining
-        else:
-            label_cols_map.pop((gM, gN, side), None)
-
-    extra_rows_above = [0] * n_block_rows
-    extra_rows_below = [0] * n_block_rows
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            rows_above = label_rows_map.get((br, bc, "above"), [])
-            rows_below = label_rows_map.get((br, bc, "below"), [])
-            extra_rows_above[br] = max(extra_rows_above[br], len(rows_above))
-            extra_rows_below[br] = max(extra_rows_below[br], len(rows_below))
-
-    extra_cols_left = [0] * n_block_cols
-    extra_cols_right = [0] * n_block_cols
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            cols_left = label_cols_map.get((br, bc, "left"), [])
-            cols_right = label_cols_map.get((br, bc, "right"), [])
-            extra_cols_left[bc] = max(extra_cols_left[bc], len(cols_left))
-            extra_cols_right[bc] = max(extra_cols_right[bc], len(cols_right))
+    extra_rows_above, extra_rows_below, extra_cols_left, extra_cols_right = _compute_label_extras(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        label_rows_map=label_rows_map,
+        label_cols_map=label_cols_map,
+    )
 
     total_block_heights = [
         extra_rows_above[br] + block_heights[br] + extra_rows_below[br] for br in range(n_block_rows)
@@ -1944,7 +2215,7 @@ def grid_submatrix_spans(
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid.
 
     This helper exposes the same naming and inferred-block-dimension logic used
-    by :func:`grid_tex`, but returns structured metadata rather than a TeX
+    by :func:`render_ge_tex`, but returns structured metadata rather than a TeX
     document. It exists primarily to support notebook workflows that want to
     attach TikZ paths to delimiter nodes without regex-parsing the generated TeX.
 
@@ -1956,7 +2227,7 @@ def grid_submatrix_spans(
       missing (common for the top E-block in the 2-column layout).
     """
 
-    # Keep this logic intentionally aligned with grid_tex.
+    # Keep this logic intentionally aligned with render_ge_tex.
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
         raise ValueError("matrices must be a non-empty nested list")
@@ -1991,87 +2262,15 @@ def grid_submatrix_spans(
     if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
         raise ValueError("Could not infer matrix block sizes from `matrices`.")
 
-    def _normalize_label_rows(val: Any) -> List[List[Any]]:
-        if val is None:
-            return []
-        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-            return [list(val)]
-        if isinstance(val, (list, tuple)):
-            out: List[List[Any]] = []
-            for row in val:
-                if isinstance(row, (list, tuple)):
-                    out.append(list(row))
-                else:
-                    out.append([row])
-            return out
-        return [[val]]
-
-    def _normalize_label_cols(val: Any) -> List[List[Any]]:
-        if val is None:
-            return []
-        if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-            return [list(val)]
-        if isinstance(val, (list, tuple)):
-            out: List[List[Any]] = []
-            for col in val:
-                if isinstance(col, (list, tuple)):
-                    out.append(list(col))
-                else:
-                    out.append([col])
-            return out
-        return [[val]]
-
-    if variable_labels:
-        if label_rows is None:
-            label_rows = []
-        else:
-            label_rows = list(label_rows)
-        for item in variable_labels:
-            if not isinstance(item, dict):
-                continue
-            spec_item = dict(item)
-            if "side" not in spec_item:
-                spec_item["side"] = "below"
-            if "rows" not in spec_item and "labels" in spec_item:
-                spec_item["rows"] = spec_item["labels"]
-            label_rows.append(spec_item)
-
-    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
-    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
-
-    for spec_item in label_rows or []:
-        if not isinstance(spec_item, dict):
-            continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        side = str(spec_item.get("side", "above")).strip().lower()
-        if side not in ("above", "below"):
-            continue
-        rows = _normalize_label_rows(spec_item.get("rows", spec_item.get("labels")))
-        if not rows:
-            continue
-        label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
-
-    for spec_item in label_cols or []:
-        if not isinstance(spec_item, dict):
-            continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        side = str(spec_item.get("side", "left")).strip().lower()
-        if side not in ("left", "right"):
-            continue
-        cols = _normalize_label_cols(spec_item.get("cols", spec_item.get("labels")))
-        if not cols:
-            continue
-        label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
+    label_rows_map, label_cols_map, _overlay = _build_label_maps(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        label_rows=label_rows,
+        label_cols=label_cols,
+        variable_labels=variable_labels,
+        allow_overlay=False,
+        strict=False,
+    )
 
     extra_rows_above = [0] * n_block_rows
     extra_rows_below = [0] * n_block_rows
@@ -2099,7 +2298,7 @@ def grid_submatrix_spans(
     ]
 
     # Build a single NiceArray format string so we keep the same inferred widths
-    # as grid_tex (including Nrhs behavior). We don't return it here, but the
+    # as render_ge_tex (including Nrhs behavior). We don't return it here, but the
     # computation is intentionally mirrored.
     _ = (Nrhs, outer_hspace_mm, cell_align)  # for signature parity / future use
 
@@ -2605,7 +2804,7 @@ def decorations_help() -> str:
     )
 
 
-def grid_tex_specs(
+def render_ge_tex_specs(
     matrices: Sequence[Sequence[Any]],
     targets: Sequence[Mapping[str, Any]],
     *,
@@ -2857,15 +3056,15 @@ def grid_bundle(
 ) -> GEGridBundle:
     """Return both the GE-grid TeX and the resolved ``\\SubMatrix`` spans.
 
-    This is a notebook-oriented convenience wrapper around :func:`grid_tex`
+    This is a notebook-oriented convenience wrapper around :func:`render_ge_tex`
     and :func:`grid_submatrix_spans`.
 
-    Unlike :func:`grid_tex`, this function returns structured metadata so
+    Unlike :func:`render_ge_tex`, this function returns structured metadata so
     callers can attach TikZ paths/callouts to known delimiter nodes without
     regex-parsing the generated TeX.
     """
 
-    tex = grid_tex(
+    tex = render_ge_tex(
         matrices=matrices,
         Nrhs=Nrhs,
         formatter=formatter,
@@ -2912,7 +3111,7 @@ def grid_bundle(
     return GEGridBundle(tex=tex, submatrix_spans=spans)
 
 
-def grid_svg(
+def render_ge_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     Nrhs: int = 0,
     formatter: LatexFormatter = latexify,
@@ -2939,13 +3138,13 @@ def grid_svg(
 ) -> str:
     r"""Render the GE matrix stack to SVG.
 
-    This is a convenience wrapper around :func:`grid_tex` and the strict
+    This is a convenience wrapper around :func:`render_ge_tex` and the strict
     rendering boundary (:func:`matrixlayout.render.render_svg`).
 
     Parameters
     ----------
     matrices, Nrhs, formatter, outer_hspace_mm, cell_align:
-        See :func:`grid_tex`.
+        See :func:`render_ge_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
     specs:
@@ -2959,7 +3158,7 @@ def grid_svg(
     if "label_targets" in kwargs:
         raise ValueError("label_targets is removed; use specs instead.")
 
-    tex = grid_tex(
+    tex = render_ge_tex(
         matrices=matrices,
         Nrhs=Nrhs,
         formatter=formatter,

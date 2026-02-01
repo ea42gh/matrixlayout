@@ -1,5 +1,5 @@
-def test_qr_grid_tex_smoke():
-    from matrixlayout.qr import qr_grid_tex
+def test_render_qr_tex_smoke():
+    from matrixlayout.qr import render_qr_tex
 
     matrices = [
         [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
@@ -7,7 +7,7 @@ def test_qr_grid_tex_smoke():
         [[[1, 0], [0, 1]], [[1, 0], [0, 1]], [[1, 2], [3, 4]], None],
     ]
 
-    tex = qr_grid_tex(matrices=matrices, preamble="")
+    tex = render_qr_tex(matrices=matrices, preamble="")
     assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
     assert "W^T W" in tex

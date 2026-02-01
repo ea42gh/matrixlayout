@@ -345,7 +345,7 @@ def _mk_vecs_matrix(
     return pre + nl.join(rows) + r" \\ " + post
 
 
-def eigproblem_tex(
+def render_eig_tex(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
@@ -396,11 +396,11 @@ def eigproblem_tex(
 
         def box(tex): return rf"\\boxed{{{tex}}}"
         decorators = [{"target": "eigenbasis", "entries": [(0, 0, 1)], "decorator": box}]
-        tex = eigproblem_tex(spec, case="S", decorators=decorators)
+        tex = render_eig_tex(spec, case="S", decorators=decorators)
     """
     if "lambda" not in eig or "ma" not in eig or "evecs" not in eig:
         missing = [k for k in ("lambda", "ma", "evecs") if k not in eig]
-        raise KeyError(f"eigproblem_tex missing required keys: {missing}")
+        raise KeyError(f"render_eig_tex missing required keys: {missing}")
 
     case = norm_str(case) or ""
     color = norm_str(color) or ""
@@ -559,7 +559,7 @@ def eigproblem_tex(
     return render_template("eigproblem.tex.j2", context)
 
 
-def eigproblem_svg(
+def render_eig_svg(
     eig: Mapping[str, Any],
     *,
     case: str = "S",
@@ -580,7 +580,7 @@ def eigproblem_svg(
     output_dir: Optional[Any] = None,
 ) -> str:
     """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
-    tex = eigproblem_tex(
+    tex = render_eig_tex(
         eig,
         case=case,
         formatter=formatter,

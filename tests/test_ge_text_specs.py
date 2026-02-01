@@ -2,10 +2,10 @@ from unittest.mock import patch
 
 from matrixlayout.ge import (
     grid_label_layouts,
-    grid_svg,
+    render_ge_svg,
     grid_submatrix_spans,
-    grid_tex_specs,
-    grid_tex,
+    render_ge_tex_specs,
+    render_ge_tex,
 )
 
 
@@ -16,9 +16,9 @@ def _parse_coord(coord: str) -> tuple[int, int, str]:
     return int(row_str), int(col_str), anchor
 
 
-def test_grid_tex_specs_default_offsets():
+def test_render_ge_tex_specs_default_offsets():
     matrices = [[[1, 2], [3, 4]]]
-    specs = grid_tex_specs(
+    specs = render_ge_tex_specs(
         matrices,
         [
             {"grid": (0, 0), "side": "above", "labels": ["a", "b"]},
@@ -33,9 +33,9 @@ def test_grid_tex_specs_default_offsets():
     assert all("yshift" not in s[2] for s in below)
 
 
-def test_grid_tex_specs_multiline_default_line_gap():
+def test_render_ge_tex_specs_multiline_default_line_gap():
     matrices = [[[1, 2], [3, 4]]]
-    specs = grid_tex_specs(
+    specs = render_ge_tex_specs(
         matrices,
         [
             {"grid": (0, 0), "side": "below", "labels": [["a", "b"], ["c", "d"]]},
@@ -45,9 +45,9 @@ def test_grid_tex_specs_multiline_default_line_gap():
     assert not any("yshift=-8.0mm" in s[2] for s in specs)
 
 
-def test_grid_tex_specs_mixed_text_latex():
+def test_render_ge_tex_specs_mixed_text_latex():
     matrices = [[[1, 2], [3, 4]]]
-    specs = grid_tex_specs(
+    specs = render_ge_tex_specs(
         matrices,
         [
             {"grid": (0, 0), "side": "right", "labels": ["row $i$", "$x_1$", "plain"]},
@@ -59,9 +59,9 @@ def test_grid_tex_specs_mixed_text_latex():
     assert any(t == "plain" for t in texts)
 
 
-def test_grid_tex_label_rows_mixed_text_latex():
+def test_render_ge_tex_label_rows_mixed_text_latex():
     matrices = [[[1, 2], [3, 4]]]
-    tex = grid_tex(
+    tex = render_ge_tex(
         matrices=matrices,
         formatter=str,
         label_rows=[
@@ -72,9 +72,9 @@ def test_grid_tex_label_rows_mixed_text_latex():
     assert "x_1" in tex
 
 
-def test_grid_tex_specs_accounts_for_label_rows():
+def test_render_ge_tex_specs_accounts_for_label_rows():
     matrices = [[[1, 2], [3, 4]]]
-    specs = grid_tex_specs(
+    specs = render_ge_tex_specs(
         matrices,
         [{"grid": (0, 0), "side": "left", "labels": ["a", "b"]}],
         label_rows=[{"grid": (0, 0), "side": "above", "rows": ["x", "y"]}],
@@ -95,7 +95,7 @@ def test_ge_grid_label_layouts_basic():
     assert cols == [{"grid": (1, 1), "side": "left", "cols": [["a"], ["b"]]}]
 
 
-def test_grid_tex_specs_axis_consistency():
+def test_render_ge_tex_specs_axis_consistency():
     matrices = [
         [None, [[1, 2], [3, 4]]],
         [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
@@ -112,7 +112,7 @@ def test_grid_tex_specs_axis_consistency():
         side = target["side"]
         grid = tuple(target["grid"])
         span = span_map[grid]
-        specs = grid_tex_specs(matrices, [target])
+        specs = render_ge_tex_specs(matrices, [target])
         parsed = [_parse_coord(coord) for coord, *_ in specs]
         assert parsed
         if side in ("left", "right"):
@@ -123,9 +123,9 @@ def test_grid_tex_specs_axis_consistency():
             assert all(row == expected_row for row, _, _ in parsed)
 
 
-def test_grid_tex_specs_offset_alignment():
+def test_render_ge_tex_specs_offset_alignment():
     matrices = [[[1, 2], [3, 4]]]
-    specs = grid_tex_specs(
+    specs = render_ge_tex_specs(
         matrices,
         [
             {
@@ -150,7 +150,7 @@ def test_grid_tex_specs_offset_alignment():
     assert any("xshift=0.75mm" in opt for opt in opts)
 
 
-def test_grid_svg_label_targets_overlay():
+def test_render_ge_svg_label_targets_overlay():
     matrices = [
         [None, [[1, 2], [3, 4]]],
         [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
@@ -158,39 +158,39 @@ def test_grid_svg_label_targets_overlay():
     targets = [
         {"grid": (0, 1), "side": "left", "labels": ["$w_1^T$", "$w_2^T$"]},
     ]
-    with patch("matrixlayout.ge.grid_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
+    with patch("matrixlayout.ge.render_ge_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
         mock_tex.return_value = "TEX"
         mock_svg.return_value = "SVG"
-        grid_svg(matrices=matrices, specs=targets)
+        render_ge_svg(matrices=matrices, specs=targets)
         assert mock_tex.call_args.kwargs.get("specs") == targets
 
 
-def test_grid_svg_label_targets_add_blank_rows():
+def test_render_ge_svg_label_targets_add_blank_rows():
     matrices = [[[1, 2], [3, 4]]]
     targets = [
         {"grid": (0, 0), "side": "above", "labels": ["head", "tail"]},
     ]
-    tex = grid_tex(matrices=matrices, formatter=str, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, specs=targets)
     assert "\\text{head}" in tex
     assert "\\text{tail}" in tex
 
 
-def test_grid_svg_label_targets_preserve_label_rows():
+def test_render_ge_svg_label_targets_preserve_label_rows():
     matrices = [[[1, 2], [3, 4]]]
     targets = [
         {"grid": (0, 0), "side": "above", "labels": ["head"]},
     ]
     existing_rows = [{"grid": (0, 0), "side": "above", "rows": [["X"]]}]
-    tex = grid_tex(matrices=matrices, formatter=str, label_rows=existing_rows, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, specs=targets)
     assert "\\text{X}" in tex
     assert "\\text{head}" in tex
 
 
-def test_grid_svg_label_targets_do_not_add_label_cols():
+def test_render_ge_svg_label_targets_do_not_add_label_cols():
     matrices = [[[1, 2], [3, 4]]]
     targets = [
         {"grid": (0, 0), "side": "left", "labels": ["a", "b"]},
     ]
-    tex = grid_tex(matrices=matrices, formatter=str, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, specs=targets)
     assert "\\text{a}" in tex
     assert "\\text{b}" in tex

@@ -82,7 +82,7 @@ decorations = [
     {"grid": (2, 1), "entries": [(0, 0)], "box": True},
     {"grid": (0, 1), "label": r"\\mathbf{C}", "side": "right", "angle": -35, "length": 8},
 ]
-svg = grid_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
+svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
 ## Selectors
@@ -113,6 +113,10 @@ decorators = [
     {"grid": (0, 1), "entries": [sel_box((0, 0), (1, 1))], "decorator": decorator_bg("yellow")},
 ]
 ```
+
+Notes:
+- `decorator_bg(color)` wraps the entry in `\\colorbox{color}{...}`.
+- Background highlights in `decorations` require `create_medium_nodes=True`.
 
 Eigen/SVD vector selectors:
 

@@ -1,5 +1,5 @@
-def test_eigproblem_tex_decorates_lambda_matrix():
-    from matrixlayout.eigproblem import eigproblem_tex
+def test_render_eig_tex_decorates_lambda_matrix():
+    from matrixlayout.eigproblem import render_eig_tex
 
     spec = {
         "lambda": [2],
@@ -10,7 +10,7 @@ def test_eigproblem_tex_decorates_lambda_matrix():
     def dec(tex: str) -> str:
         return rf"\boxed{{{tex}}}"
 
-    tex = eigproblem_tex(
+    tex = render_eig_tex(
         spec,
         case="S",
         formatter=str,
@@ -21,8 +21,8 @@ def test_eigproblem_tex_decorates_lambda_matrix():
     assert r"\boxed{2}" in tex
 
 
-def test_eigproblem_tex_decorates_eigenbasis_vector_entry():
-    from matrixlayout.eigproblem import eigproblem_tex
+def test_render_eig_tex_decorates_eigenbasis_vector_entry():
+    from matrixlayout.eigproblem import render_eig_tex
 
     spec = {
         "lambda": [2],
@@ -33,7 +33,7 @@ def test_eigproblem_tex_decorates_eigenbasis_vector_entry():
     def dec(tex: str) -> str:
         return rf"\boxed{{{tex}}}"
 
-    tex = eigproblem_tex(
+    tex = render_eig_tex(
         spec,
         case="S",
         formatter=str,
@@ -44,8 +44,8 @@ def test_eigproblem_tex_decorates_eigenbasis_vector_entry():
     assert r"\boxed{5}" in tex
 
 
-def test_eigproblem_tex_decorates_evecs_row_alias():
-    from matrixlayout.eigproblem import eigproblem_tex
+def test_render_eig_tex_decorates_evecs_row_alias():
+    from matrixlayout.eigproblem import render_eig_tex
 
     spec = {
         "lambda": [2],
@@ -56,7 +56,7 @@ def test_eigproblem_tex_decorates_evecs_row_alias():
     def dec(tex: str) -> str:
         return rf"\boxed{{{tex}}}"
 
-    tex = eigproblem_tex(
+    tex = render_eig_tex(
         spec,
         case="S",
         formatter=str,

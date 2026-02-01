@@ -18,3 +18,13 @@ A short list of issues that commonly appear when first using matrixlayout.
 
 - Callouts attach to submatrix names; ensure names are present.
 - When using alternate submatrix naming, enable `legacy_submatrix_names=True`.
+
+## Label placement
+
+- `grid` refers to block `(row, col)`, not entry coordinates.
+- Labels may be placed into adjacent empty blocks; if no empty block exists,
+  matrixlayout inserts padding rows/cols.
+
+## Specs vs explicit kwargs
+
+- If both are provided, explicit kwargs take precedence.
