@@ -6,6 +6,9 @@ import pytest
 
 from matrixlayout import render as ml_render
 import matrixlayout.backsubst as ml_backsubst
+import matrixlayout.ge as ml_ge
+import matrixlayout.qr as ml_qr
+import matrixlayout.eigproblem as ml_eig
 
 
 class _FakeArtifacts:
@@ -100,3 +103,86 @@ def test_backsubst_svg_passes_through_options(monkeypatch):
     assert recorded["kwargs"]["toolchain_name"] == "pdftex_pdftocairo"
     assert recorded["kwargs"]["crop"] == "tight"
     assert recorded["kwargs"]["padding"] == {"top": 5}
+
+
+def test_render_ge_svg_merges_render_opts(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_ge, "_render_svg", fake_render_svg)
+
+    out = ml_ge.render_ge_svg(
+        matrices=[[None, [[1]]]],
+        render_opts={"crop": "page", "padding": (1, 1, 1, 1), "toolchain_name": "tc"},
+        crop="tight",
+        padding=(2, 2, 2, 2),
+        frame=True,
+        exact_bbox=True,
+        output_stem="ge_opts",
+    )
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
+    assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
+    assert recorded["kwargs"]["toolchain_name"] == "tc"
+    assert recorded["kwargs"]["frame"] is True
+    assert recorded["kwargs"]["exact_bbox"] is True
+    assert recorded["kwargs"]["output_stem"] == "ge_opts"
+
+
+def test_render_qr_svg_merges_render_opts(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_qr, "render_svg", fake_render_svg)
+    monkeypatch.setattr(ml_qr, "render_qr_tex", lambda *args, **kwargs: "TEX")
+
+    out = ml_qr.render_qr_svg(
+        matrices=[[None, [[1]]]],
+        render_opts={"crop": "page", "padding": (1, 1, 1, 1)},
+        crop="tight",
+        padding=(2, 2, 2, 2),
+        exact_bbox=True,
+        output_stem="qr_opts",
+    )
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
+    assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
+    assert recorded["kwargs"]["exact_bbox"] is True
+    assert recorded["kwargs"]["output_stem"] == "qr_opts"
+
+
+def test_render_eig_svg_merges_render_opts(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_eig, "render_svg", fake_render_svg)
+    monkeypatch.setattr(ml_eig, "render_eig_tex", lambda *args, **kwargs: "TEX")
+
+    out = ml_eig.render_eig_svg(
+        {"dummy": True},
+        render_opts={"crop": "page", "padding": (1, 1, 1, 1)},
+        crop="tight",
+        padding=(2, 2, 2, 2),
+        exact_bbox=True,
+        output_stem="eig_opts",
+    )
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
+    assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
+    assert recorded["kwargs"]["exact_bbox"] is True
+    assert recorded["kwargs"]["output_stem"] == "eig_opts"

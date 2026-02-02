@@ -17,6 +17,27 @@ svg = render_ge_svg(matrices=[[None, [[1]]]])
 `render_ge_svg` forwards its inputs to `render_ge_tex` before rendering. If you pass both
 `spec`/`specs` and explicit kwargs, explicit kwargs take precedence.
 
+## render_opts pass-through
+
+All SVG renderers accept a `render_opts` mapping that is forwarded verbatim to
+`jupyter_tikz.render_svg`. Explicit keyword arguments (e.g., `crop`, `padding`,
+`toolchain_name`) override any values supplied in `render_opts`.
+
+```python
+from matrixlayout.ge import render_ge_svg
+
+svg = render_ge_svg(
+    matrices=[[None, [[1, 2], [3, 4]]]],
+    render_opts={
+        "toolchain_name": "xelatex_dvisvgm",
+        "crop": "tight",
+        "padding": (4, 4, 4, 4),
+        "frame": {"stroke": "#666", "stroke_width": 0.5},
+        "exact_bbox": True,
+    },
+)
+```
+
 ## Keep artifacts for debugging
 
 ```python

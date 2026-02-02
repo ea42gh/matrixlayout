@@ -1396,8 +1396,11 @@ def svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    frame: Any = None,
+    exact_bbox: Optional[bool] = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     output_stem: str = "output",
+    render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
     tex_doc = tex(
@@ -1424,16 +1427,22 @@ def svg(
         outer_delims_name=outer_delims_name,
         outer_delims_span=outer_delims_span,
     )
-    if toolchain_name:
-        return _render_svg(
-            tex_doc,
-            toolchain_name=toolchain_name,
-            crop=crop,
-            padding=padding,
-            output_dir=output_dir,
-            output_stem=output_stem,
-        )
-    return _render_svg(tex_doc, crop=crop, padding=padding, output_dir=output_dir, output_stem=output_stem)
+    opts: Dict[str, Any] = dict(render_opts or {})
+    if toolchain_name is not None:
+        opts["toolchain_name"] = toolchain_name
+    if crop is not None:
+        opts["crop"] = crop
+    if padding is not None:
+        opts["padding"] = padding
+    if frame is not None:
+        opts["frame"] = frame
+    if output_dir is not None:
+        opts["output_dir"] = output_dir
+    if output_stem is not None:
+        opts["output_stem"] = output_stem
+    if exact_bbox is not None:
+        opts["exact_bbox"] = exact_bbox
+    return _render_svg(tex_doc, **opts)
 
 
 # -----------------------------------------------------------------------------
@@ -3126,11 +3135,13 @@ def render_ge_svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    exact_bbox: Optional[bool] = None,
     decorations: Optional[Sequence[Any]] = None,
     strict: bool = False,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     output_stem: str = "output",
     frame: Any = None,
+    render_opts: Optional[Mapping[str, Any]] = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
@@ -3176,13 +3187,19 @@ def render_ge_svg(
         specs=specs,
         **kwargs,
     )
-    return _render_svg(
-        tex,
-        toolchain_name=toolchain_name,
-        crop=crop,
-        padding=padding,
-        frame=frame,
-        output_dir=output_dir,
-        output_stem=output_stem,
-    )
-
+    opts: Dict[str, Any] = dict(render_opts or {})
+    if toolchain_name is not None:
+        opts["toolchain_name"] = toolchain_name
+    if crop is not None:
+        opts["crop"] = crop
+    if padding is not None:
+        opts["padding"] = padding
+    if frame is not None:
+        opts["frame"] = frame
+    if output_dir is not None:
+        opts["output_dir"] = output_dir
+    if output_stem is not None:
+        opts["output_stem"] = output_stem
+    if exact_bbox is not None:
+        opts["exact_bbox"] = exact_bbox
+    return _render_svg(tex, **opts)

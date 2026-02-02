@@ -631,8 +631,11 @@ def render_qr_svg(
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
+    exact_bbox: Optional[bool] = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
+    output_stem: Optional[str] = None,
     frame: Any = None,
+    render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Render a QR grid layout to SVG via the configured TeX toolchain."""
     tex = render_qr_tex(
@@ -655,14 +658,22 @@ def render_qr_svg(
         strict=strict,
         specs=specs,
     )
-    return render_svg(
-        tex,
-        toolchain_name=toolchain_name,
-        crop=crop,
-        padding=padding,
-        frame=frame,
-        output_dir=output_dir,
-    )
+    opts: Dict[str, Any] = dict(render_opts or {})
+    if toolchain_name is not None:
+        opts["toolchain_name"] = toolchain_name
+    if crop is not None:
+        opts["crop"] = crop
+    if padding is not None:
+        opts["padding"] = padding
+    if frame is not None:
+        opts["frame"] = frame
+    if output_dir is not None:
+        opts["output_dir"] = output_dir
+    if output_stem is not None:
+        opts["output_stem"] = output_stem
+    if exact_bbox is not None:
+        opts["exact_bbox"] = exact_bbox
+    return render_svg(tex, **opts)
 
 
 def resolve_qr_grid_name(

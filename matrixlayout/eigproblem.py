@@ -17,7 +17,7 @@ Out of scope:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List, Dict
 
 from .jinja_env import render_template
 from .render import render_svg
@@ -576,8 +576,11 @@ def render_eig_svg(
     crop: Optional[str] = None,
     padding: Any = None,
     frame: Any = None,
+    exact_bbox: Optional[bool] = None,
+    output_stem: Optional[str] = None,
     tmp_dir: Optional[Any] = None,
     output_dir: Optional[Any] = None,
+    render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
     tex = render_eig_tex(
@@ -595,11 +598,19 @@ def render_eig_svg(
     )
     if output_dir is None:
         output_dir = tmp_dir
-    return render_svg(
-        tex,
-        toolchain_name=toolchain_name,
-        crop=crop,
-        padding=padding,
-        frame=frame,
-        output_dir=output_dir,
-    )
+    opts: Dict[str, Any] = dict(render_opts or {})
+    if toolchain_name is not None:
+        opts["toolchain_name"] = toolchain_name
+    if crop is not None:
+        opts["crop"] = crop
+    if padding is not None:
+        opts["padding"] = padding
+    if frame is not None:
+        opts["frame"] = frame
+    if output_dir is not None:
+        opts["output_dir"] = output_dir
+    if output_stem is not None:
+        opts["output_stem"] = output_stem
+    if exact_bbox is not None:
+        opts["exact_bbox"] = exact_bbox
+    return render_svg(tex, **opts)
