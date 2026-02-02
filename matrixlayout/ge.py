@@ -3185,3 +3185,4 @@ def render_ge_svg(
         output_dir=output_dir,
         output_stem=output_stem,
     )
+
