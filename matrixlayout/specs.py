@@ -207,6 +207,7 @@ class GEGridSpec:
     callouts: Optional[Sequence[Any]] = None
     codebefore: Optional[Sequence[Any]] = None
     create_cell_nodes: Optional[bool] = None
+    create_extra_nodes: Optional[bool] = None
     create_medium_nodes: Optional[bool] = None
     strict: Optional[bool] = None
     array_names: Optional[Any] = None

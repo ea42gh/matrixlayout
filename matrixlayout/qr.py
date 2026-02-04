@@ -592,6 +592,8 @@ def render_qr_tex(
             label_shift_rules=label_shift_rules,
             length_rules=length_rules,
         )
+        if create_extra_nodes is None:
+            create_extra_nodes = True
 
     return render_ge_tex(
         matrices=grid,

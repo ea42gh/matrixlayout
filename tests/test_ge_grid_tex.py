@@ -28,3 +28,15 @@ def test_render_ge_tex_smoke_builds_tex():
     assert "\\SubMatrix" in tex
     # RHS partition should appear in the pNiceArray column spec.
     assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
+
+
+def test_render_ge_tex_callouts_enable_extra_nodes():
+    if not _has_ge_template():
+        pytest.skip("matrixlayout GE template not available")
+
+    from matrixlayout.ge import render_ge_tex
+
+    matrices = [[None, [[1]]], [[[1]], [[2]]]]
+    tex = render_ge_tex(matrices=matrices, callouts=True, preamble="")
+    line = next(line for line in tex.splitlines() if "NiceArray" in line and "begin" in line)
+    assert "create-extra-nodes" in line
