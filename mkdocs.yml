@@ -20,6 +20,7 @@ nav:
   - API: api.md
   - Notebooks:
       - Overview: notebooks/README.md
+      - Stack of matrices: notebooks/00_stack_of_matrices.ipynb
       - GE grids: notebooks/01_ge_grids.ipynb
       - QR grids: notebooks/02_qr_grids.ipynb
       - Eigen/SVD tables: notebooks/03_eig_svd_tables.ipynb

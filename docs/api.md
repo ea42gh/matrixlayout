@@ -35,7 +35,7 @@ use `specs` for labels/callouts and `decorations` for entry styling/lines.
 
 - `matrixlayout.qr.render_qr_tex(matrices, **opts)`: emit TeX for a QR grid (accepts `specs`).
 - `matrixlayout.qr.render_qr_svg(matrices, **opts)`: render a QR grid to SVG (accepts `specs`).
-- `matrixlayout.qr.qr_grid_bundle(matrices, **opts)`: return TeX plus submatrix span metadata.
+- `matrixlayout.qr.qr_grid_bundle(matrices, **opts)`: return a `QRGridBundle` (TeX plus submatrix span metadata).
 - `matrixlayout.qr.resolve_qr_grid_name(name, **opts)`: resolve QR grid matrix names to positions.
 
 Common options: `specs` (labels/callouts), `output_dir`/`output_stem` (persist TeX/SVG).

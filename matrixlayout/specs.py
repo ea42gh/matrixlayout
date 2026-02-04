@@ -167,6 +167,14 @@ class GEGridBundle:
 
 
 @dataclass(frozen=True)
+class QRGridBundle:
+    """A TeX document plus structured metadata for a QR matrix grid."""
+
+    tex: str
+    submatrix_spans: List[SubMatrixSpan]
+
+
+@dataclass(frozen=True)
 class GEGridSpec:
     """Serializable spec for a GE matrix grid + layout options."""
 

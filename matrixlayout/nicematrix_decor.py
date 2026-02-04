@@ -181,8 +181,6 @@ def render_delim_callout(callout: CalloutLike) -> str:
     node_anchor = "east" if which == "left" else "west"
 
     label = c.label
-    if c.math_mode:
-        label = rf"$ {label} $"
 
     # Build draw options.
     opts: List[str] = [

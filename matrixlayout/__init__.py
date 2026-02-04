@@ -24,8 +24,8 @@ from .ge import (
     grid_label_layouts,
     decorations_help,
 )
-from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name
-from .specs import GEGridSpec, QRGridSpec
+from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name, qr_grid_bundle
+from .specs import GEGridSpec, QRGridSpec, QRGridBundle
 from .formatting import (
     decorate_tex_entries,
     latexify,
@@ -71,9 +71,11 @@ __all__ = [
     "resolve_ge_grid_name",
     "render_qr_tex",
     "render_qr_svg",
+    "qr_grid_bundle",
     "resolve_qr_grid_name",
     "GEGridSpec",
     "QRGridSpec",
+    "QRGridBundle",
     "latexify",
     "make_decorator",
     "decorate_tex_entries",

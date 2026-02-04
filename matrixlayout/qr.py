@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, 
 import re
 
 from .formatting import latexify
-from .ge import render_ge_tex
+from .ge import render_ge_tex, grid_submatrix_spans
 from .render import render_svg
-from .specs import QRGridSpec
+from .specs import QRGridSpec, QRGridBundle
 
 
 def _as_grid(matrices: Any) -> List[List[Any]]:
@@ -461,6 +461,30 @@ def _coerce_qr_spec(spec: Optional[Union[Dict[str, Any], QRGridSpec]]) -> Option
     return QRGridSpec.from_dict(spec)
 
 
+def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    label_rows: List[Dict[str, Any]] = []
+    label_cols: List[Dict[str, Any]] = []
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+    n_cols = 0
+    if n_block_rows > 0 and n_block_cols > 2:
+        try:
+            n_cols = _mat_shape(grid[0][2])[1]
+        except Exception:
+            n_cols = 0
+    if n_cols > 0:
+        v_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{v_{i+1}}}}}$" for i in range(n_cols)]
+        w_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{i+1}}}}}$" for i in range(n_cols)]
+        wt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
+        if n_block_rows > 0 and n_block_cols > 2:
+            label_rows.append({"grid": (0, 2), "side": "above", "rows": v_labels})
+        if n_block_rows > 0 and n_block_cols > 3:
+            label_rows.append({"grid": (0, 3), "side": "above", "rows": w_labels})
+        if n_block_rows > 1 and n_block_cols > 1:
+            label_cols.append({"grid": (1, 1), "side": "left", "cols": wt_labels})
+    return label_rows, label_cols
+
+
 def render_qr_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
@@ -529,28 +553,7 @@ def render_qr_tex(
         )
 
     # Gram–Schmidt labels via label rows/cols.
-    label_rows: List[Dict[str, Any]] = []
-    label_cols: List[Dict[str, Any]] = []
-    n_block_rows = len(grid)
-    n_block_cols = max((len(r) for r in grid), default=0)
-    n_cols = 0
-    if n_block_rows > 0 and n_block_cols > 2:
-        try:
-            n_cols = _mat_shape(grid[0][2])[1]
-        except Exception:
-            n_cols = 0
-    if n_cols > 0:
-        v_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{v_{i+1}}}}}$" for i in range(n_cols)]
-        w_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{i+1}}}}}$" for i in range(n_cols)]
-        wt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
-        if n_block_rows > 0 and n_block_cols > 2:
-            label_rows.append({"grid": (0, 2), "side": "above", "rows": v_labels})
-        if n_block_rows > 0 and n_block_cols > 3:
-            label_rows.append({"grid": (0, 3), "side": "above", "rows": w_labels})
-        if n_block_rows > 1 and n_block_cols > 1:
-            label_cols.append(
-                {"grid": (1, 1), "side": "left", "cols": wt_labels}
-            )
+    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
 
     callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
@@ -606,6 +609,67 @@ def render_qr_tex(
         strict=bool(strict),
         specs=specs,
     )
+
+
+def qr_grid_bundle(
+    matrices: Optional[Sequence[Sequence[Any]]] = None,
+    *,
+    spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    specs: Optional[Sequence[Mapping[str, Any]]] = None,
+    formatter: Any = latexify,
+    array_names: Any = True,
+    fig_scale: Optional[Any] = None,
+    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
+    extension: str = "",
+    nice_options: Optional[str] = "vlines-in-sub-matrix = I",
+    label_color: str = "blue",
+    label_text_color: str = "red",
+    known_zero_color: str = "brown",
+    landscape: Optional[bool] = None,
+    create_cell_nodes: Optional[bool] = True,
+    create_extra_nodes: Optional[bool] = True,
+    create_medium_nodes: Optional[bool] = True,
+    decorators: Optional[Sequence[Any]] = None,
+    strict: bool = False,
+) -> QRGridBundle:
+    """Return both the QR-grid TeX and the resolved ``\\SubMatrix`` spans."""
+
+    tex = render_qr_tex(
+        matrices=matrices,
+        spec=spec,
+        specs=specs,
+        formatter=formatter,
+        array_names=array_names,
+        fig_scale=fig_scale,
+        preamble=preamble,
+        extension=extension,
+        nice_options=nice_options,
+        label_color=label_color,
+        label_text_color=label_text_color,
+        known_zero_color=known_zero_color,
+        landscape=landscape,
+        create_cell_nodes=create_cell_nodes,
+        create_extra_nodes=create_extra_nodes,
+        create_medium_nodes=create_medium_nodes,
+        decorators=decorators,
+        strict=strict,
+    )
+
+    spec_obj = _coerce_qr_spec(spec)
+    if spec_obj is not None:
+        matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
+        label_text_color = _merge_scalar("label_text_color", label_text_color, spec_obj.label_text_color)
+    if matrices is None:
+        raise ValueError("qr_grid_bundle requires `matrices`")
+
+    grid = _as_grid(matrices)
+    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
+    spans = grid_submatrix_spans(
+        grid,
+        label_rows=label_rows or None,
+        label_cols=label_cols or None,
+    )
+    return QRGridBundle(tex=tex, submatrix_spans=spans)
 
 
 def render_qr_svg(

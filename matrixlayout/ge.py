@@ -891,36 +891,50 @@ def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optiona
 
 def _normalize_label_rows(val: Any) -> List[List[Any]]:
     """Normalize label row input into a list of row lists."""
+    def _strip_math_wrappers(x: Any) -> Any:
+        if not isinstance(x, str):
+            return x
+        s = x.strip()
+        if len(s) >= 2 and s[0] == "$" and s[-1] == "$" and s.count("$") == 2:
+            return s[1:-1].strip()
+        return x
     if val is None:
         return []
     if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-        return [list(val)]
+        return [[_strip_math_wrappers(v) for v in val]]
     if isinstance(val, (list, tuple)):
         out: List[List[Any]] = []
         for row in val:
             if isinstance(row, (list, tuple)):
-                out.append(list(row))
+                out.append([_strip_math_wrappers(v) for v in row])
             else:
-                out.append([row])
+                out.append([_strip_math_wrappers(row)])
         return out
-    return [[val]]
+    return [[_strip_math_wrappers(val)]]
 
 
 def _normalize_label_cols(val: Any) -> List[List[Any]]:
     """Normalize label column input into a list of column lists."""
+    def _strip_math_wrappers(x: Any) -> Any:
+        if not isinstance(x, str):
+            return x
+        s = x.strip()
+        if len(s) >= 2 and s[0] == "$" and s[-1] == "$" and s.count("$") == 2:
+            return s[1:-1].strip()
+        return x
     if val is None:
         return []
     if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-        return [list(val)]
+        return [[_strip_math_wrappers(v) for v in val]]
     if isinstance(val, (list, tuple)):
         out: List[List[Any]] = []
         for col in val:
             if isinstance(col, (list, tuple)):
-                out.append(list(col))
+                out.append([_strip_math_wrappers(v) for v in col])
             else:
-                out.append([col])
+                out.append([_strip_math_wrappers(col)])
         return out
-    return [[val]]
+    return [[_strip_math_wrappers(val)]]
 
 
 def _append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels: Optional[Sequence[Any]]) -> List[Any]:
