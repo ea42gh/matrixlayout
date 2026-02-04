@@ -53,6 +53,15 @@ from .nicematrix_decor import (
     render_delim_callouts,
 )
 
+def show_svg(svg: object):
+    """Notebook-friendly display helper for SVG strings."""
+    try:
+        from IPython.display import SVG, display
+    except Exception as exc:  # pragma: no cover - only used in notebooks
+        raise ImportError("show_svg requires IPython (for SVG display).") from exc
+    display(SVG(svg))
+    return svg
+
 __all__ = [
     "get_environment",
     "backsubst_tex",
@@ -98,4 +107,5 @@ __all__ = [
     "infer_ge_layer_callouts",
     "render_delim_callout",
     "render_delim_callouts",
+    "show_svg",
 ]
