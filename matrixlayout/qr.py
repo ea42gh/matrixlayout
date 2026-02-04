@@ -543,6 +543,8 @@ def render_qr_tex(
         formatter = latexify
 
     grid = _as_grid(matrices)
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
 
     # Known-zero decorators.
     qr_decorators: List[Dict[str, Any]] = list(decorators or [])

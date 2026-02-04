@@ -1281,6 +1281,10 @@ def tex(
     txt_with_locs = _coerce_txt_with_locs(txt_with_locs)
     rowechelon_paths = _coerce_rowechelon_paths(rowechelon_paths)
 
+    # Callouts (including matrix labels) require extra nodes for delimiter anchors.
+    if callouts and create_extra_nodes is None:
+        create_extra_nodes = True
+
     # Apply historical defaults after layout merging.
     if nice_options is None:
         nice_options = "vlines-in-sub-matrix = I"
@@ -1916,6 +1920,9 @@ def render_ge_tex(
         stripped = s.strip()
         if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
             return stripped[1:-1]
+        # If caller already provided LaTeX macros, don't wrap in \text{...}.
+        if "\\" in s:
+            return s
         mixed = _split_dollar_segments(s)
         if mixed:
             return mixed[0]
