@@ -323,7 +323,7 @@ def _make_decorator(
 ) -> Any:
     box_decorator = r"\boxed<{a}>"
     coloredbox_decorator = r"\colorboxed<{color}><{a}>"
-    color_decorator = r"\Block[draw={text_color},fill={bg_color}]<><{a}>"
+    color_decorator = r"\Block[draw={text_color},fill={bg_color}]{{1-1}}{{{a}}}"
     txt_color_decorator = r"\color<{color}><{a}>"
     bg_color_decorator = r"\colorbox<{color}><{a}>"
     bf_decorator = r"\mathbf<{a}>"

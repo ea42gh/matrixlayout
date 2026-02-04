@@ -75,7 +75,7 @@ def make_decorator(
     """Return a decorator function for TeX strings."""
     box_decorator = r"\boxed{{{a}}}"
     coloredbox_decorator = r"\colorboxed{{{color}}}{{{a}}}"
-    color_decorator = r"\Block[draw={text_color},fill={bg_color}]<>{{{a}}}"
+    color_decorator = r"\Block[draw={text_color},fill={bg_color}]{{1-1}}{{{a}}}"
     txt_color_decorator = r"\color{{{color}}}{{{a}}}"
     # Ensure math entries (e.g., \frac) render correctly inside \colorbox.
     bg_color_decorator = r"\colorbox{{{color}}}{{\ensuremath{{{a}}}}}"
