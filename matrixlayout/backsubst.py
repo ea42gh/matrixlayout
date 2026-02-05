@@ -168,7 +168,7 @@ def backsubst_svg(
     frame: Any = None,
     exact_bbox: Optional[bool] = None,
     output_stem: Optional[str] = None,
-    tmp_dir: Optional[Any] = None,
+    tmp_dir: Optional[Any] = "/tmp/la/run",
     output_dir: Optional[Any] = None,
     render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:

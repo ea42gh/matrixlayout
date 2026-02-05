@@ -118,7 +118,9 @@ def render_svg(
         return _strip_svg_header_comment(artifacts.read_svg())
 
     # Default: isolate artifacts per-call, keep them on failure for diagnostics.
-    tmp = Path(tempfile.mkdtemp(prefix="matrixlayout_render_"))
+    tmp_root = Path("/tmp/la")
+    tmp_root.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix="matrixlayout_render_", dir=tmp_root))
     try:
         artifacts = render_svg_with_artifacts(
             tex_source,
