@@ -560,6 +560,24 @@ def render_qr_tex(
     callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
+        if name_specs:
+            filtered_specs = []
+            for spec in name_specs:
+                if not (isinstance(spec, (list, tuple)) and len(spec) >= 1):
+                    continue
+                grid_pos = spec[0]
+                if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+                    continue
+                gM, gN = int(grid_pos[0]), int(grid_pos[1])
+                if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+                    continue
+                try:
+                    if grid[gM][gN] is None:
+                        continue
+                except Exception:
+                    continue
+                filtered_specs.append(spec)
+            name_specs = filtered_specs
         a_rows = a_cols = 0
         if n_block_rows > 0 and n_block_cols > 2:
             try:
@@ -581,19 +599,20 @@ def render_qr_tex(
         ]
         length_rules = []
         if a_cols and a_cols < 3:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 8.0)]
+            length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
         if a_rows == 2 and a_cols == 2:
             length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
-        callouts = _qr_name_specs_to_callouts(
-            name_specs,
-            color=label_color,
-            angle_deg=-35.0,
-            length_mm=6.0,
-            label_shift_rules=label_shift_rules,
-            length_rules=length_rules,
-        )
-        if create_extra_nodes is None:
-            create_extra_nodes = True
+        if name_specs:
+            callouts = _qr_name_specs_to_callouts(
+                name_specs,
+                color=label_color,
+                angle_deg=-35.0,
+                length_mm=6.0,
+                label_shift_rules=label_shift_rules,
+                length_rules=length_rules,
+            )
+            if create_extra_nodes is None:
+                create_extra_nodes = True
 
     return render_ge_tex(
         matrices=grid,

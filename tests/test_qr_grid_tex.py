@@ -9,8 +9,15 @@ def test_render_qr_tex_smoke():
 
     tex = render_qr_tex(matrices=matrices, preamble="")
     assert "\\begin{NiceArray}" in tex
+
+
+def test_render_qr_tex_filters_callouts_for_minimal_grid():
+    from matrixlayout.qr import render_qr_tex
+
+    matrices = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]]
+    tex = render_qr_tex(matrices=matrices, preamble="")
+    assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
-    assert "W^T W" in tex
     assert "v_1" in tex
 
 
