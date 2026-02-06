@@ -9,6 +9,7 @@ Functions exported via ``__all__`` are the supported public entry points.
 Helpers prefixed with ``_`` are internal and subject to change.
 """
 
+from .__about__ import __version__, __build__
 from .jinja_env import get_environment
 from .backsubst import backsubst_tex, backsubst_svg
 from .eigproblem import render_eig_tex, render_eig_svg
@@ -64,6 +65,8 @@ def show_svg(svg: object):
     return svg
 
 __all__ = [
+    "__version__",
+    "__build__",
     "get_environment",
     "backsubst_tex",
     "backsubst_svg",
