@@ -1838,6 +1838,11 @@ def render_ge_tex(
                 kwargs["create_medium_nodes"] = True
 
     legacy_format = bool(kwargs.pop("legacy_format", False))
+    if legacy_format:
+        if extension is None:
+            extension = ""
+        if "\\newcolumntype{I}" not in extension:
+            extension = extension + "\n\\newcolumntype{I}{|}\n"
 
     # Use nicematrix's semantic marker for "this cell is not empty" so that
     # `create-cell-nodes` reliably creates nodes without introducing spacing.
