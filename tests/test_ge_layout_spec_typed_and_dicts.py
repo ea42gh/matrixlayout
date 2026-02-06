@@ -3,7 +3,7 @@ import shutil
 import pytest
 
 from matrixlayout.ge import tex, svg
-from matrixlayout.specs import GELayoutSpec, PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
+from matrixlayout.specs import GEGridSpec, GELayoutSpec, PivotBox, QRGridSpec, RowEchelonPath, SubMatrixLoc, TextAt
 
 
 def _pick_toolchain_name_or_skip() -> str:
@@ -98,6 +98,30 @@ def test_ge_tex_accepts_callouts_bool_in_layout():
     }
     tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
     assert "\\draw[" in tex_out
+
+
+def test_ge_gridspec_from_dict_allows_extra_when_strict_false():
+    spec = {"matrices": [[1]], "strict": False, "extra_field": 1}
+    out = GEGridSpec.from_dict(spec)
+    assert out.matrices == [[1]]
+
+
+def test_ge_gridspec_from_dict_rejects_extra_when_strict_true():
+    spec = {"matrices": [[1]], "strict": True, "extra_field": 1}
+    with pytest.raises(ValueError):
+        GEGridSpec.from_dict(spec)
+
+
+def test_qr_gridspec_from_dict_allows_extra_when_strict_false():
+    spec = {"matrices": [[1]], "strict": False, "extra_field": 1}
+    out = QRGridSpec.from_dict(spec)
+    assert out.matrices == [[1]]
+
+
+def test_qr_gridspec_from_dict_rejects_extra_when_strict_true():
+    spec = {"matrices": [[1]], "strict": True, "extra_field": 1}
+    with pytest.raises(ValueError):
+        QRGridSpec.from_dict(spec)
 
 
 @pytest.mark.render

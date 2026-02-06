@@ -51,6 +51,7 @@ from .nicematrix_decor import (
     infer_ge_layer_callouts,
     render_delim_callout,
     render_delim_callouts,
+    validate_callouts,
 )
 
 def show_svg(svg: object):
@@ -107,5 +108,6 @@ __all__ = [
     "infer_ge_layer_callouts",
     "render_delim_callout",
     "render_delim_callouts",
+    "validate_callouts",
     "show_svg",
 ]

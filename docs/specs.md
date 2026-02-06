@@ -48,6 +48,7 @@ specs = [
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
 - `specs` (label/callout targets) are merged into `label_rows`/`label_cols`.
 - `variable_labels` are appended to `label_rows` with `side="below"`.
+- When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 
 If labels are attached to a block that has adjacent empty blocks, the labels are
 placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.

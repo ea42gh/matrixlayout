@@ -281,6 +281,34 @@ def render_delim_callouts(
     return out
 
 
+def validate_callouts(
+    callouts: Optional[Union[Sequence[CalloutLike], bool]],
+    *,
+    available_names: Optional[Iterable[str]] = None,
+    name_map: Optional[Mapping[Tuple[int, int], str]] = None,
+    strict: bool = True,
+) -> List[str]:
+    """Validate callout descriptors without rendering.
+
+    Returns an empty list on success. When ``strict`` is ``False``, returns a
+    list of error strings instead of raising.
+    """
+    if not callouts:
+        return []
+    try:
+        render_delim_callouts(
+            callouts,
+            available_names=available_names,
+            name_map=name_map,
+            strict=True,
+        )
+    except Exception as exc:  # noqa: BLE001 - surface errors to caller
+        if strict:
+            raise
+        return [str(exc)]
+    return []
+
+
 def infer_ge_matrix_labels(
     matrices: Sequence[Sequence[Any]],
     *,

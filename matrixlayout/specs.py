@@ -216,16 +216,19 @@ class GEGridSpec:
     known_zero_color: Optional[str] = None
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "GEGridSpec":
+    def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "GEGridSpec":
         if d is None:
             raise ValueError("GEGridSpec.from_dict requires a mapping")
+        if allow_extra is None:
+            allow_extra = not bool(d.get("strict", True))
         allowed = set(GEGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
         extra = set(d.keys()) - allowed
-        if extra:
+        if extra and not allow_extra:
             raise ValueError(f"Unknown GEGridSpec fields: {sorted(extra)}")
         if "matrices" not in d:
             raise ValueError("GEGridSpec requires 'matrices'")
-        return GEGridSpec(**d)
+        filtered = {k: v for k, v in d.items() if k in allowed}
+        return GEGridSpec(**filtered)
 
     def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
         d = asdict(self)
@@ -257,16 +260,19 @@ class QRGridSpec:
     specs: Optional[Sequence[Mapping[str, Any]]] = None
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "QRGridSpec":
+    def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "QRGridSpec":
         if d is None:
             raise ValueError("QRGridSpec.from_dict requires a mapping")
+        if allow_extra is None:
+            allow_extra = not bool(d.get("strict", True))
         allowed = set(QRGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
         extra = set(d.keys()) - allowed
-        if extra:
+        if extra and not allow_extra:
             raise ValueError(f"Unknown QRGridSpec fields: {sorted(extra)}")
         if "matrices" not in d:
             raise ValueError("QRGridSpec requires 'matrices'")
-        return QRGridSpec(**d)
+        filtered = {k: v for k, v in d.items() if k in allowed}
+        return QRGridSpec(**filtered)
 
     def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
         d = asdict(self)
