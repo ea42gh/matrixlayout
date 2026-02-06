@@ -118,6 +118,16 @@ tex = render_ge_tex(matrices=matrices, specs=specs)
 svg = render_ge_svg(matrices=matrices, specs=specs, output_dir="./_out", output_stem="debug")
 ```
 
+### Smoke render helper
+
+If you need a quick toolchain sanity check, run:
+
+```
+python render_smoke.py
+```
+
+Set `MATRIXLAYOUT_SMOKE_OUT` to control the output directory.
+
 ## Troubleshooting (minimal)
 
 - If SVG rendering fails, switch to `*_tex` to inspect the emitted LaTeX.

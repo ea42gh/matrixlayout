@@ -31,6 +31,14 @@ labels are inserted by adding padding rows/cols to the block.
 Matrixlayout renders through `jupyter_tikz`. The rendering layer is external;
 matrixlayout does not manage toolchain installation or environment setup.
 
+## Compatibility matrix
+
+| Component | Minimum | Notes |
+| --- | --- | --- |
+| Python | 3.9 | Tested with 3.9–3.12. |
+| jupyter_tikz | itikz_port | TeX toolchains + SVG. |
+| TeX toolchain | TeX Live 2022+ | Needed for SVG rendering. |
+
 ## Data flow
 
 Algorithmic code produces a spec → matrixlayout formats entries → optional

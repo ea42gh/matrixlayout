@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Mapping
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Mapping, Iterable
 
 
 @dataclass(frozen=True)
@@ -279,3 +279,97 @@ class QRGridSpec:
         if drop_none:
             return {k: v for k, v in d.items() if v is not None}
         return d
+
+
+def _matrix_shape(mat: Any) -> Optional[Tuple[int, int]]:
+    if mat is None:
+        return None
+    shape = getattr(mat, "shape", None)
+    if shape is not None:
+        try:
+            if len(shape) >= 2:
+                return (int(shape[0]), int(shape[1]))
+        except Exception:
+            pass
+    if isinstance(mat, (list, tuple)):
+        if len(mat) == 0:
+            return (0, 0)
+        first = mat[0]
+        if isinstance(first, (list, tuple)):
+            return (len(mat), len(first))
+    return None
+
+
+def _grid_size(mats: Any) -> Optional[Tuple[int, int]]:
+    if not isinstance(mats, (list, tuple)) or not mats:
+        return None
+    ncols = None
+    for row in mats:
+        if not isinstance(row, (list, tuple)):
+            return None
+        if ncols is None:
+            ncols = len(row)
+        elif len(row) != ncols:
+            return None
+    return (len(mats), ncols or 0)
+
+
+def _validate_grid_matrices(mats: Sequence[Sequence[Any]]) -> List[str]:
+    errors: List[str] = []
+    grid = _grid_size(mats)
+    if grid is None:
+        errors.append("matrices must be a rectangular 2D list")
+        return errors
+    nrows, ncols = grid
+    col_shapes: List[Optional[Tuple[int, int]]] = [None] * ncols
+    for r, row in enumerate(mats):
+        row_shapes: List[Tuple[int, int]] = []
+        for c, item in enumerate(row):
+            shape = _matrix_shape(item)
+            if shape is None:
+                continue
+            row_shapes.append(shape)
+            if col_shapes[c] is None:
+                col_shapes[c] = shape
+            elif col_shapes[c] != shape:
+                errors.append(f"column {c} shape mismatch: expected {col_shapes[c]}, got {shape}")
+        if row_shapes:
+            row_rows = {s[0] for s in row_shapes}
+            if len(row_rows) > 1:
+                errors.append(f"row {r} has inconsistent row counts: {sorted(row_rows)}")
+    return errors
+
+
+def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[str]:
+    """Validate a GE spec dict and return a list of errors.
+
+    This is intended as a lightweight preflight before rendering.
+    """
+    errors: List[str] = []
+    try:
+        GEGridSpec.from_dict(dict(spec), allow_extra=not strict)
+    except Exception as exc:
+        errors.append(str(exc))
+    mats = spec.get("matrices") if isinstance(spec, Mapping) else None
+    if mats is None:
+        if not any("requires 'matrices'" in e for e in errors):
+            errors.append("GE spec requires 'matrices'")
+        return errors
+    errors.extend(_validate_grid_matrices(mats))
+    return errors
+
+
+def validate_qr_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[str]:
+    """Validate a QR spec dict and return a list of errors."""
+    errors: List[str] = []
+    try:
+        QRGridSpec.from_dict(dict(spec), allow_extra=not strict)
+    except Exception as exc:
+        errors.append(str(exc))
+    mats = spec.get("matrices") if isinstance(spec, Mapping) else None
+    if mats is None:
+        if not any("requires 'matrices'" in e for e in errors):
+            errors.append("QR spec requires 'matrices'")
+        return errors
+    errors.extend(_validate_grid_matrices(mats))
+    return errors

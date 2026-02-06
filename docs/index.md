@@ -32,3 +32,13 @@ matrices.
   - `notebooks/05_formatting_selectors.ipynb`
   - `notebooks/06_rendering_templates.ipynb`
 - See `glossary.md` for terminology.
+
+## CLI quick checks
+
+Run a smoke render to validate toolchains:
+
+```
+python render_smoke.py
+```
+
+Set `MATRIXLAYOUT_SMOKE_OUT` to control the output directory.

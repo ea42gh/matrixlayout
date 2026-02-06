@@ -25,7 +25,7 @@ from .ge import (
     decorations_help,
 )
 from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name, qr_grid_bundle
-from .specs import GEGridSpec, QRGridSpec, QRGridBundle
+from .specs import GEGridSpec, QRGridSpec, QRGridBundle, validate_ge_spec, validate_qr_spec
 from .formatting import (
     decorate_tex_entries,
     latexify,
@@ -86,6 +86,8 @@ __all__ = [
     "GEGridSpec",
     "QRGridSpec",
     "QRGridBundle",
+    "validate_ge_spec",
+    "validate_qr_spec",
     "latexify",
     "make_decorator",
     "decorate_tex_entries",

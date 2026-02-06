@@ -71,6 +71,7 @@ Common options: `specs` (labels/callouts), `output_dir`/`output_stem` (persist T
 - `matrixlayout.render.render_svg_with_artifacts`: render TeX to SVG and keep TeX/PDF/SVG artifacts.
 - `matrixlayout.nicematrix_decor.render_delim_callout(s)`: render delimiter callouts as TikZ.
 - `matrixlayout.nicematrix_decor.validate_callouts`: validate callout descriptors (strict or non-strict).
+- `matrixlayout.specs.validate_ge_spec`, `matrixlayout.specs.validate_qr_spec`: lightweight spec validation.
 - `matrixlayout.nicematrix_decor.infer_ge_matrix_labels`: infer labels from a GE grid.
 - `matrixlayout.nicematrix_decor.infer_ge_layer_callouts`: infer layer callouts from a GE grid.
 - `matrixlayout.jinja_env.make_environment/get_environment`: create or fetch Jinja environments.
