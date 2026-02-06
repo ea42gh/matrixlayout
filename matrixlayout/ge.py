@@ -1296,6 +1296,10 @@ def tex(
         create_extra_nodes = False
     if create_medium_nodes is None:
         create_medium_nodes = False
+    if not create_medium_nodes and codebefore:
+        # Legacy codebefore snippets can reference -medium nodes; enable them automatically.
+        if any("medium" in str(item) for item in codebefore):
+            create_medium_nodes = True
     if outer_delims is None:
         outer_delims = False
     if outer_delims_name is None:
