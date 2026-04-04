@@ -24,7 +24,7 @@ import re
 
 from .jinja_env import render_template
 from .render import render_svg as _render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator
+from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator, _normalize_unicode_tex
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -2959,6 +2959,7 @@ def render_ge_tex_specs(
                 s = str(text[1])
             else:
                 s = str(text)
+            s = _normalize_unicode_tex(s)
             stripped = s.strip()
             if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
                 return stripped

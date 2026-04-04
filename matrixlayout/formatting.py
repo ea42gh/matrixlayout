@@ -16,10 +16,21 @@ import re
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
 
+_UNICODE_TEX_REPLACEMENTS = {
+    "ᵀ": r"^{T}",
+}
+
+
+def _normalize_unicode_tex(s: str) -> str:
+    for src, dst in _UNICODE_TEX_REPLACEMENTS.items():
+        s = s.replace(src, dst)
+    return s
+
+
 def latexify(x: Any) -> str:
     """Return a TeX-ready representation for a scalar-like value."""
     if isinstance(x, str):
-        return x
+        return _normalize_unicode_tex(x)
 
     if isinstance(x, (tuple, list)) and len(x) == 2 and all(isinstance(v, int) for v in x):
         num, den = x
@@ -58,8 +69,8 @@ def norm_str(x: Any) -> Any:
                 inner = inner[1:]
             if len(inner) >= 2 and inner[0] == inner[-1] and inner[0] in ("'", '"'):
                 inner = inner[1:-1]
-            return inner
-    return s
+            return _normalize_unicode_tex(inner)
+    return _normalize_unicode_tex(s)
 
 def make_decorator(
     *,
