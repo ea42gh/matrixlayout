@@ -119,6 +119,35 @@ def test_validate_render_opts_rejects_non_mapping():
         ml_render.validate_render_opts(["crop", "tight"])
 
 
+def test_merge_render_opts_preserves_render_opts_without_overrides(tmp_path):
+    opts = ml_render.merge_render_opts(
+        {
+            "toolchain_name": "pdftex_pdftocairo",
+            "crop": "page",
+            "output_dir": tmp_path,
+        }
+    )
+
+    assert opts == {
+        "toolchain_name": "pdftex_pdftocairo",
+        "crop": "page",
+        "output_dir": tmp_path,
+    }
+
+
+def test_merge_render_opts_applies_non_none_overrides():
+    opts = ml_render.merge_render_opts(
+        {"crop": "page", "padding": (1, 1, 1, 1), "frame": True},
+        crop="tight",
+        padding=None,
+        frame=False,
+    )
+
+    assert opts["crop"] == "tight"
+    assert opts["padding"] == (1, 1, 1, 1)
+    assert opts["frame"] is False
+
+
 def test_matrixlayout_render_svg_falls_back_to_legacy_render_svg(monkeypatch, tmp_path):
     calls = []
 

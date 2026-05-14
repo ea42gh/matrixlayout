@@ -12,7 +12,7 @@ import re
 
 from .formatting import latexify
 from .ge import render_ge_tex, grid_submatrix_spans
-from .render import render_svg, validate_render_opts
+from .render import merge_render_opts, render_svg
 from .specs import QRGridSpec, QRGridBundle
 
 
@@ -745,22 +745,16 @@ def render_qr_svg(
         strict=strict,
         specs=specs,
     )
-    validate_render_opts(render_opts)
-    opts: Dict[str, Any] = dict(render_opts or {})
-    if toolchain_name is not None:
-        opts["toolchain_name"] = toolchain_name
-    if crop is not None:
-        opts["crop"] = crop
-    if padding is not None:
-        opts["padding"] = padding
-    if frame is not None:
-        opts["frame"] = frame
-    if output_dir is not None:
-        opts["output_dir"] = output_dir
-    if output_stem is not None:
-        opts["output_stem"] = output_stem
-    if exact_bbox is not None:
-        opts["exact_bbox"] = exact_bbox
+    opts = merge_render_opts(
+        render_opts,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+        output_stem=output_stem,
+        exact_bbox=exact_bbox,
+    )
     return render_svg(tex, **opts)
 
 

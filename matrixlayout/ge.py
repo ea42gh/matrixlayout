@@ -23,7 +23,7 @@ import os
 import re
 
 from .jinja_env import render_template
-from .render import render_svg as _render_svg, validate_render_opts
+from .render import merge_render_opts, render_svg as _render_svg
 from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator, _normalize_unicode_tex
 from .specs import (
     GEGridBundle,
@@ -927,6 +927,8 @@ def _normalize_label_cols(val: Any) -> List[List[Any]]:
     if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
         return [[_strip_math_wrappers(v) for v in val]]
     if isinstance(val, (list, tuple)):
+        if val and all(isinstance(col, (list, tuple)) and len(col) == 1 for col in val):
+            return [[_strip_math_wrappers(col[0]) for col in val]]
         out: List[List[Any]] = []
         for col in val:
             if isinstance(col, (list, tuple)):
@@ -1449,22 +1451,16 @@ def svg(
         outer_delims_name=outer_delims_name,
         outer_delims_span=outer_delims_span,
     )
-    validate_render_opts(render_opts)
-    opts: Dict[str, Any] = dict(render_opts or {})
-    if toolchain_name is not None:
-        opts["toolchain_name"] = toolchain_name
-    if crop is not None:
-        opts["crop"] = crop
-    if padding is not None:
-        opts["padding"] = padding
-    if frame is not None:
-        opts["frame"] = frame
-    if output_dir is not None:
-        opts["output_dir"] = output_dir
-    if output_stem is not None:
-        opts["output_stem"] = output_stem
-    if exact_bbox is not None:
-        opts["exact_bbox"] = exact_bbox
+    opts = merge_render_opts(
+        render_opts,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+        output_stem=output_stem,
+        exact_bbox=exact_bbox,
+    )
     return _render_svg(tex_doc, **opts)
 
 
@@ -3219,20 +3215,14 @@ def render_ge_svg(
         specs=specs,
         **kwargs,
     )
-    validate_render_opts(render_opts)
-    opts: Dict[str, Any] = dict(render_opts or {})
-    if toolchain_name is not None:
-        opts["toolchain_name"] = toolchain_name
-    if crop is not None:
-        opts["crop"] = crop
-    if padding is not None:
-        opts["padding"] = padding
-    if frame is not None:
-        opts["frame"] = frame
-    if output_dir is not None:
-        opts["output_dir"] = output_dir
-    if output_stem is not None:
-        opts["output_stem"] = output_stem
-    if exact_bbox is not None:
-        opts["exact_bbox"] = exact_bbox
+    opts = merge_render_opts(
+        render_opts,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+        output_stem=output_stem,
+        exact_bbox=exact_bbox,
+    )
     return _render_svg(tex, **opts)

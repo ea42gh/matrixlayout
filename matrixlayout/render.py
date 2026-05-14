@@ -82,6 +82,21 @@ def validate_render_opts(render_opts: Optional[Mapping[str, Any]]) -> None:
         raise ValueError(f"Unknown render option(s): {bad}. Supported options: {available}")
 
 
+def merge_render_opts(
+    render_opts: Optional[Mapping[str, Any]] = None,
+    **overrides: Any,
+) -> dict[str, Any]:
+    """Merge renderer options with explicit non-``None`` overrides."""
+    validate_render_opts(render_opts)
+    opts = dict(render_opts or {})
+    for key, value in overrides.items():
+        if key not in _RENDER_OPTION_KEYS:
+            raise ValueError(f"Unknown render option override: {key}")
+        if value is not None:
+            opts[key] = value
+    return opts
+
+
 def render_svg_with_artifacts(
     tex_source: str,
     *,

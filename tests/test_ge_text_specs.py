@@ -72,6 +72,19 @@ def test_render_ge_tex_label_rows_mixed_text_latex():
     assert "x_1" in tex
 
 
+def test_render_ge_tex_label_cols_singletons_attach_to_matrix_rows():
+    tex = render_ge_tex(
+        matrices=[[[1, 0, 2], [0, 1, -1]]],
+        formatter=str,
+        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x1", "x2", "b"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["r1"], ["r2"]]}],
+    )
+
+    assert r"\text{r1}\hspace{0.8mm} & 1 & 0 & 2" in tex
+    assert r"\text{r2}\hspace{0.8mm} & 0 & 1 & -1" in tex
+    assert r"\text{r1}\hspace{0.8mm} & \text{r2}\hspace{0.8mm} & 1" not in tex
+
+
 def test_render_ge_tex_specs_accounts_for_label_rows():
     matrices = [[[1, 2], [3, 4]]]
     specs = render_ge_tex_specs(
