@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List, Dict
 
 from .jinja_env import render_template
-from .render import render_svg
+from .render import render_svg, validate_render_opts
 from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str
 
 
@@ -598,6 +598,7 @@ def render_eig_svg(
     )
     if output_dir is None:
         output_dir = tmp_dir
+    validate_render_opts(render_opts)
     opts: Dict[str, Any] = dict(render_opts or {})
     if toolchain_name is not None:
         opts["toolchain_name"] = toolchain_name

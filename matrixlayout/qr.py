@@ -12,7 +12,7 @@ import re
 
 from .formatting import latexify
 from .ge import render_ge_tex, grid_submatrix_spans
-from .render import render_svg
+from .render import render_svg, validate_render_opts
 from .specs import QRGridSpec, QRGridBundle
 
 
@@ -745,6 +745,7 @@ def render_qr_svg(
         strict=strict,
         specs=specs,
     )
+    validate_render_opts(render_opts)
     opts: Dict[str, Any] = dict(render_opts or {})
     if toolchain_name is not None:
         opts["toolchain_name"] = toolchain_name

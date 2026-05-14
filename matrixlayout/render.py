@@ -20,13 +20,24 @@ import shutil
 import tempfile
 import inspect
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 from .formatting import norm_str
 
 _PathLike = Union[str, os.PathLike, Path]
 
 _SVG_HEADER_COMMENT_RE = re.compile(r"^\s*<!--.*?-->\s*", flags=re.DOTALL)
+_RENDER_OPTION_KEYS = frozenset(
+    {
+        "toolchain_name",
+        "output_stem",
+        "crop",
+        "padding",
+        "frame",
+        "exact_bbox",
+        "output_dir",
+    }
+)
 
 
 def _strip_svg_header_comment(svg_text: str) -> str:
@@ -34,6 +45,41 @@ def _strip_svg_header_comment(svg_text: str) -> str:
     if not svg_text:
         return svg_text
     return _SVG_HEADER_COMMENT_RE.sub("", svg_text, count=1)
+
+
+def _validate_toolchain_name(jupyter_tikz: Any, toolchain_name: Optional[str]) -> None:
+    """Raise a clear error for unknown jupyter_tikz toolchain names."""
+    if toolchain_name is None:
+        return
+
+    toolchains = getattr(jupyter_tikz, "TOOLCHAINS", None)
+    if toolchains is None:
+        return
+    try:
+        known = set(toolchains.keys())
+    except AttributeError:
+        return
+
+    if toolchain_name not in known:
+        available = ", ".join(sorted(str(name) for name in known))
+        raise ValueError(
+            f"Unknown jupyter_tikz toolchain: {toolchain_name!r}. "
+            f"Available toolchains: {available}"
+        )
+
+
+def validate_render_opts(render_opts: Optional[Mapping[str, Any]]) -> None:
+    """Raise a clear error for unsupported render option keys."""
+    if render_opts is None:
+        return
+    if not isinstance(render_opts, Mapping):
+        raise TypeError("render_opts must be a mapping of render option names to values")
+
+    unknown = set(render_opts) - _RENDER_OPTION_KEYS
+    if unknown:
+        available = ", ".join(sorted(_RENDER_OPTION_KEYS))
+        bad = ", ".join(sorted(str(key) for key in unknown))
+        raise ValueError(f"Unknown render option(s): {bad}. Supported options: {available}")
 
 
 def render_svg_with_artifacts(
@@ -65,6 +111,7 @@ def render_svg_with_artifacts(
 
     toolchain_name = norm_str(toolchain_name)
     crop = norm_str(crop)
+    _validate_toolchain_name(jupyter_tikz, toolchain_name)
 
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)

@@ -81,6 +81,44 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
     assert Path(kwargs["output_dir"]).name.startswith("matrixlayout_render_")
 
 
+def test_matrixlayout_render_svg_rejects_unknown_toolchain_early(monkeypatch, tmp_path):
+    fake = types.SimpleNamespace(TOOLCHAINS={"pdftex_pdftocairo": object()})
+
+    def fake_render_svg_with_artifacts(tex_source, **kwargs):
+        raise AssertionError("rendering should not be called for an unknown toolchain")
+
+    fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
+
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    with pytest.raises(ValueError, match="Unknown jupyter_tikz toolchain"):
+        ml_render.render_svg("TEX", toolchain_name="missing_toolchain", output_dir=tmp_path)
+
+
+def test_validate_render_opts_accepts_supported_keys(tmp_path):
+    ml_render.validate_render_opts(
+        {
+            "toolchain_name": "pdftex_pdftocairo",
+            "output_stem": "demo",
+            "crop": "tight",
+            "padding": (1, 2, 3, 4),
+            "frame": True,
+            "exact_bbox": False,
+            "output_dir": tmp_path,
+        }
+    )
+
+
+def test_validate_render_opts_rejects_unknown_keys():
+    with pytest.raises(ValueError, match="Unknown render option"):
+        ml_render.validate_render_opts({"toolchain": "pdftex_pdftocairo"})
+
+
+def test_validate_render_opts_rejects_non_mapping():
+    with pytest.raises(TypeError, match="render_opts must be a mapping"):
+        ml_render.validate_render_opts(["crop", "tight"])
+
+
 def test_matrixlayout_render_svg_falls_back_to_legacy_render_svg(monkeypatch, tmp_path):
     calls = []
 
@@ -159,6 +197,17 @@ def test_backsubst_svg_passes_through_options(monkeypatch):
     assert recorded["kwargs"]["padding"] == {"top": 5}
 
 
+def test_backsubst_svg_rejects_unknown_render_opts(monkeypatch):
+    monkeypatch.setattr(
+        ml_backsubst,
+        "render_svg",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not render")),
+    )
+
+    with pytest.raises(ValueError, match="Unknown render option"):
+        ml_backsubst.backsubst_svg(system_txt="SYS", render_opts={"toolchain": "tc"})
+
+
 def test_render_ge_svg_merges_render_opts(monkeypatch):
     recorded = {}
 
@@ -188,6 +237,17 @@ def test_render_ge_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["output_stem"] == "ge_opts"
 
 
+def test_render_ge_svg_rejects_unknown_render_opts(monkeypatch):
+    monkeypatch.setattr(
+        ml_ge,
+        "_render_svg",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not render")),
+    )
+
+    with pytest.raises(ValueError, match="Unknown render option"):
+        ml_ge.render_ge_svg(matrices=[[None, [[1]]]], render_opts={"toolchain": "tc"})
+
+
 def test_render_qr_svg_merges_render_opts(monkeypatch):
     recorded = {}
 
@@ -215,6 +275,18 @@ def test_render_qr_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["output_stem"] == "qr_opts"
 
 
+def test_render_qr_svg_rejects_unknown_render_opts(monkeypatch):
+    monkeypatch.setattr(
+        ml_qr,
+        "render_svg",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not render")),
+    )
+    monkeypatch.setattr(ml_qr, "render_qr_tex", lambda *args, **kwargs: "TEX")
+
+    with pytest.raises(ValueError, match="Unknown render option"):
+        ml_qr.render_qr_svg(matrices=[[None, [[1]]]], render_opts={"toolchain": "tc"})
+
+
 def test_render_eig_svg_merges_render_opts(monkeypatch):
     recorded = {}
 
@@ -240,3 +312,15 @@ def test_render_eig_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
     assert recorded["kwargs"]["exact_bbox"] is True
     assert recorded["kwargs"]["output_stem"] == "eig_opts"
+
+
+def test_render_eig_svg_rejects_unknown_render_opts(monkeypatch):
+    monkeypatch.setattr(
+        ml_eig,
+        "render_svg",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not render")),
+    )
+    monkeypatch.setattr(ml_eig, "render_eig_tex", lambda *args, **kwargs: "TEX")
+
+    with pytest.raises(ValueError, match="Unknown render option"):
+        ml_eig.render_eig_svg({"dummy": True}, render_opts={"toolchain": "tc"})

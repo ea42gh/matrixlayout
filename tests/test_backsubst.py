@@ -45,12 +45,41 @@ def test_backsubst_tex_sections_toggle():
     assert "C2" not in tex
 
 
-def test_backsubst_tex_supports_systeme_blocks_from_callers():
+def test_backsubst_tex_loads_systeme_for_callers():
     tex = backsubst_tex(system_txt=r"\systeme{x=1}", show_cascade=False, show_solution=False)
 
     assert r"\usepackage{systeme}" in tex
     assert r"\usepackage{cascade}" in tex
     assert r"\systeme{x=1}" in tex
+
+
+def test_backsubst_tex_plain_system_loads_required_systeme_package():
+    tex = backsubst_tex(
+        system_txt=r"$x + 2y = 5,\quad y = 1$",
+        cascade_txt=[r"$x + 2(1) = 5$", r"$x = 3$"],
+        solution_txt=r"$(x,y) = (3,1)$",
+    )
+
+    assert r"\usepackage{systeme}" in tex
+    assert r"$x + 2y = 5,\quad y = 1$" in tex
+
+
+@pytest.mark.render
+def test_systeme_sty_is_available_when_rendering():
+    kpsewhich = shutil.which("kpsewhich")
+    if kpsewhich is None:
+        pytest.skip("kpsewhich not found")
+
+    import subprocess
+
+    result = subprocess.run(
+        [kpsewhich, "systeme.sty"],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip()
 
 
 def test_backsubst_tex_includes_cascade_lines_in_order():

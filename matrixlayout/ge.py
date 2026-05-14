@@ -23,7 +23,7 @@ import os
 import re
 
 from .jinja_env import render_template
-from .render import render_svg as _render_svg
+from .render import render_svg as _render_svg, validate_render_opts
 from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator, _normalize_unicode_tex
 from .specs import (
     GEGridBundle,
@@ -1449,6 +1449,7 @@ def svg(
         outer_delims_name=outer_delims_name,
         outer_delims_span=outer_delims_span,
     )
+    validate_render_opts(render_opts)
     opts: Dict[str, Any] = dict(render_opts or {})
     if toolchain_name is not None:
         opts["toolchain_name"] = toolchain_name
@@ -3218,6 +3219,7 @@ def render_ge_svg(
         specs=specs,
         **kwargs,
     )
+    validate_render_opts(render_opts)
     opts: Dict[str, Any] = dict(render_opts or {})
     if toolchain_name is not None:
         opts["toolchain_name"] = toolchain_name
