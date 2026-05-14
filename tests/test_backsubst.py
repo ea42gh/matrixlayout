@@ -45,6 +45,14 @@ def test_backsubst_tex_sections_toggle():
     assert "C2" not in tex
 
 
+def test_backsubst_tex_supports_systeme_blocks_from_callers():
+    tex = backsubst_tex(system_txt=r"\systeme{x=1}", show_cascade=False, show_solution=False)
+
+    assert r"\usepackage{systeme}" in tex
+    assert r"\usepackage{cascade}" in tex
+    assert r"\systeme{x=1}" in tex
+
+
 def test_backsubst_tex_includes_cascade_lines_in_order():
     tex = backsubst_tex(
         cascade_txt=("C1", "C2", "C3"),

@@ -8,4 +8,5 @@ texlive-latex-extra
 texlive-latex-recommended
 texlive-pictures
 texlive-science
+texlive-lang-french
 fonts-lmodern

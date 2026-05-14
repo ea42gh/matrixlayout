@@ -2,8 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from jupyter_tikz.svg_normalize import normalize_svg
 from matrixlayout.backsubst import backsubst_svg
+
+pytest.importorskip("jupyter_tikz")
+normalize_svg = pytest.importorskip("jupyter_tikz.svg_normalize").normalize_svg
 
 
 @pytest.mark.render

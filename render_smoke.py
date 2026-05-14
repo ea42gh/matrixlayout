@@ -1,11 +1,14 @@
 import os
 import sys
+import tempfile
+from pathlib import Path
 
 from matrixlayout.ge import render_ge_svg
 
 
 def main() -> int:
-    outdir = os.environ.get("MATRIXLAYOUT_SMOKE_OUT", "/tmp/la/smoke/matrixlayout")
+    default_outdir = Path(tempfile.gettempdir()) / "la" / "smoke" / "matrixlayout"
+    outdir = os.environ.get("MATRIXLAYOUT_SMOKE_OUT", str(default_outdir))
     os.makedirs(outdir, exist_ok=True)
     print("matrixlayout smoke render ->", outdir)
     print("python:", sys.version.split()[0])
