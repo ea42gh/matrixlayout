@@ -1,0 +1,11 @@
+latexmk
+dvisvgm
+ghostscript
+poppler-utils
+pdf2svg
+texlive-latex-base
+texlive-latex-extra
+texlive-latex-recommended
+texlive-pictures
+texlive-science
+fonts-lmodern
