@@ -43,6 +43,39 @@ def _coerce_label_text_for_layout(val: Any) -> str:
         return str(val[1])
     return str(val)
 
+
+_LABEL_TEXT_ESCAPES = {
+    "\\": r"\textbackslash{}",
+    "{": r"\{",
+    "}": r"\}",
+    "&": r"\&",
+    "%": r"\%",
+    "#": r"\#",
+    "_": r"\_",
+    "^": r"\textasciicircum{}",
+    "~": r"\textasciitilde{}",
+}
+
+
+def _escape_label_text_segment(s: str) -> str:
+    """Escape ordinary text that will be placed in TeX label content."""
+    return "".join(_LABEL_TEXT_ESCAPES.get(ch, ch) for ch in s)
+
+
+def _split_label_dollar_segments(s: str) -> Optional[str]:
+    parts = s.split("$")
+    if len(parts) < 3 or len(parts) % 2 == 0:
+        return None
+    expr_parts: List[str] = []
+    for idx, part in enumerate(parts):
+        if idx % 2 == 0:
+            if part:
+                expr_parts.append(rf"\text{{{_escape_label_text_segment(part)}}}")
+        else:
+            expr_parts.append(part)
+    return "".join(expr_parts)
+
+
 def _normalize_label_entries(val: Any) -> List[List[str]]:
     if val is None:
         return []
@@ -891,52 +924,38 @@ def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optiona
 
 def _normalize_label_rows(val: Any) -> List[List[Any]]:
     """Normalize label row input into a list of row lists."""
-    def _strip_math_wrappers(x: Any) -> Any:
-        if not isinstance(x, str):
-            return x
-        s = x.strip()
-        if len(s) >= 2 and s[0] == "$" and s[-1] == "$" and s.count("$") == 2:
-            return s[1:-1].strip()
-        return x
     if val is None:
         return []
     if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-        return [[_strip_math_wrappers(v) for v in val]]
+        return [list(val)]
     if isinstance(val, (list, tuple)):
         out: List[List[Any]] = []
         for row in val:
             if isinstance(row, (list, tuple)):
-                out.append([_strip_math_wrappers(v) for v in row])
+                out.append(list(row))
             else:
-                out.append([_strip_math_wrappers(row)])
+                out.append([row])
         return out
-    return [[_strip_math_wrappers(val)]]
+    return [[val]]
 
 
 def _normalize_label_cols(val: Any) -> List[List[Any]]:
     """Normalize label column input into a list of column lists."""
-    def _strip_math_wrappers(x: Any) -> Any:
-        if not isinstance(x, str):
-            return x
-        s = x.strip()
-        if len(s) >= 2 and s[0] == "$" and s[-1] == "$" and s.count("$") == 2:
-            return s[1:-1].strip()
-        return x
     if val is None:
         return []
     if isinstance(val, (list, tuple)) and val and all(not isinstance(v, (list, tuple)) for v in val):
-        return [[_strip_math_wrappers(v) for v in val]]
+        return [list(val)]
     if isinstance(val, (list, tuple)):
         if val and all(isinstance(col, (list, tuple)) and len(col) == 1 for col in val):
-            return [[_strip_math_wrappers(col[0]) for col in val]]
+            return [[col[0] for col in val]]
         out: List[List[Any]] = []
         for col in val:
             if isinstance(col, (list, tuple)):
-                out.append([_strip_math_wrappers(v) for v in col])
+                out.append(list(col))
             else:
-                out.append([_strip_math_wrappers(col)])
+                out.append([col])
         return out
-    return [[_strip_math_wrappers(val)]]
+    return [[val]]
 
 
 def _append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels: Optional[Sequence[Any]]) -> List[Any]:
@@ -1908,19 +1927,6 @@ def render_ge_tex(
             return str(val[1])
         return str(val)
 
-    def _split_dollar_segments(s: str) -> Optional[Tuple[str, bool]]:
-        parts = s.split("$")
-        if len(parts) < 3 or len(parts) % 2 == 0:
-            return None
-        expr_parts: List[str] = []
-        for idx, part in enumerate(parts):
-            if idx % 2 == 0:
-                if part:
-                    expr_parts.append(rf"\text{{{part}}}")
-            else:
-                expr_parts.append(part)
-        return "".join(expr_parts), True
-
     def _format_label_cell(val: Any) -> str:
         s = _coerce_label_text(val)
         stripped = s.strip()
@@ -1929,10 +1935,10 @@ def render_ge_tex(
         # If caller already provided LaTeX macros, don't wrap in \text{...}.
         if "\\" in s:
             return s
-        mixed = _split_dollar_segments(s)
+        mixed = _split_label_dollar_segments(s)
         if mixed:
-            return mixed[0]
-        return rf"\text{{{s}}}"
+            return mixed
+        return rf"\text{{{_escape_label_text_segment(s)}}}"
 
     def _pad_label_col(text: str, side: str) -> str:
         if not label_gap_mm:
@@ -2882,19 +2888,6 @@ def render_ge_tex_specs(
 
     from collections.abc import Mapping as _Mapping
 
-    def _split_dollar_segments(s: str) -> Optional[str]:
-        parts = s.split("$")
-        if len(parts) < 3 or len(parts) % 2 == 0:
-            return None
-        expr_parts: List[str] = []
-        for idx, part in enumerate(parts):
-            if idx % 2 == 0:
-                if part:
-                    expr_parts.append(rf"\text{{{part}}}")
-            else:
-                expr_parts.append(part)
-        return "".join(expr_parts)
-
     def _count_label_blocks(val: Any) -> int:
         if val is None:
             return 0
@@ -2960,10 +2953,12 @@ def render_ge_tex_specs(
             stripped = s.strip()
             if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
                 return stripped
-            mixed = _split_dollar_segments(s)
+            if "\\" in s:
+                return s
+            mixed = _split_label_dollar_segments(s)
             if mixed:
                 return f"${mixed}$"
-            return s
+            return _escape_label_text_segment(s)
 
         if side in ("right", "left"):
             edge = "center"

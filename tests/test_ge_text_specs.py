@@ -72,6 +72,32 @@ def test_render_ge_tex_label_rows_mixed_text_latex():
     assert "x_1" in tex
 
 
+def test_render_ge_tex_label_rows_escape_plain_text_specials():
+    tex = render_ge_tex(
+        matrices=[[[1, 0, 2], [0, 1, -1]]],
+        formatter=str,
+        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x_1", "x^2", "a&b"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["r_1"], ["r^2"]]}],
+    )
+
+    assert r"\text{x\_1}" in tex
+    assert r"\text{x\textasciicircum{}2}" in tex
+    assert r"\text{a\&b}" in tex
+    assert r"\text{r\_1}\hspace{0.8mm}" in tex
+    assert r"\text{r\textasciicircum{}2}\hspace{0.8mm}" in tex
+
+
+def test_render_ge_tex_specs_escape_plain_text_specials_in_mixed_labels():
+    specs = render_ge_tex_specs(
+        [[[1, 2], [3, 4]]],
+        [{"grid": (0, 0), "side": "right", "labels": ["row_name $i$", "x_1"]}],
+    )
+    texts = [s[1] for s in specs]
+
+    assert r"$\text{row\_name }i$" in texts
+    assert "x\\_1" in texts
+
+
 def test_render_ge_tex_label_cols_singletons_attach_to_matrix_rows():
     tex = render_ge_tex(
         matrices=[[[1, 0, 2], [0, 1, -1]]],
