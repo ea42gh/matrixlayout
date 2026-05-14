@@ -2725,6 +2725,27 @@ def _parse_ge_decorations(
             highlights.append(spec)
             continue
 
+        if "decorator" in item:
+            decorator = item["decorator"]
+            if not callable(decorator):
+                raise ValueError("decorations decorator must be callable")
+            entries = item.get("entries")
+            if entries is None:
+                mat = matrices[key[0]][key[1]]
+                _, h, w = _as_2d_list(mat)
+                rows = item.get("rows")
+                cols = item.get("cols")
+                if "submatrix" in item and item["submatrix"] is not None:
+                    sub = item["submatrix"]
+                    if isinstance(sub, (tuple, list)) and len(sub) == 2:
+                        rows = sub[0]
+                        cols = sub[1]
+                row_idx = _normalize_index_list(rows, h)
+                col_idx = _normalize_index_list(cols, w)
+                entries = [(r, c) for r in row_idx for c in col_idx]
+            dec_specs.append({"grid": key, "entries": entries, "decorator": decorator})
+            continue
+
         boxed = False
         box_color: Optional[str] = None
         text_color: Optional[str] = None

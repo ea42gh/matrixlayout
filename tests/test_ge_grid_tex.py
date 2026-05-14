@@ -40,3 +40,22 @@ def test_render_ge_tex_callouts_enable_extra_nodes():
     tex = render_ge_tex(matrices=matrices, callouts=True, preamble="")
     line = next(line for line in tex.splitlines() if "NiceArray" in line and "begin" in line)
     assert "create-extra-nodes" in line
+
+
+def test_render_ge_tex_rowechelon_paths_live_in_existing_tikzpicture():
+    if not _has_ge_template():
+        pytest.skip("matrixlayout GE template not available")
+
+    from matrixlayout.ge import render_ge_tex
+
+    path = r"\draw[blue] let \p1 = (A0.north west), \p2 = (A0.south east) in (\x1,\y1) -- (\x2,\y2);"
+    tex = render_ge_tex(
+        matrices=[[[1, 2], [3, 4]]],
+        rowechelon_paths=[path],
+        create_medium_nodes=True,
+        preamble="",
+    )
+
+    assert path in tex
+    assert r"\tikz \draw" not in tex
+    assert tex.count(r"\begin{tikzpicture}") == 1

@@ -1,4 +1,5 @@
 from matrixlayout.ge import render_ge_tex
+from matrixlayout.formatting import decorator_bg, decorator_box, sel_col, sel_entry
 
 
 def test_render_ge_tex_decorations_background_submatrix():
@@ -8,6 +9,19 @@ def test_render_ge_tex_decorations_background_submatrix():
     ]
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
     assert "fill=yellow!25" in tex
+
+
+def test_render_ge_tex_decorations_accept_callable_decorator_specs():
+    matrices = [[[1, 2], [0, -2], [0, 0]]]
+    decorations = [
+        {"grid": (0, 0), "entries": [sel_col(0)], "decorator": decorator_bg("green!15")},
+        {"grid": (0, 0), "entries": [sel_entry(0, 0), sel_entry(1, 1)], "decorator": decorator_box(color="red")},
+    ]
+    tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str)
+    assert r"\colorbox{green!15}" in tex
+    assert r"\colorboxed{red}" in tex
+    assert r"\color{black}{\colorboxed{red}{1}}" in tex
+    assert r"\colorbox{green!15}{0}" in tex
 
 
 def test_render_ge_tex_decorations_box_submatrix():
