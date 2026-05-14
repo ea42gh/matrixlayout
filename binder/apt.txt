@@ -6,7 +6,7 @@ pdf2svg
 texlive-latex-base
 texlive-latex-extra
 texlive-latex-recommended
+texlive-plain-generic
 texlive-pictures
 texlive-science
-texlive-lang-french
 fonts-lmodern
