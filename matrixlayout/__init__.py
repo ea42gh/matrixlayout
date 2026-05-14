@@ -56,13 +56,13 @@ from .nicematrix_decor import (
 )
 
 def show_svg(svg: object):
-    """Notebook-friendly display helper for SVG strings."""
+    """Display an SVG string in a notebook and return ``None``."""
     try:
         from IPython.display import SVG, display
     except Exception as exc:  # pragma: no cover - only used in notebooks
         raise ImportError("show_svg requires IPython (for SVG display).") from exc
     display(SVG(svg))
-    return svg
+    return None
 
 __all__ = [
     "__version__",
