@@ -77,3 +77,16 @@ def test_resolve_qr_grid_name():
     ]
 
     assert resolve_qr_grid_name("QR0x2", matrices=matrices) == (0, 2)
+
+
+def test_qr_grid_bundle_is_importable_and_returns_spans():
+    from matrixlayout.qr import qr_grid_bundle
+    from matrixlayout.specs import QRGridBundle
+
+    matrices = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]]
+
+    bundle = qr_grid_bundle(matrices=matrices, array_names=False)
+
+    assert isinstance(bundle, QRGridBundle)
+    assert bundle.tex
+    assert bundle.submatrix_spans
