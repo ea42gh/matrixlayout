@@ -18,6 +18,7 @@ import os
 import re
 import shutil
 import tempfile
+import inspect
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -68,16 +69,52 @@ def render_svg_with_artifacts(
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    return jupyter_tikz.render_svg_with_artifacts(
-        tex_source,
-        output_dir=outdir,
-        toolchain_name=toolchain_name,
-        output_stem=output_stem,
-        crop=crop,
-        padding=padding,
-        frame=frame,
-        exact_bbox=exact_bbox,
-    )
+    if hasattr(jupyter_tikz, "render_svg_with_artifacts"):
+        return jupyter_tikz.render_svg_with_artifacts(
+            tex_source,
+            output_dir=outdir,
+            toolchain_name=toolchain_name,
+            output_stem=output_stem,
+            crop=crop,
+            padding=padding,
+            frame=frame,
+            exact_bbox=exact_bbox,
+        )
+
+    if not hasattr(jupyter_tikz, "render_svg"):
+        raise AttributeError(
+            "jupyter_tikz must provide render_svg or render_svg_with_artifacts. "
+            "Upgrade jupyter-tikz or install matrixlayout with the render extra."
+        )
+
+    render_svg = jupyter_tikz.render_svg
+    kwargs = {
+        "toolchain_name": toolchain_name,
+        "output_stem": output_stem,
+        "crop": crop,
+        "padding": padding,
+        "frame": frame,
+        "exact_bbox": exact_bbox,
+    }
+    try:
+        params = inspect.signature(render_svg).parameters
+    except (TypeError, ValueError):
+        params = {}
+    accepts_var_kwargs = any(p.kind == p.VAR_KEYWORD for p in params.values())
+    if "output_dir" in params:
+        kwargs["output_dir"] = outdir
+    elif "artifacts_path" in params:
+        kwargs["artifacts_path"] = outdir
+    if params and not accepts_var_kwargs:
+        kwargs = {key: value for key, value in kwargs.items() if key in params}
+
+    svg_text = render_svg(tex_source, **kwargs)
+
+    class _LegacyArtifacts:
+        def read_svg(self) -> str:
+            return str(svg_text)
+
+    return _LegacyArtifacts()
 
 
 def render_svg(
@@ -123,7 +160,7 @@ def render_svg(
         return _strip_svg_header_comment(artifacts.read_svg())
 
     # Default: isolate artifacts per-call, keep them on failure for diagnostics.
-    tmp_root = Path("/tmp/la")
+    tmp_root = Path(tempfile.gettempdir()) / "la"
     tmp_root.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix="matrixlayout_render_", dir=tmp_root))
     try:

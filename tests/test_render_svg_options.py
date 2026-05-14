@@ -81,6 +81,58 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
     assert Path(kwargs["output_dir"]).name.startswith("matrixlayout_render_")
 
 
+def test_matrixlayout_render_svg_falls_back_to_legacy_render_svg(monkeypatch, tmp_path):
+    calls = []
+
+    fake = types.SimpleNamespace()
+
+    def fake_render_svg(tex_source, **kwargs):
+        calls.append((tex_source, kwargs))
+        return "<svg>legacy</svg>"
+
+    fake.render_svg = fake_render_svg
+
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    out = ml_render.render_svg(
+        "TEX",
+        crop="tight",
+        padding=(1, 2, 3, 4),
+        output_dir=tmp_path,
+    )
+
+    assert out == "<svg>legacy</svg>"
+    assert len(calls) == 1
+    tex_source, kwargs = calls[0]
+    assert tex_source == "TEX"
+    assert kwargs["crop"] == "tight"
+    assert kwargs["padding"] == (1, 2, 3, 4)
+    assert "output_dir" not in kwargs
+
+
+def test_matrixlayout_render_svg_fallback_uses_artifacts_path_when_available(monkeypatch, tmp_path):
+    calls = []
+
+    fake = types.SimpleNamespace()
+
+    def fake_render_svg(tex_source, *, artifacts_path=None):
+        calls.append((tex_source, artifacts_path))
+        return "<svg>legacy-artifacts</svg>"
+
+    fake.render_svg = fake_render_svg
+
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    out = ml_render.render_svg("TEX", output_dir=tmp_path)
+
+    assert out == "<svg>legacy-artifacts</svg>"
+    assert len(calls) == 1
+    tex_source, artifacts_path = calls[0]
+    assert tex_source == "TEX"
+    assert Path(artifacts_path).parent == tmp_path
+    assert Path(artifacts_path).name.startswith("matrixlayout_render_")
+
+
 def test_backsubst_svg_passes_through_options(monkeypatch):
     # Patch the function reference used inside backsubst_svg so no TeX toolchain is needed.
     recorded = {}
