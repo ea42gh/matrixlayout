@@ -18,7 +18,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
-from .formatting import apply_decorator, expand_entry_selectors, latexify, norm_str
+from .eigproblem_decorations import apply_matrix_decorators as _apply_matrix_decorators
+from .eigproblem_decorations import apply_vector_decorators as _apply_vector_decorators
+from .eigproblem_decorations import collect_vector_decorator_specs as _collect_vector_decorator_specs
+from .formatting import latexify, norm_str
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg
 
@@ -87,51 +90,7 @@ def _mk_vector_blocks(
     strict: bool = False,
 ) -> str:
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
-    dec_specs: List[Tuple[Callable[..., str], set[Tuple[int, int, int]]]] = []
-    if decorators and target_name:
-        target_key = target_name.lower()
-        alias_map = {
-            "eigenbasis": {"eigenbasis", "evecs_row", "basis"},
-            "orthonormal_basis": {"orthonormal_basis", "qvecs_row", "orthobasis"},
-        }
-        targets = alias_map.get(target_key, {target_key})
-        for spec_item in decorators:
-            if not isinstance(spec_item, dict):
-                raise ValueError("decorators must be dict specs")
-            key = spec_item.get("target")
-            if key is None or str(key).lower() not in targets:
-                continue
-            dec = spec_item.get("decorator")
-            if not callable(dec):
-                raise ValueError("decorator must be callable")
-            entries = spec_item.get("entries")
-            expanded: set[Tuple[int, int, int]] = set()
-            if entries is None:
-                for g_idx, group in enumerate(vec_groups):
-                    for v_idx, vec in enumerate(group):
-                        for i_idx, _ in enumerate(vec):
-                            expanded.add((g_idx, v_idx, i_idx))
-            else:
-                for ent in entries:
-                    if isinstance(ent, (list, tuple)) and len(ent) == 3:
-                        expanded.add((int(ent[0]), int(ent[1]), int(ent[2])))
-                        continue
-                    if isinstance(ent, (list, tuple)) and len(ent) == 2:
-                        a, b = ent
-                        if (
-                            isinstance(a, (list, tuple))
-                            and isinstance(b, (list, tuple))
-                            and len(a) == 3
-                            and len(b) == 3
-                            and int(a[0]) == int(b[0])
-                            and int(a[1]) == int(b[1])
-                        ):
-                            g_idx, v_idx = int(a[0]), int(a[1])
-                            i0, i1 = int(a[2]), int(b[2])
-                            for i_idx in range(min(i0, i1), max(i0, i1) + 1):
-                                expanded.add((g_idx, v_idx, i_idx))
-            if expanded:
-                dec_specs.append((dec, expanded))
+    dec_specs = _collect_vector_decorator_specs(vec_groups, decorators, target_name)
     groups_out: List[str] = []
     applied_counts = [0 for _ in dec_specs]
     for g_idx, vecs in enumerate(vec_groups):
@@ -141,10 +100,15 @@ def _mk_vector_blocks(
             for i_idx, v in enumerate(vec):
                 cell = formatter(v)
                 if dec_specs:
-                    for idx, (dec, expanded) in enumerate(dec_specs):
-                        if (g_idx, v_idx, i_idx) in expanded:
-                            cell = apply_decorator(dec, i_idx, v_idx, v, cell)
-                            applied_counts[idx] += 1
+                    cell = _apply_vector_decorators(
+                        cell,
+                        value=v,
+                        group_index=g_idx,
+                        vector_index=v_idx,
+                        entry_index=i_idx,
+                        dec_specs=dec_specs,
+                        applied_counts=applied_counts,
+                    )
                 entries.append(cell)
             vec_tex.append(r"$\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}$")
         groups_out.append(", ".join(vec_tex))
@@ -153,42 +117,6 @@ def _mk_vector_blocks(
             if count == 0:
                 raise ValueError("decorator selector did not match any entries")
     return " & & ".join(groups_out)
-
-
-def _apply_matrix_decorators(
-    mat_tex: List[List[str]],
-    mat_raw: List[List[Any]],
-    decorators: Optional[Sequence[Any]],
-    matrix_ids: Sequence[str],
-    formatter: LatexFormatter,
-    strict: bool,
-) -> List[List[str]]:
-    if not decorators:
-        return mat_tex
-    id_set = {str(mid).lower() for mid in matrix_ids}
-    nrows = len(mat_tex)
-    ncols = len(mat_tex[0]) if nrows else 0
-    for spec_item in decorators:
-        if not isinstance(spec_item, dict):
-            raise ValueError("decorators must be dict specs")
-        key = spec_item.get("matrix", spec_item.get("target"))
-        if key is None or str(key).lower() not in id_set:
-            continue
-        dec = spec_item.get("decorator")
-        if not callable(dec):
-            raise ValueError("decorator must be callable")
-        fmt = spec_item.get("formatter", formatter)
-        applied = 0
-        for i, j in expand_entry_selectors(spec_item.get("entries"), nrows, ncols):
-            if i < 0 or j < 0 or i >= nrows or j >= ncols:
-                continue
-            raw = mat_raw[i][j]
-            base = mat_tex[i][j] or str(fmt(raw))
-            mat_tex[i][j] = apply_decorator(dec, i, j, raw, base)
-            applied += 1
-        if strict and applied == 0:
-            raise ValueError("decorator selector did not match any entries")
-    return mat_tex
 
 
 def _mk_diag_matrix(
