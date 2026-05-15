@@ -22,7 +22,7 @@ import os
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-from .formatting import _normalize_unicode_tex, apply_decorator, expand_entry_selectors, latexify
+from .formatting import _normalize_unicode_tex, expand_entry_selectors, latexify
 from . import ge_decorations as _ge_decorations
 from . import ge_labels as _ge_labels
 from .ge_decorations import parse_ge_decorations as _parse_ge_decorations_impl
@@ -38,6 +38,7 @@ from .ge_grid import (
     block_pad_top as _block_pad_top,
     normalize_grid_input as _normalize_grid_input,
 )
+from .ge_render_grid import build_ge_grid_render_parts
 from .ge_template import (
     coerce_pivot_locs as _coerce_pivot_locs,
     coerce_rowechelon_paths as _coerce_rowechelon_paths,
@@ -635,322 +636,45 @@ def render_ge_tex(
                 raise ValueError("decorator selector did not match any entries")
             decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
 
-    def _coerce_label_text(val: Any) -> str:
-        if isinstance(val, dict):
-            return str(val.get("text", ""))
-        if isinstance(val, (tuple, list)) and len(val) == 2:
-            return str(val[1])
-        return str(val)
-
-    def _format_label_cell(val: Any) -> str:
-        s = _coerce_label_text(val)
-        stripped = s.strip()
-        if len(stripped) >= 2 and stripped[0] == "$" and stripped[-1] == "$":
-            return stripped[1:-1]
-        # If caller already provided LaTeX macros, don't wrap in \text{...}.
-        if "\\" in s:
-            return s
-        mixed = _split_label_dollar_segments(s)
-        if mixed:
-            return mixed
-        return rf"\text{{{_escape_label_text_segment(s)}}}"
-
-    def _pad_label_col(text: str, side: str) -> str:
-        if not label_gap_mm:
-            return text
-        gap = rf"\hspace{{{float(label_gap_mm)}mm}}"
-        return f"{text}{gap}" if side == "left" else f"{gap}{text}"
-
-    label_rows_map, label_cols_map, overlay_label_specs = _build_label_maps(
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        label_rows=label_rows,
-        label_cols=label_cols,
-        variable_labels=variable_labels,
-        allow_overlay=True,
-        strict=strict,
-    )
-
-    block_pad_left: List[List[int]] = [
-        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
-    ]
-    block_pad_top: List[List[int]] = [
-        [0 for _ in range(n_block_cols)] for _ in range(n_block_rows)
-    ]
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            _, h, w = cell_cache[br][bc]
-            if h == 0 or w == 0:
-                continue
-            W = block_widths[bc]
-            H = block_heights[br]
-            block_pad_left[br][bc] = _block_pad_left(W, w, block_align)
-            block_pad_top[br][bc] = _block_pad_top(H, h, block_valign)
-
-    embedded_row_labels = _embed_row_labels(
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        label_rows_map=label_rows_map,
-        block_heights=block_heights,
-        block_pad_left=block_pad_left,
-        cell_cache=cell_cache,
-    )
-    embedded_col_labels = _embed_col_labels(
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        label_cols_map=label_cols_map,
-        block_widths=block_widths,
-        block_pad_top=block_pad_top,
-        cell_cache=cell_cache,
-    )
-
-    extra_rows_above, extra_rows_below, extra_cols_left, extra_cols_right = _compute_label_extras(
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        label_rows_map=label_rows_map,
-        label_cols_map=label_cols_map,
-    )
-
-    total_block_heights = [
-        extra_rows_above[br] + block_heights[br] + extra_rows_below[br] for br in range(n_block_rows)
-    ]
-    total_block_widths = [
-        extra_cols_left[bc] + block_widths[bc] + extra_cols_right[bc] for bc in range(n_block_cols)
-    ]
-
-    # Build a single NiceArray format string (including label columns).
-    fmt_parts: List[str] = []
-    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
-    if legacy_format:
-        fmt_parts.append(spacer)
-
-    sep = "I" if legacy_format else "|"
-    for bc, base_w in enumerate(block_widths):
-        if bc > 0:
-            fmt_parts.append(spacer)
-
-        left_extra = extra_cols_left[bc]
-        right_extra = extra_cols_right[bc]
-
-        # Apply Nrhs only to the last block-column (A-block in the standard layout).
-        if Nrhs and format_nrhs and bc == n_block_cols - 1:
-            if isinstance(Nrhs, (list, tuple)):
-                rhs = [int(x) for x in Nrhs]
-                left = base_w - sum(rhs)
-                cuts: List[int] = [left]
-                for cut in rhs[:-1]:
-                    cuts.append(cuts[-1] + cut)
-                cur = 0
-                fmt = cell_align * left_extra
-                for cut in cuts:
-                    fmt += (cell_align * (cut - cur)) + sep
-                    cur = cut
-                if cur < base_w:
-                    fmt += cell_align * (base_w - cur)
-                fmt += cell_align * right_extra
-                fmt_parts.append(fmt)
-            elif 0 < int(Nrhs) < base_w:
-                left = base_w - int(Nrhs)
-                fmt = (cell_align * left_extra) + (cell_align * left) + sep + (cell_align * int(Nrhs)) + (cell_align * right_extra)
-                fmt_parts.append(fmt)
-            else:
-                fmt_parts.append(cell_align * (left_extra + base_w + right_extra))
-        else:
-            fmt_parts.append(cell_align * (left_extra + base_w + right_extra))
-
-    mat_format = "".join(fmt_parts)
-
-    # Flatten all blocks into one scalar matrix representation.
-    lines: List[str] = []
-    for br in range(n_block_rows):
-        H = block_heights[br]
-        Htot = total_block_heights[br]
-        for i in range(Htot):
-            in_matrix = extra_rows_above[br] <= i < (extra_rows_above[br] + H)
-            src_i = i - extra_rows_above[br]
-            above_rows = extra_rows_above[br]
-            below_rows = extra_rows_below[br]
-            row_cells: List[str] = []
-            for bc in range(n_block_cols):
-                W = block_widths[bc]
-                Wtot = total_block_widths[bc]
-                rows, h, w = cell_cache[br][bc]
-                if h == 0 or w == 0:
-                    out_cells: List[str] = [blank] * Wtot
-                    if in_matrix:
-                        matrix_i = src_i
-                        for row_idx, start_col, row_vals, tgt_w in embedded_row_labels.get((br, bc), []):
-                            if matrix_i != row_idx:
-                                continue
-                            vals = list(row_vals)
-                            if len(vals) < tgt_w:
-                                vals.extend([""] * (tgt_w - len(vals)))
-                            for j, v in enumerate(vals[:tgt_w]):
-                                idx = start_col + j
-                                if 0 <= idx < Wtot:
-                                    out_cells[idx] = _format_label_cell(v)
-                        for col_idx, start_row, col_vals, side in embedded_col_labels.get((br, bc), []):
-                            rel = matrix_i - start_row
-                            if 0 <= rel < len(col_vals):
-                                if 0 <= col_idx < Wtot:
-                                    out_cells[col_idx] = _pad_label_col(
-                                        _format_label_cell(col_vals[rel]),
-                                        side,
-                                    )
-                    row_cells.extend(out_cells)
-                    continue
-                out_cells: List[str] = [blank] * Wtot
-                left_cols = extra_cols_left[bc]
-                matrix_start = left_cols
-                matrix_end = left_cols + W
-                pad_top = block_pad_top[br][bc]
-                pad_left = block_pad_left[br][bc]
-                matrix_i = src_i - pad_top
-
-                # Label rows (above/below) within matrix columns only.
-                if not in_matrix:
-                    if i < above_rows:
-                        rows_above = label_rows_map.get((br, bc, "above"), [])
-                        if rows_above:
-                            start_row = above_rows - len(rows_above)
-                            label_idx = i - start_row
-                            if 0 <= label_idx < len(rows_above):
-                                row_vals = list(rows_above[label_idx])
-                                if len(row_vals) < W:
-                                    row_vals.extend([""] * (W - len(row_vals)))
-                                for j, v in enumerate(row_vals[:W]):
-                                    out_cells[matrix_start + pad_left + j] = _format_label_cell(v)
-                    else:
-                        rows_below = label_rows_map.get((br, bc, "below"), [])
-                        if rows_below:
-                            label_idx = i - (above_rows + H)
-                            if 0 <= label_idx < len(rows_below):
-                                row_vals = list(rows_below[label_idx])
-                                if len(row_vals) < W:
-                                    row_vals.extend([""] * (W - len(row_vals)))
-                                for j, v in enumerate(row_vals[:W]):
-                                    out_cells[matrix_start + pad_left + j] = _format_label_cell(v)
-                    row_cells.extend(out_cells)
-                    continue
-
-                if matrix_i < 0 or matrix_i >= h:
-                    row_cells.extend(out_cells)
-                    continue
-
-                src = list(rows[matrix_i]) if matrix_i < len(rows) else []
-                if len(src) < w:
-                    src.extend([None] * (w - len(src)))
-
-                # Label columns (left/right) within matrix rows.
-                cols_left = label_cols_map.get((br, bc, "left"), [])
-                if cols_left:
-                    start_col = max(left_cols - len(cols_left), 0)
-                    for cj, col_vals in enumerate(cols_left):
-                        if matrix_i < len(col_vals):
-                            out_cells[start_col + cj] = _pad_label_col(
-                                _format_label_cell(col_vals[matrix_i]),
-                                "left",
-                            )
-                cols_right = label_cols_map.get((br, bc, "right"), [])
-                if cols_right:
-                    start_col = matrix_end
-                    for cj, col_vals in enumerate(cols_right):
-                        if matrix_i < len(col_vals):
-                            if start_col + cj < Wtot:
-                                out_cells[start_col + cj] = _pad_label_col(
-                                    _format_label_cell(col_vals[matrix_i]),
-                                    "right",
-                                )
-
-                dec_specs = decorator_map.get((br, bc), [])
-                for j, v in enumerate(src[:w]):
-                    if not dec_specs:
-                        out_cells[matrix_start + pad_left + j] = _fmt(v)
-                        continue
-                    cell_tex = _fmt(v)
-                    for dec, sel, fmt in dec_specs:
-                        if (matrix_i, j) in sel and v is not None:
-                            base = fmt(v)
-                            if not (isinstance(base, str) and base.strip()):
-                                base = blank
-                            cell_tex = apply_decorator(dec, matrix_i, j, v, base)
-                    out_cells[matrix_start + pad_left + j] = cell_tex
-                row_cells.extend(out_cells)
-            line = " & ".join(row_cells) + r" \\"
-            if not in_matrix and above_rows and i == above_rows - 1 and label_gap_mm:
-                line += rf"\noalign{{\vskip{float(label_gap_mm)}mm}}"
-            if in_matrix and matrix_i == H - 1 and below_rows and label_gap_mm:
-                line += rf"\noalign{{\vskip{float(label_gap_mm)}mm}}"
-            lines.append(line)
-        if block_vspace_mm and br < n_block_rows - 1:
-            lines[-1] += rf"\noalign{{\vskip{int(block_vspace_mm)}mm}}"
-
-    mat_rep = "\n".join(lines)
-
-    # Precompute offsets (1-based nicematrix coordinates).
-    row_starts: List[int] = []
-    acc = 1
-    for H in total_block_heights:
-        row_starts.append(acc)
-        acc += H
-    col_starts: List[int] = []
-    acc = 1
-    for W in total_block_widths:
-        col_starts.append(acc)
-        acc += W
-
     # Ensure node coordinates exist when text nodes are requested.
     if "txt_with_locs" in kwargs and kwargs.get("create_cell_nodes") is None:
         kwargs["create_cell_nodes"] = True
 
-    # Emit \SubMatrix spans for each non-empty block to draw parentheses.
-    # Merge with any user-provided spans passed via **kwargs.
     user_sub = kwargs.pop("submatrix_locs", None)
-    submatrix_locs: List[Tuple[str, str, str]] = []
     use_legacy_names = bool(kwargs.pop("legacy_submatrix_names", False))
-
-    name_map: Dict[Tuple[int, int], str] = {}
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            _, h, w = cell_cache[br][bc]
-            if h == 0 or w == 0:
-                continue
-            r0 = row_starts[br] + extra_rows_above[br] + block_pad_top[br][bc]
-            c0 = col_starts[bc] + extra_cols_left[bc] + block_pad_left[br][bc]
-            r1 = r0 + h - 1
-            c1 = c0 + w - 1
-            # Name matrices by their column role when in the 2-column layout.
-            if use_legacy_names:
-                base = "A"
-                name = f"{base}{br}x{bc}"
-            else:
-                if n_block_cols == 2:
-                    base = ("E" if bc == 0 else "A")
-                else:
-                    base = f"M{bc}"
-                name = f"{base}{br}"
-            # Use \SubMatrix to draw the per-block delimiters.
-            # IMPORTANT: do *not* force explicit delimiter overrides via
-            # _{(}^{)} here. Nicematrix already draws parentheses for SubMatrix
-            # blocks by default, and adding explicit overrides re-introduces the
-            # "spurious extra delimiters" artifact (and breaks tests that
-            # assert the canonical \SubMatrix(...) [name=...] syntax).
-            opts = f"name={name}"
-            submatrix_locs.append((opts, f"{r0}-{c0}", f"{r1}-{c1}"))
-            name_map[(br, bc)] = name
-
-    if user_sub:
-        submatrix_locs.extend(list(user_sub))
+    parts = build_ge_grid_render_parts(
+        grid=grid,
+        cell_cache=cell_cache,
+        block_heights=block_heights,
+        block_widths=block_widths,
+        Nrhs=Nrhs,
+        formatter=formatter,
+        outer_hspace_mm=outer_hspace_mm,
+        block_vspace_mm=block_vspace_mm,
+        cell_align=cell_align,
+        block_align=block_align,
+        block_valign=block_valign,
+        format_nrhs=bool(format_nrhs),
+        label_rows=label_rows,
+        label_cols=label_cols,
+        label_gap_mm=label_gap_mm,
+        variable_labels=variable_labels,
+        decorator_map=decorator_map,
+        strict=bool(strict),
+        legacy_format=legacy_format,
+        legacy_submatrix_names=use_legacy_names,
+        user_submatrix_locs=user_sub,
+    )
 
     return tex(
-        mat_rep=mat_rep,
-        mat_format=mat_format,
+        mat_rep=parts.mat_rep,
+        mat_format=parts.mat_format,
         extension=extension,
         fig_scale=fig_scale,
-        submatrix_locs=submatrix_locs,
+        submatrix_locs=parts.submatrix_locs,
         callouts=kwargs.pop("callouts", None),
         matrix_labels=kwargs.pop("matrix_labels", None),
-        callout_name_map=name_map,
+        callout_name_map=parts.name_map,
         **kwargs,
     )
 
