@@ -22,10 +22,11 @@ import os
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-from .formatting import _normalize_unicode_tex, expand_entry_selectors, latexify
+from .formatting import _normalize_unicode_tex, latexify
 from . import ge_decorations as _ge_decorations
 from . import ge_labels as _ge_labels
 from .ge_decorations import parse_ge_decorations as _parse_ge_decorations_impl
+from .ge_decorator_map import build_ge_decorator_map
 from .ge_spec_merge import (
     coerce_grid_spec as _coerce_grid_spec,
     coerce_layout_spec as _coerce_layout_spec,
@@ -580,61 +581,22 @@ def render_ge_tex(
         if "\\newcolumntype{I}" not in extension:
             extension = extension + "\n\\newcolumntype{I}{|}\n"
 
-    # Use nicematrix's semantic marker for "this cell is not empty" so that
-    # `create-cell-nodes` reliably creates nodes without introducing spacing.
-    blank = r"\NotEmpty"
-
-    def _fmt(v: Any) -> str:
-        if v is None:
-            return blank
-        s = formatter(v)
-        return s if (isinstance(s, str) and s.strip()) else blank
-
-    decorator_map: Dict[Tuple[int, int], List[Tuple[Callable[..., str], set[Tuple[int, int]], Callable[[Any], str]]]] = {}
-    if decorators:
-        use_legacy_names = bool(kwargs.get("legacy_submatrix_names", False))
-
-        def _resolve_grid(spec_item: Dict[str, Any]) -> Optional[Tuple[int, int]]:
-            grid_pos = spec_item.get("grid")
-            if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
-                return (int(grid_pos[0]), int(grid_pos[1]))
-            name = spec_item.get("matrix_name") or spec_item.get("name") or spec_item.get("matrix")
-            if isinstance(name, (list, tuple)) and len(name) == 3:
-                return (int(name[1]), int(name[2]))
-            if isinstance(name, str):
-                resolved = resolve_ge_grid_name(name, matrices=grid, legacy_submatrix_names=use_legacy_names)
-                if resolved is not None:
-                    return resolved
-                m = re.match(r"([A-Za-z]+)(\d+)x(\d+)$", name)
-                if m:
-                    return (int(m.group(2)), int(m.group(3)))
-                m = re.match(r"([A-Za-z]+)(\d+)$", name)
-                if m and n_block_cols == 2 and m.group(1) in ("E", "A"):
-                    bc = 0 if m.group(1) == "E" else 1
-                    return (int(m.group(2)), bc)
-            return None
-
-        for spec_item in decorators:
-            if not isinstance(spec_item, dict):
-                raise ValueError("decorators must be dict specs")
-            grid_pos = _resolve_grid(spec_item)
-            if grid_pos is None:
-                if strict:
-                    raise ValueError("decorator grid must be a (row,col) pair or resolvable name")
-                continue
-            gM, gN = grid_pos
-            dec = spec_item.get("decorator")
-            if not callable(dec):
-                raise ValueError("decorator must be callable")
-            fmt = spec_item.get("formatter", formatter)
-            entries = spec_item.get("entries")
-            if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
-                raise ValueError("decorator grid position out of range")
-            _, nrows, ncols = cell_cache[gM][gN]
-            sel = expand_entry_selectors(entries, nrows, ncols, filter_bounds=True)
-            if strict and not sel:
-                raise ValueError("decorator selector did not match any entries")
-            decorator_map.setdefault((gM, gN), []).append((dec, sel, fmt))
+    use_legacy_names_for_decorators = bool(kwargs.get("legacy_submatrix_names", False))
+    decorator_map = build_ge_decorator_map(
+        decorators=decorators,
+        matrices=grid,
+        cell_cache=cell_cache,
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        formatter=formatter,
+        strict=bool(strict),
+        legacy_submatrix_names=use_legacy_names_for_decorators,
+        resolve_grid_name=lambda name, matrices, legacy: resolve_ge_grid_name(
+            name,
+            matrices=matrices,
+            legacy_submatrix_names=legacy,
+        ),
+    )
 
     # Ensure node coordinates exist when text nodes are requested.
     if "txt_with_locs" in kwargs and kwargs.get("create_cell_nodes") is None:
