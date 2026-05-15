@@ -16,6 +16,7 @@ from .eigproblem import render_eig_tex, render_eig_svg
 from .ge import (
     render_ge_tex,
     render_ge_svg,
+    grid_bundle,
     resolve_ge_grid_name,
     grid_line_specs,
     grid_highlight_specs,
@@ -24,7 +25,7 @@ from .ge import (
     decorations_help,
 )
 from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name, qr_grid_bundle
-from .specs import GEGridSpec, QRGridSpec, QRGridBundle, validate_ge_spec, validate_qr_spec
+from .specs import GEGridSpec, QRGridSpec, GEGridBundle, QRGridBundle, validate_ge_spec, validate_qr_spec
 from .formatting import (
     decorate_tex_entries,
     latexify,
@@ -72,6 +73,7 @@ __all__ = [
     "render_eig_svg",
     "render_ge_tex",
     "render_ge_svg",
+    "grid_bundle",
     "grid_line_specs",
     "grid_highlight_specs",
     "render_ge_tex_specs",
@@ -84,6 +86,7 @@ __all__ = [
     "resolve_qr_grid_name",
     "GEGridSpec",
     "QRGridSpec",
+    "GEGridBundle",
     "QRGridBundle",
     "validate_ge_spec",
     "validate_qr_spec",

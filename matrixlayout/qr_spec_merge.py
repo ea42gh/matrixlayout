@@ -76,6 +76,33 @@ def qr_default_name_specs() -> List[Any]:
     ]
 
 
+def filter_qr_name_specs(
+    name_specs: Sequence[Any],
+    *,
+    grid: Sequence[Sequence[Any]],
+) -> List[Any]:
+    """Keep only name specs that target existing non-empty QR grid blocks."""
+    n_block_rows = len(grid)
+    n_block_cols = max((len(row) for row in grid), default=0)
+    filtered_specs: List[Any] = []
+    for spec in name_specs:
+        if not (isinstance(spec, (list, tuple)) and len(spec) >= 1):
+            continue
+        grid_pos = spec[0]
+        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+            continue
+        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+            continue
+        try:
+            if grid[gM][gN] is None:
+                continue
+        except Exception:
+            continue
+        filtered_specs.append(spec)
+    return filtered_specs
+
+
 def qr_label_layouts(
     grid: Sequence[Sequence[Any]],
     label_text_color: str,

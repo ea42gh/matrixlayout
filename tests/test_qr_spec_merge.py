@@ -1,7 +1,8 @@
-from matrixlayout.qr import _mat_shape, _qr_known_zero_entries, _qr_label_layouts, _qr_name_specs_to_callouts
+from matrixlayout.qr import _filter_qr_name_specs, _mat_shape, _qr_known_zero_entries, _qr_label_layouts, _qr_name_specs_to_callouts
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
     coerce_qr_spec,
+    filter_qr_name_specs,
     merge_scalar_default,
     merge_scalar,
     qr_default_name_specs,
@@ -43,6 +44,22 @@ def test_qr_name_specs_to_callouts_module_matches_compatibility_alias():
         "length_rules": [(r"\mathbf{A}", 8.0)],
     }
     assert qr_name_specs_to_callouts(specs, **kwargs) == _qr_name_specs_to_callouts(specs, **kwargs)
+
+
+def test_filter_qr_name_specs_module_matches_compatibility_alias():
+    grid = [[None, None, [[1]], None], [None, [[1]]]]
+    specs = [
+        "bad",
+        [(0,), "al", "bad-grid"],
+        [(0, 0), "al", "empty"],
+        [(0, 2), "al", "A"],
+        [(1, 1), "br", "B"],
+        [(4, 1), "br", "outside"],
+    ]
+
+    expected = [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
+    assert filter_qr_name_specs(specs, grid=grid) == expected
+    assert _filter_qr_name_specs(specs, grid=grid) == expected
 
 
 def test_merge_scalar_default_lets_spec_override_renderer_default():

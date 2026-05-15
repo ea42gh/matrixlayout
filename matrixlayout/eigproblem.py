@@ -37,7 +37,7 @@ def _is_zero_like(x: Any) -> bool:
         return x.strip() == "0"
     # SymPy-ish: x.is_zero is True/False/None
     try:
-        iz = getattr(x, "is_zero")
+        iz = x.is_zero
         if iz is True:
             return True
         if iz is False:
@@ -135,7 +135,7 @@ def _mk_diag_matrix(
 ) -> str:
     # Expand distinct values by multiplicity to length N (diagonal entries)
     diag: List[Any] = []
-    for v, m in zip(values, multiplicities):
+    for v, m in zip(values, multiplicities, strict=False):
         diag.extend([v] * int(m))
     n = len(diag)
 
@@ -183,7 +183,7 @@ def _mk_sigma_matrix(
     strict: bool = False,
 ) -> str:
     diag: List[Any] = []
-    for v, m in zip(values, multiplicities):
+    for v, m in zip(values, multiplicities, strict=False):
         diag.extend([v] * int(m))
     n = len(diag)
 

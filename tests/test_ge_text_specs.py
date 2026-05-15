@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from matrixlayout.ge import (
     grid_label_layouts,
     render_ge_svg,
@@ -187,6 +189,28 @@ def test_render_ge_tex_specs_offset_alignment():
     assert opts
     assert any("xshift=1.25mm" in opt for opt in opts)
     assert any("xshift=0.75mm" in opt for opt in opts)
+
+
+def test_render_ge_tex_specs_strict_rejects_bad_targets():
+    matrices = [[[1, 2], [3, 4]]]
+
+    with pytest.raises(ValueError, match="targets must be mappings"):
+        render_ge_tex_specs(matrices, [object()], strict=True)
+
+    with pytest.raises(ValueError, match="require grid"):
+        render_ge_tex_specs(matrices, [{"labels": ["x"]}], strict=True)
+
+    with pytest.raises(ValueError, match="outside"):
+        render_ge_tex_specs(matrices, [{"grid": (9, 0), "labels": ["x"]}], strict=True)
+
+    with pytest.raises(ValueError, match="side"):
+        render_ge_tex_specs(matrices, [{"grid": (0, 0), "side": "diagonal", "labels": ["x"]}], strict=True)
+
+
+def test_render_ge_tex_specs_default_still_ignores_bad_targets():
+    matrices = [[[1, 2], [3, 4]]]
+
+    assert render_ge_tex_specs(matrices, [object(), {"labels": ["x"]}, {"grid": (9, 0), "labels": ["x"]}]) == []
 
 
 def test_render_ge_svg_label_targets_overlay():

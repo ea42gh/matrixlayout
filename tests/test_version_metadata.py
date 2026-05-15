@@ -24,3 +24,15 @@ def test_pyproject_uses_dynamic_version_metadata():
 
 def test_package_version_is_nonempty():
     assert matrixlayout.__version__
+
+
+def test_render_extra_requires_patched_jupyter_tikz():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert '"jupyter-tikz>=0.5.8"' in text
+
+
+def test_coverage_gate_tracks_current_quality_level():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert "fail_under = 85" in text

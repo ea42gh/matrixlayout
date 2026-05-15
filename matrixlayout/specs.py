@@ -378,6 +378,114 @@ def _grid_size(mats: Any) -> Optional[Tuple[int, int]]:
     return (len(mats), ncols or 0)
 
 
+def _is_grid_coord(value: Any) -> bool:
+    return isinstance(value, (list, tuple)) and len(value) == 2
+
+
+def _validate_grid_coord(value: Any, *, field: str, grid: Optional[Tuple[int, int]]) -> List[str]:
+    if not _is_grid_coord(value):
+        return [f"{field} must be a (row, col) grid coordinate"]
+    try:
+        row, col = int(value[0]), int(value[1])
+    except Exception:
+        return [f"{field} must contain integer row/col values"]
+    if row < 0 or col < 0:
+        return [f"{field} must be non-negative"]
+    if grid is not None:
+        nrows, ncols = grid
+        if row >= nrows or col >= ncols:
+            return [f"{field} {row, col} is outside matrix grid {grid}"]
+    return []
+
+
+def _validate_label_specs(
+    specs: Optional[Sequence[Any]],
+    *,
+    field: str,
+    allowed_sides: Sequence[str],
+    value_key: str,
+    grid: Optional[Tuple[int, int]],
+    strict: bool,
+) -> List[str]:
+    errors: List[str] = []
+    if specs is None:
+        return errors
+    allowed_keys = {"grid", "side", value_key, "labels", "overlay"}
+    for idx, item in enumerate(specs):
+        if not isinstance(item, Mapping):
+            errors.append(f"{field}[{idx}] must be a mapping")
+            continue
+        if strict:
+            extra = set(item) - allowed_keys
+            if extra:
+                errors.append(f"{field}[{idx}] has unknown field(s): {sorted(extra)}")
+        if "grid" in item:
+            errors.extend(_validate_grid_coord(item["grid"], field=f"{field}[{idx}].grid", grid=grid))
+        side = str(item.get("side", allowed_sides[0])).strip().lower()
+        if side not in allowed_sides:
+            errors.append(f"{field}[{idx}].side must be one of {tuple(allowed_sides)}")
+        if value_key not in item and "labels" not in item:
+            errors.append(f"{field}[{idx}] must include '{value_key}' or 'labels'")
+    return errors
+
+
+def _validate_ge_decorations(
+    decorations: Optional[Sequence[Any]],
+    *,
+    grid: Optional[Tuple[int, int]],
+    strict: bool,
+) -> List[str]:
+    errors: List[str] = []
+    if decorations is None:
+        return errors
+    allowed_keys = {
+        "grid",
+        "entries",
+        "rows",
+        "cols",
+        "submatrix",
+        "decorator",
+        "background",
+        "color",
+        "bold",
+        "outline",
+        "padding_pt",
+        "hlines",
+        "vlines",
+        "box",
+        "label",
+        "side",
+        "anchor",
+        "angle",
+        "angle_deg",
+        "length",
+        "length_mm",
+        "line_width_pt",
+        "tip",
+        "label_shift_y_mm",
+        "label_shift_x_mm",
+    }
+    for idx, item in enumerate(decorations):
+        if not isinstance(item, Mapping):
+            errors.append(f"decorations[{idx}] must be a mapping")
+            continue
+        if strict:
+            extra = set(item) - allowed_keys
+            if extra:
+                errors.append(f"decorations[{idx}] has unknown field(s): {sorted(extra)}")
+        if "grid" in item:
+            errors.extend(_validate_grid_coord(item["grid"], field=f"decorations[{idx}].grid", grid=grid))
+        elif grid != (1, 1):
+            errors.append(f"decorations[{idx}] requires grid=(row, col) for multi-block grids")
+        if "decorator" in item and not callable(item["decorator"]):
+            errors.append(f"decorations[{idx}].decorator must be callable")
+        if "side" in item:
+            side = str(item["side"]).strip().lower()
+            if side not in {"left", "right", "above", "below", "top", "bottom"}:
+                errors.append(f"decorations[{idx}].side must be left/right/above/below")
+    return errors
+
+
 def _validate_grid_matrices(mats: Sequence[Sequence[Any]]) -> List[str]:
     errors: List[str] = []
     grid = _grid_size(mats)
@@ -419,7 +527,29 @@ def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
         if not any("requires 'matrices'" in e for e in errors):
             errors.append("GE spec requires 'matrices'")
         return errors
+    grid = _grid_size(mats)
     errors.extend(_validate_grid_matrices(mats))
+    errors.extend(
+        _validate_label_specs(
+            spec.get("label_rows"),
+            field="label_rows",
+            allowed_sides=("above", "below"),
+            value_key="rows",
+            grid=grid,
+            strict=strict,
+        )
+    )
+    errors.extend(
+        _validate_label_specs(
+            spec.get("label_cols"),
+            field="label_cols",
+            allowed_sides=("left", "right"),
+            value_key="cols",
+            grid=grid,
+            strict=strict,
+        )
+    )
+    errors.extend(_validate_ge_decorations(spec.get("decorations"), grid=grid, strict=strict))
     return errors
 
 
@@ -435,5 +565,12 @@ def validate_qr_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
         if not any("requires 'matrices'" in e for e in errors):
             errors.append("QR spec requires 'matrices'")
         return errors
+    specs = spec.get("specs")
+    if specs is not None and not isinstance(specs, Sequence):
+        errors.append("specs must be a sequence of mappings")
+    elif specs is not None:
+        for idx, item in enumerate(specs):
+            if not isinstance(item, Mapping):
+                errors.append(f"specs[{idx}] must be a mapping")
     errors.extend(_validate_grid_matrices(mats))
     return errors

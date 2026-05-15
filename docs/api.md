@@ -33,6 +33,9 @@ Common options: `specs` (labels/callouts), `decorations` (hlines/vlines/boxes),
 when needed; existing blank rows/cols are reused. Explicit kwargs override values
 provided by a spec.
 
+The package top level also exports `grid_bundle` and `GEGridBundle`, matching
+the QR `qr_grid_bundle`/`QRGridBundle` API.
+
 Specs vs decorations:
 use `specs` for labels/callouts and `decorations` for entry styling/lines.
 

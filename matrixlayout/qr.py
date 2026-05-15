@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 from .formatting import latexify
 from .ge import grid_submatrix_spans, render_ge_tex
 from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
+from .qr_spec_merge import filter_qr_name_specs as _filter_qr_name_specs_impl
 from .qr_spec_merge import merge_scalar_default as _merge_scalar_default
 from .qr_spec_merge import merge_scalar as _merge_scalar
 from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
@@ -292,11 +293,12 @@ class QRGridLayout:
             self.tex_list[i] += r" \\"
 
         idxs = []
-        for i, a, b, c in zip(
+        for _i, a, b, c in zip(
             range(len(self.cs_mat_row_height[1:-1])),
             self.cs_mat_row_height[1:-1],
             self.cs_extra_rows[1:-1],
             self.extra_rows[1:-1],
+            strict=False,
         ):
             idxs.append(int(a + b - c))
         for i in idxs:
@@ -381,6 +383,10 @@ def _qr_name_specs_to_callouts(
         label_shift_rules=label_shift_rules,
         length_rules=length_rules,
     )
+
+
+def _filter_qr_name_specs(name_specs: Sequence[Any], *, grid: Sequence[Sequence[Any]]) -> List[Any]:
+    return _filter_qr_name_specs_impl(name_specs, grid=grid)
 
 
 def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -473,23 +479,7 @@ def render_qr_tex(
     if array_names:
         name_specs = _qr_default_name_specs() if array_names is True else array_names
         if name_specs:
-            filtered_specs = []
-            for spec in name_specs:
-                if not (isinstance(spec, (list, tuple)) and len(spec) >= 1):
-                    continue
-                grid_pos = spec[0]
-                if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-                    continue
-                gM, gN = int(grid_pos[0]), int(grid_pos[1])
-                if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
-                    continue
-                try:
-                    if grid[gM][gN] is None:
-                        continue
-                except Exception:
-                    continue
-                filtered_specs.append(spec)
-            name_specs = filtered_specs
+            name_specs = _filter_qr_name_specs(name_specs, grid=grid)
         a_rows = a_cols = 0
         if n_block_rows > 0 and n_block_cols > 2:
             try:

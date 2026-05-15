@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from jinja2 import UndefinedError
 
 from matrixlayout.jinja_env import JinjaConfig, get_environment, make_environment, render_string
 
@@ -37,6 +38,6 @@ def test_filesystem_loader_works(tmp_path: Path):
     env = make_environment(JinjaConfig(template_dirs=[tmp_path], strict_undefined=True))
     out = env.get_template("t.tex.j2").render(ok=True)
     assert out == "A=Y"
-    with pytest.raises(Exception):
+    with pytest.raises(UndefinedError):
         # strict undefined should raise for missing 'ok'
         env.get_template("t.tex.j2").render()
