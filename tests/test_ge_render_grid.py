@@ -119,6 +119,25 @@ def test_ge_render_parts_legacy_names_and_block_alignment():
     assert parts.name_map == {(0, 0): "A0x0", (0, 1): "A0x1"}
 
 
+def test_ge_render_parts_center_alignment_offsets_submatrix_span_and_body():
+    matrices = [
+        [[[1]]],
+        [[[1, 2, 3]]],
+    ]
+    parts = _parts(
+        matrices,
+        block_align="center",
+        block_align_render="center",
+    )
+
+    assert r"\NotEmpty & 1 & \NotEmpty \\" in parts.mat_rep
+    assert r"1 & 2 & 3 \\" in parts.mat_rep
+    assert parts.submatrix_locs == [
+        ("name=M00", "1-2", "1-2"),
+        ("name=M01", "2-1", "2-3"),
+    ]
+
+
 def test_ge_render_parts_three_column_submatrix_names_are_column_indexed():
     parts = _parts(
         [

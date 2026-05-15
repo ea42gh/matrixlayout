@@ -60,28 +60,6 @@ def _pad_label_col(text: str, side: str, label_gap_mm: Optional[float]) -> str:
     return f"{text}{gap}" if side == "left" else f"{gap}{text}"
 
 
-def _block_padding_maps(
-    *,
-    n_block_rows: int,
-    n_block_cols: int,
-    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
-    block_heights: Sequence[int],
-    block_widths: Sequence[int],
-    block_align: Optional[str],
-    block_valign: Optional[str],
-) -> Tuple[List[List[int]], List[List[int]]]:
-    pad_left, pad_top = _block_padding_maps(
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        cell_cache=cell_cache,
-        block_heights=block_heights,
-        block_widths=block_widths,
-        block_align=block_align,
-        block_valign=block_valign,
-    )
-    return pad_left, pad_top
-
-
 def _total_block_sizes(
     *,
     block_heights: Sequence[int],
