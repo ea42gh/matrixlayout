@@ -29,7 +29,7 @@ def test_package_version_is_nonempty():
 def test_render_extra_requires_patched_jupyter_tikz():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
-    assert '"jupyter-tikz>=0.5.6"' in text
+    assert '"jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea' in text
 
 
 def test_coverage_gate_tracks_current_quality_level():

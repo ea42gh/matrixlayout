@@ -16,7 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 render = [
-  "jupyter-tikz>=0.5.6",
+  "jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a",
 ]
 
 dev = [
