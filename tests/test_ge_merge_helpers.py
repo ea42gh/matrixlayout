@@ -7,6 +7,7 @@ from matrixlayout.ge import (
     render_ge_tex,
 )
 from matrixlayout.ge_spec_merge import merge_scalar_default
+from matrixlayout.ge_spec_merge import coerce_grid_spec, coerce_layout_spec, merge_scalar
 from matrixlayout.ge_labels import build_label_maps, grid_label_layouts, merge_label_specs
 
 
@@ -68,6 +69,37 @@ def test_ge_merge_scalar_default_lets_spec_override_renderer_default():
 
 def test_ge_merge_scalar_default_preserves_non_default_explicit_over_spec_default():
     assert merge_scalar_default("format_nrhs", False, True, True) is False
+
+
+def test_ge_merge_scalar_base_cases_and_conflict():
+    assert merge_scalar("x", "explicit", None) == "explicit"
+    assert merge_scalar("x", None, "spec") == "spec"
+    assert merge_scalar("x", "same", "same") == "same"
+    try:
+        merge_scalar("x", "explicit", "spec")
+    except ValueError as exc:
+        assert "Conflicting values for x" in str(exc)
+    else:
+        raise AssertionError("expected merge conflict")
+
+
+def test_ge_coerce_spec_helpers_accept_none_objects_and_dicts():
+    grid_spec = GEGridSpec(matrices=[[None]])
+
+    assert coerce_grid_spec(None) is None
+    assert coerce_grid_spec(grid_spec) is grid_spec
+    assert coerce_grid_spec({"matrices": [[None]], "strict": False}).matrices == [[None]]
+    assert coerce_layout_spec(None) is None
+
+
+def test_ge_coerce_spec_helpers_reject_invalid_types():
+    for helper in (coerce_grid_spec, coerce_layout_spec):
+        try:
+            helper("bad")
+        except TypeError as exc:
+            assert "must be" in str(exc)
+        else:
+            raise AssertionError("expected invalid spec type to raise")
 
 
 def test_render_ge_tex_spec_nrhs_and_format_nrhs_override_defaults():

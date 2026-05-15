@@ -13,87 +13,14 @@ The template is treated as a layout/presentation artifact only:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
-from .formatting import apply_decorator, expand_entry_selectors
+from .backsubst_helpers import apply_line_decorators as _apply_line_decorators
+from .backsubst_helpers import as_lines as _as_lines
+from .backsubst_helpers import as_scale as _as_scale
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg
 from .shortcascade import mk_shortcascade_lines
-
-
-def _as_lines(value: Union[str, Sequence[str], None]) -> list[str]:
-    """Normalize a value to a list of strings.
-
-    Julia/PythonCall commonly passes tuples instead of lists; we accept both.
-    """
-
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    return [str(v) for v in value]
-
-
-def _as_scale(value: Optional[Union[str, float, int]]) -> Optional[str]:
-    """Normalize a scale value to the string used by the TeX template.
-
-    Accepts:
-    - ``None``: no scaling wrapper is emitted.
-    - ``str``: passed through verbatim (caller-managed formatting).
-    - numeric: formatted with ``format(value, 'g')`` to avoid TeX-unfriendly
-      representations (e.g., excessive trailing zeros).
-    """
-    if value is None:
-        return None
-    if isinstance(value, str):
-        return value
-    # Stable, TeX-friendly numeric formatting
-    return format(value, "g")
-
-
-def _apply_line_decorators(
-    lines: List[str],
-    decorators: Optional[Sequence[Any]],
-    block: str,
-    *,
-    strict: bool,
-) -> List[str]:
-    if not decorators:
-        return lines
-    if not lines:
-        if strict:
-            block_key = block.lower()
-            for spec_item in decorators:
-                if not isinstance(spec_item, dict):
-                    raise ValueError("decorators must be dict specs")
-                key = spec_item.get("block", spec_item.get("target"))
-                if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
-                    continue
-                if not callable(spec_item.get("decorator")):
-                    raise ValueError("decorator must be callable")
-                raise ValueError("decorator selector did not match any entries")
-        return lines
-    nrows, ncols = len(lines), 1
-    block_key = block.lower()
-    for spec_item in decorators:
-        if not isinstance(spec_item, dict):
-            raise ValueError("decorators must be dict specs")
-        key = spec_item.get("block", spec_item.get("target"))
-        if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
-            continue
-        dec = spec_item.get("decorator")
-        if not callable(dec):
-            raise ValueError("decorator must be callable")
-        applied = 0
-        for i, j in expand_entry_selectors(spec_item.get("entries"), nrows, ncols, allow_int=True):
-            if i < 0 or i >= nrows or j != 0:
-                continue
-            base = lines[i]
-            lines[i] = apply_decorator(dec, i, j, base, base)
-            applied += 1
-        if strict and applied == 0:
-            raise ValueError("decorator selector did not match any entries")
-    return lines
 
 
 @dataclass(frozen=True)

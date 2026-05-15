@@ -1,4 +1,6 @@
-from matrixlayout.shortcascade import mk_shortcascade_lines
+import pytest
+
+from matrixlayout.shortcascade import mk_shortcascade_lines, normalize_backsub_trace
 from matrixlayout.backsubst import backsubst_tex
 
 
@@ -46,3 +48,42 @@ def test_backsubst_tex_accepts_cascade_trace():
     assert r"\ShortCascade" in tex
     assert r"\boxed" in tex
     assert "x_4" in tex
+
+
+def test_mk_shortcascade_lines_empty_trace_returns_no_lines():
+    assert mk_shortcascade_lines({"base": "", "steps": []}) == []
+
+
+def test_mk_shortcascade_lines_base_only_is_boxed():
+    assert mk_shortcascade_lines({"base": "t = 1", "steps": []}) == [r"{$\boxed{ t = 1 }$}%"]
+
+
+def test_normalize_backsub_trace_accepts_two_sequence_and_lhs_rhs_steps():
+    base, steps = normalize_backsub_trace(
+        (
+            [("x", "s"), "y = t"],
+            [{"lhs": "x + y", "rhs": "s + t"}],
+        )
+    )
+
+    assert base == "x = s, y = t"
+    assert steps == [("x + y", "s + t")]
+
+
+def test_normalize_backsub_trace_none_steps_and_missing_base():
+    assert normalize_backsub_trace({"steps": None}) == ("", [])
+
+
+def test_normalize_backsub_trace_rejects_invalid_trace_shape():
+    with pytest.raises(TypeError, match="trace must be"):
+        normalize_backsub_trace(["base only"])
+
+
+def test_normalize_backsub_trace_rejects_nonsequence_steps():
+    with pytest.raises(TypeError, match=r"trace\['steps'\] must be a sequence"):
+        normalize_backsub_trace({"base": "x = t", "steps": object()})
+
+
+def test_normalize_backsub_trace_rejects_invalid_step_shape():
+    with pytest.raises(TypeError, match="Each step must"):
+        normalize_backsub_trace({"base": "x = t", "steps": ["bad step"]})
