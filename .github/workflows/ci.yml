@@ -64,7 +64,7 @@ jobs:
         run: ruff check matrixlayout tests render_smoke.py
 
       - name: Run mypy on typed core
-        run: python -m mypy matrixlayout/formatting.py matrixlayout/shortcascade.py matrixlayout/ge_spec_merge.py matrixlayout/ge_labels.py matrixlayout/ge_decorations.py matrixlayout/specs.py
+        run: python -m mypy matrixlayout/formatting.py matrixlayout/shortcascade.py matrixlayout/ge_spec_merge.py matrixlayout/ge_labels.py matrixlayout/ge_decorations.py matrixlayout/qr_spec_merge.py matrixlayout/specs.py
 
   package:
     name: Build package

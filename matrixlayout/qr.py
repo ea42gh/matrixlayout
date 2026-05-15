@@ -13,6 +13,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .formatting import latexify
 from .ge import grid_submatrix_spans, render_ge_tex
+from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
+from .qr_spec_merge import merge_scalar as _merge_scalar
+from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
+from .qr_spec_merge import qr_known_zero_entries as _qr_known_zero_entries_impl
+from .qr_spec_merge import qr_label_layouts as _qr_label_layouts_impl
+from .qr_spec_merge import qr_name_specs_to_callouts as _qr_name_specs_to_callouts_impl
 from .render import merge_render_opts, render_svg
 from .specs import QRGridBundle, QRGridSpec
 
@@ -354,37 +360,7 @@ def _make_decorator(
 
 
 def _qr_known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tuple[int, int], List[Tuple[int, int]]]]:
-    if not matrices or len(matrices) < 2:
-        return []
-    WtA = None
-    WtW = None
-    try:
-        WtA = matrices[1][2]
-        WtW = matrices[1][3]
-    except Exception:
-        return []
-
-    m_wta = _mat_shape(WtA)[0]
-    m_wtw = _mat_shape(WtW)[0]
-    if m_wta <= 0 or m_wtw <= 0:
-        return []
-
-    entries_wta = [(i, j) for i in range(m_wta) for j in range(m_wta) if i > j]
-    entries_wtw = [(i, j) for i in range(m_wtw) for j in range(m_wtw) if i != j]
-    return [((1, 2), entries_wta), ((1, 3), entries_wtw)]
-
-
-def _qr_default_name_specs() -> List[Any]:
-    return [
-        [(0, 2), "al", r"\mathbf{A}"],
-        [(0, 3), "ar", r"\mathbf{W}"],
-        [(1, 1), "al", r"\mathbf{W^T}"],
-        [(1, 2), "al", r"\mathbf{W^T A}"],
-        [(1, 3), "ar", r"\mathbf{W^T W}"],
-        [(2, 0), "al", r"\mathbf{S = \left( W^T W \right)^{-\tfrac{1}{2}}}"],
-        [(2, 1), "br", r"\mathbf{Q^T = S W^T}"],
-        [(2, 2), "br", r"\mathbf{R = S W^T A}"],
-    ]
+    return _qr_known_zero_entries_impl(matrices, mat_shape=_mat_shape)
 
 
 def _qr_name_specs_to_callouts(
@@ -396,94 +372,18 @@ def _qr_name_specs_to_callouts(
     label_shift_rules: Optional[Sequence[Tuple[str, float]]] = None,
     length_rules: Optional[Sequence[Tuple[str, float]]] = None,
 ) -> List[Dict[str, Any]]:
-    side_map = {
-        "al": ("left", "top"),
-        "tl": ("left", "top"),
-        "bl": ("left", "bottom"),
-        "ar": ("right", "top"),
-        "tr": ("right", "top"),
-        "br": ("right", "bottom"),
-    }
-    out: List[Dict[str, Any]] = []
-    for spec in name_specs:
-        if not isinstance(spec, (list, tuple)) or len(spec) < 3:
-            continue
-        grid = spec[0]
-        if not (isinstance(grid, (list, tuple)) and len(grid) == 2):
-            continue
-        loc = str(spec[1]).strip().lower()
-        label_str = str(spec[2]).strip()
-        side, anchor = side_map.get(loc, ("right", "center"))
-        local_angle = angle_deg
-        if "Q^T" in label_str or "R =" in label_str:
-            local_angle = 40.0
-        label_shift_y_mm = None
-        if label_shift_rules:
-            for needle, shift in label_shift_rules:
-                if needle in label_str:
-                    label_shift_y_mm = float(shift)
-                    break
-        local_length = float(length_mm)
-        if length_rules:
-            for needle, override in length_rules:
-                if needle in label_str:
-                    local_length = float(override)
-                    break
-        callout = {
-            "grid_pos": (int(grid[0]), int(grid[1])),
-            "label": label_str,
-            "side": side,
-            "anchor": anchor,
-            "color": color,
-            "angle_deg": float(local_angle),
-            "length_mm": float(local_length),
-        }
-        if label_shift_y_mm is not None:
-            callout["label_shift_y_mm"] = float(label_shift_y_mm)
-        out.append(callout)
-    return out
-
-
-def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
-    if spec_val is None:
-        return explicit
-    if explicit is None:
-        return spec_val
-    if explicit != spec_val:
-        raise ValueError(f"Conflicting values for {field}: explicit={explicit!r} spec={spec_val!r}")
-    return explicit
-
-
-def _coerce_qr_spec(spec: Optional[Union[Dict[str, Any], QRGridSpec]]) -> Optional[QRGridSpec]:
-    if spec is None:
-        return None
-    if isinstance(spec, QRGridSpec):
-        return spec
-    return QRGridSpec.from_dict(spec)
+    return _qr_name_specs_to_callouts_impl(
+        name_specs,
+        color=color,
+        angle_deg=angle_deg,
+        length_mm=length_mm,
+        label_shift_rules=label_shift_rules,
+        length_rules=length_rules,
+    )
 
 
 def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    label_rows: List[Dict[str, Any]] = []
-    label_cols: List[Dict[str, Any]] = []
-    n_block_rows = len(grid)
-    n_block_cols = max((len(r) for r in grid), default=0)
-    n_cols = 0
-    if n_block_rows > 0 and n_block_cols > 2:
-        try:
-            n_cols = _mat_shape(grid[0][2])[1]
-        except Exception:
-            n_cols = 0
-    if n_cols > 0:
-        v_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{v_{i+1}}}}}$" for i in range(n_cols)]
-        w_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{i+1}}}}}$" for i in range(n_cols)]
-        wt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
-        if n_block_rows > 0 and n_block_cols > 2:
-            label_rows.append({"grid": (0, 2), "side": "above", "rows": v_labels})
-        if n_block_rows > 0 and n_block_cols > 3:
-            label_rows.append({"grid": (0, 3), "side": "above", "rows": w_labels})
-        if n_block_rows > 1 and n_block_cols > 1:
-            label_cols.append({"grid": (1, 1), "side": "left", "cols": wt_labels})
-    return label_rows, label_cols
+    return _qr_label_layouts_impl(grid, label_text_color, mat_shape=_mat_shape)
 
 
 def render_qr_tex(
