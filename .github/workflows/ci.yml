@@ -38,3 +38,41 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
+  render-smoke:
+    name: Render smoke - Python 3.11
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install TeX and SVG toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dvisvgm \
+            fonts-lmodern \
+            ghostscript \
+            latexmk \
+            pdf2svg \
+            poppler-utils \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-latex-recommended \
+            texlive-pictures \
+            texlive-plain-generic \
+            texlive-science
+
+      - name: Install render dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a
+          python -m pip install -e .[render]
+
+      - name: Run render smoke
+        run: python render_smoke.py
