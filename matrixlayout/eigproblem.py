@@ -80,6 +80,19 @@ def _mk_rule_format(num_distinct: int) -> str:
     return "".join([rf" \cmidrule{{{2*i}-{2*i}}}" for i in range(1, num_distinct + 1)])
 
 
+def _coerce_matrix_size(value: Any, *, default: Tuple[int, int]) -> Tuple[int, int]:
+    """Return a concrete two-integer matrix size."""
+    if value is None:
+        return default
+    try:
+        items = tuple(value)
+    except Exception as exc:
+        raise ValueError("sz must be a 2-item matrix size") from exc
+    if len(items) != 2:
+        raise ValueError("sz must be a 2-item matrix size")
+    return (int(items[0]), int(items[1]))
+
+
 def _mk_vector_blocks(
     vec_groups: Sequence[Sequence[Iterable[Any]]],
     *,
@@ -334,13 +347,8 @@ def render_eig_tex(
     lambdas_distinct = list(eig["lambda"])
     multiplicities = list(eig["ma"])
     n = int(sum(multiplicities))
-    if sz is None and "sz" in eig:
-        # Algorithmic packages may attach the original matrix size for SVD tables.
-        try:
-            sz = tuple(eig["sz"])  # type: ignore[arg-type]
-        except Exception:
-            sz = None
-    sz = (n, n) if sz is None else tuple(sz)
+    # Algorithmic packages may attach the original matrix size for SVD tables.
+    size = _coerce_matrix_size(sz if sz is not None else eig.get("sz"), default=(n, n))
 
     # Matrix blocks span only the *distinct* value columns.
     matrix_span_cols = max(1, len(lambdas_distinct))
@@ -389,7 +397,7 @@ def render_eig_tex(
             left_singular_matrix = _mk_vecs_matrix(
                 eig["uvecs"],
                 formatter=formatter,
-                sz=sz[0],
+                sz=size[0],
                 mm=mmS,
                 span_cols=matrix_span_cols,
                 decorators=decorators,
@@ -404,7 +412,7 @@ def render_eig_tex(
             diag_values,
             multiplicities,
             formatter=formatter,
-            sz=sz,
+            sz=size,
             mm=mmLambda,
             span_cols=matrix_span_cols,
             decorators=decorators,
@@ -416,7 +424,7 @@ def render_eig_tex(
             lambdas_distinct,
             multiplicities,
             formatter=formatter,
-            sz=sz,
+            sz=size,
             mm=mmLambda,
             span_cols=matrix_span_cols,
             decorators=decorators,
@@ -428,7 +436,7 @@ def render_eig_tex(
         evecs_matrix = _mk_vecs_matrix(
             eig["evecs"],
             formatter=formatter,
-            sz=sz[1],
+            sz=size[1],
             mm=mmS,
             span_cols=matrix_span_cols,
             decorators=decorators,
@@ -441,7 +449,7 @@ def render_eig_tex(
             _mk_vecs_matrix(
                 qvecs,
                 formatter=formatter,
-                sz=sz[1],
+                sz=size[1],
                 mm=mmS,
                 span_cols=matrix_span_cols,
                 decorators=decorators,

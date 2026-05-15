@@ -1,7 +1,16 @@
 import re
 
+import pytest
+
 import matrixlayout
-from matrixlayout.eigproblem import _is_zero_like, _mk_diag_matrix, _mk_sigma_matrix, _mk_values, _mk_vecs_matrix
+from matrixlayout.eigproblem import (
+    _coerce_matrix_size,
+    _is_zero_like,
+    _mk_diag_matrix,
+    _mk_sigma_matrix,
+    _mk_values,
+    _mk_vecs_matrix,
+)
 
 
 def test_templates_load():
@@ -68,6 +77,17 @@ def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():
     tex = matrixlayout.render_eig_tex(spec, case="SVD", formatter=str, fig_scale=None)
     assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex
     assert r"2 & 0 \\ 0 & 0 \\ 0 & 0 \\" in tex
+
+
+def test_eig_matrix_size_helper_validates_two_item_size():
+    assert _coerce_matrix_size(None, default=(2, 2)) == (2, 2)
+    assert _coerce_matrix_size(["3", 2.0], default=(2, 2)) == (3, 2)
+
+    with pytest.raises(ValueError, match="2-item"):
+        _coerce_matrix_size([3], default=(2, 2))
+
+    with pytest.raises(ValueError, match="2-item"):
+        matrixlayout.render_eig_tex({**_sample_eig(), "sz": [3]}, case="SVD", formatter=str)
 
 
 def test_eig_zero_like_and_values_helpers():
