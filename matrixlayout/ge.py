@@ -2713,6 +2713,15 @@ def _parse_ge_decorations(
                 spec["color"] = item.get("background")
             if "padding_pt" in item:
                 spec["padding_pt"] = item["padding_pt"]
+            if "entries" in item:
+                mat = matrices[key[0]][key[1]]
+                _, h, w = _as_2d_list(mat)
+                for r, c in expand_entry_selectors(item.get("entries"), h, w, filter_bounds=True):
+                    entry_spec = dict(spec)
+                    entry_spec["rows"] = (r, r)
+                    entry_spec["cols"] = (c, c)
+                    highlights.append(entry_spec)
+                continue
             if "submatrix" in item and item["submatrix"] is not None:
                 sub = item["submatrix"]
                 if isinstance(sub, (tuple, list)) and len(sub) == 2:

@@ -11,6 +11,27 @@ def test_render_ge_tex_decorations_background_submatrix():
     assert "fill=yellow!25" in tex
 
 
+def test_render_ge_tex_decorations_background_entries_do_not_fill_whole_block():
+    matrices = [[[1, 2], [3, 4]]]
+    decorations = [
+        {"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!25"},
+    ]
+    tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
+    assert "fit=(1-1-medium) (1-1-medium)" in tex
+    assert "fit=(1-1-medium) (2-2-medium)" not in tex
+
+
+def test_render_ge_tex_decorations_background_entry_selectors():
+    matrices = [[[1, 2], [3, 4]]]
+    decorations = [
+        {"grid": (0, 0), "entries": [sel_col(1)], "background": "yellow!25"},
+    ]
+    tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
+    assert "fit=(1-2-medium) (1-2-medium)" in tex
+    assert "fit=(2-2-medium) (2-2-medium)" in tex
+    assert "fit=(1-1-medium) (1-1-medium)" not in tex
+
+
 def test_render_ge_tex_decorations_accept_callable_decorator_specs():
     matrices = [[[1, 2], [0, -2], [0, 0]]]
     decorations = [
