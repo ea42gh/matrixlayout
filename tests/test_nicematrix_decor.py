@@ -1,6 +1,6 @@
 import pytest
 
-from matrixlayout.nicematrix_decor import render_delim_callout, validate_callouts
+from matrixlayout.nicematrix_decor import infer_ge_layer_callouts, render_delim_callout, validate_callouts
 
 
 def test_render_delim_callout_math_mode_wraps_label():
@@ -39,3 +39,20 @@ def test_validate_callouts_passes_on_known_name():
         strict=False,
     )
     assert errs == []
+
+
+def test_render_delim_callout_defaults_unknown_side_and_anchor():
+    tex = render_delim_callout({"name": "A0", "label": "A", "side": "diagonal", "anchor": "nowhere"})
+
+    assert "(A0-right.north)" in tex
+    assert "{$A$}" in tex
+
+
+def test_ge_layer_callouts_merges_style_without_mutating_it():
+    style = {"color": "red", "angle_deg": -20.0}
+
+    callouts = infer_ge_layer_callouts([[[None, [[1]]]], [[[1]], [[2]]]], **style)
+
+    assert style == {"color": "red", "angle_deg": -20.0}
+    assert {"grid_pos": (0, 1), "label": r"A_{0}", "side": "right", **style} in callouts
+    assert {"grid_pos": (1, 0), "label": r"E_{1}", "side": "left", **style} in callouts

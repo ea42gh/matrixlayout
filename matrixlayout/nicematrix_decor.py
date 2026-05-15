@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Literal, Mapping, Optional, Sequence, Tuple, TypedDict, Union
+from typing import Any, Iterable, List, Literal, Mapping, Optional, Sequence, Tuple, TypedDict, Union, cast
 
 
 Side = Literal["left", "right", "auto"]
@@ -89,6 +89,20 @@ class DelimCallout:
 CalloutLike = Union[DelimCallout, DelimCalloutDict, Mapping[str, Any]]
 
 
+def _coerce_side(value: Any) -> Side:
+    side = str(value).strip().lower()
+    if side in {"left", "right", "auto"}:
+        return cast(Side, side)
+    return "auto"
+
+
+def _coerce_anchor(value: Any) -> Anchor:
+    anchor = str(value).strip().lower()
+    if anchor in {"north", "south", "center", "top", "bottom", "mid"}:
+        return cast(Anchor, anchor)
+    return "top"
+
+
 def _coerce_callout(obj: CalloutLike) -> DelimCallout:
     """Coerce a callout-like object into :class:`DelimCallout`."""
 
@@ -101,8 +115,8 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
             return DelimCallout(
                 name=str(d["name"]),
                 label=str(d["label"]),
-                side=str(d.get("side", "auto")),
-                anchor=str(d.get("anchor", "top")),
+                side=_coerce_side(d.get("side", "auto")),
+                anchor=_coerce_anchor(d.get("anchor", "top")),
                 angle_deg=float(d.get("angle_deg", -35.0)),
                 length_mm=float(d.get("length_mm", 6.0)),
                 color=str(d.get("color", "blue")),
@@ -344,24 +358,28 @@ def infer_ge_matrix_labels(
 
     for br, row in enumerate(layers):
         if include_A:
-            out.append(
+            callout = cast(
+                DelimCalloutDict,
                 {
+                    **style,
                     "grid_pos": (br, 1),
                     "label": (label_A % br) if "%d" in label_A else label_A,
                     "side": "right",
-                    **style,
-                }
+                },
             )
+            out.append(callout)
 
         if include_E and row and len(row) >= 1 and row[0] is not None:
-            out.append(
+            callout = cast(
+                DelimCalloutDict,
                 {
+                    **style,
                     "grid_pos": (br, 0),
                     "label": (label_E % br) if "%d" in label_E else label_E,
                     "side": "left",
-                    **style,
-                }
+                },
             )
+            out.append(callout)
 
     return out
 
