@@ -1,6 +1,14 @@
 import pytest
 
-from matrixlayout.ge import tex
+from matrixlayout.ge import (
+    _extract_submatrix_names,
+    _figure_scale_wrappers,
+    _merge_layout_fields,
+    _merge_layout_string_hooks,
+    _render_matrix_callouts,
+    _submatrix_spans_with_outer_delims,
+    tex,
+)
 from matrixlayout.ge_template import (
     append_nicematrix_option,
     coerce_pivot_locs,
@@ -21,7 +29,7 @@ from matrixlayout.ge_template import (
     normalize_txt_with_locs,
     validate_body_preamble,
 )
-from matrixlayout.specs import PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
+from matrixlayout.specs import GELayoutSpec, PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
 
 
 def test_coordinate_and_fit_normalizers_accept_common_forms():
@@ -170,3 +178,174 @@ def test_tex_outer_delims_infer_shape_from_normalized_body():
 def test_tex_outer_delims_requires_inferable_shape():
     with pytest.raises(ValueError, match="Could not infer outer_delims_span"):
         tex(mat_rep="", mat_format="r", outer_delims=True)
+
+
+def test_ge_layout_string_hook_helper_merges_spec_first():
+    extension, preamble = _merge_layout_string_hooks(
+        spec=GELayoutSpec(extension="spec-ext", preamble="spec-body"),
+        extension="explicit-ext",
+        preamble="explicit-body",
+    )
+
+    assert extension == "spec-ext\nexplicit-ext"
+    assert preamble == "spec-body\nexplicit-body"
+    assert _merge_layout_string_hooks(spec=None, extension="e", preamble="p") == ("e", "p")
+
+
+def test_ge_layout_field_helper_merges_layout_values_and_callouts():
+    result = _merge_layout_fields(
+        spec=GELayoutSpec(
+            nice_options="spec-opt",
+            landscape=True,
+            create_cell_nodes=False,
+            create_extra_nodes=True,
+            create_medium_nodes=True,
+            outer_delims=True,
+            outer_delims_name="SpecName",
+            outer_delims_span=(2, 3),
+            codebefore=["spec-code"],
+            submatrix_locs=[("name=S", "1-1", "1-1")],
+            submatrix_names=["S"],
+            pivot_locs=[("spec-pivot", "draw")],
+            txt_with_locs=[("1-1", "spec-text", "")],
+            rowechelon_paths=["spec-path"],
+            callouts=[{"name": "S", "label": "spec"}],
+            matrix_labels=[{"name": "S", "label": "matrix"}],
+        ),
+        nice_options=None,
+        landscape=None,
+        create_cell_nodes=None,
+        create_extra_nodes=None,
+        create_medium_nodes=None,
+        outer_delims=None,
+        outer_delims_name=None,
+        outer_delims_span=None,
+        codebefore=["explicit-code"],
+        submatrix_locs=None,
+        submatrix_names=None,
+        pivot_locs=None,
+        txt_with_locs=None,
+        rowechelon_paths=None,
+        callouts=[{"name": "S", "label": "explicit"}],
+        matrix_labels=[{"name": "S", "label": "kw-label"}],
+    )
+
+    (
+        nice_options,
+        landscape,
+        create_cell_nodes,
+        create_extra_nodes,
+        create_medium_nodes,
+        outer_delims,
+        outer_delims_name,
+        outer_delims_span,
+        codebefore,
+        submatrix_locs,
+        submatrix_names,
+        pivot_locs,
+        txt_with_locs,
+        rowechelon_paths,
+        callouts,
+    ) = result
+
+    assert nice_options == "spec-opt"
+    assert landscape is True
+    assert create_cell_nodes is False
+    assert create_extra_nodes is True
+    assert create_medium_nodes is True
+    assert outer_delims is True
+    assert outer_delims_name == "SpecName"
+    assert outer_delims_span == (2, 3)
+    assert codebefore == ["explicit-code", "spec-code"]
+    assert submatrix_locs == [("name=S", "1-1", "1-1")]
+    assert submatrix_names == ["S"]
+    assert pivot_locs == [("spec-pivot", "draw")]
+    assert txt_with_locs == [("1-1", "spec-text", "")]
+    assert rowechelon_paths == ["spec-path"]
+    assert callouts == [
+        {"name": "S", "label": "explicit"},
+        {"name": "S", "label": "spec"},
+        {"name": "S", "label": "matrix"},
+        {"name": "S", "label": "kw-label"},
+    ]
+
+
+def test_ge_layout_field_helper_passes_through_without_layout():
+    result = _merge_layout_fields(
+        spec=None,
+        nice_options="opt",
+        landscape=False,
+        create_cell_nodes=True,
+        create_extra_nodes=False,
+        create_medium_nodes=False,
+        outer_delims=False,
+        outer_delims_name="Outer",
+        outer_delims_span=(1, 1),
+        codebefore=["code"],
+        submatrix_locs=[("name=A", "1-1", "1-1")],
+        submatrix_names=["A"],
+        pivot_locs=[("p", "")],
+        txt_with_locs=[("1-1", "t", "")],
+        rowechelon_paths=["path"],
+        callouts=[{"name": "A", "label": "A"}],
+        matrix_labels=[{"name": "A", "label": "ignored"}],
+    )
+
+    assert result[0] == "opt"
+    assert result[8] == ["code"]
+    assert result[-1] == [{"name": "A", "label": "A"}]
+
+
+def test_ge_figure_scale_wrapper_helper_variants():
+    assert _figure_scale_wrappers(None) == ("", "")
+    assert _figure_scale_wrappers(1.0) == ("", "")
+    assert _figure_scale_wrappers(1.2) == (r"\scalebox{1.2}{%", "}")
+    assert _figure_scale_wrappers(r"\resizebox{0.5\textwidth}{!}{%") == (r"\resizebox{0.5\textwidth}{!}{%", "")
+    assert _figure_scale_wrappers("   ") == ("", "")
+
+
+def test_ge_submatrix_span_helper_adds_or_preserves_outer_delimiters():
+    assert _submatrix_spans_with_outer_delims(
+        submatrix_locs=None,
+        outer_delims=True,
+        outer_delims_name="Outer",
+        outer_delims_span=None,
+        mat_rep_norm=r"1 & 2 \\ 3 & 4",
+    ) == [("name=Outer", "{1-1}{2-2}")]
+
+    explicit = [("name=A", "1-1", "1-1")]
+    assert _submatrix_spans_with_outer_delims(
+        submatrix_locs=explicit,
+        outer_delims=True,
+        outer_delims_name="Outer",
+        outer_delims_span=(9, 9),
+        mat_rep_norm="",
+    ) == [("name=A", "{1-1}{1-1}")]
+
+
+def test_ge_submatrix_name_extraction_helper_skips_empty_options():
+    assert _extract_submatrix_names([(), ("", "{1-1}{1-1}"), ("draw", "{1-1}{1-1}"), ("name=A, draw", "{1-1}{1-1}")]) == [
+        "A"
+    ]
+
+
+def test_ge_render_matrix_callouts_helper_merges_labels_and_wraps_errors():
+    assert _render_matrix_callouts(callouts=None, matrix_labels=None, sub_spans=[], callout_name_map=None) == []
+
+    rendered = _render_matrix_callouts(
+        callouts=[{"name": "A", "label": "A", "side": "right"}],
+        matrix_labels=[{"name": "B", "label": "B", "side": "left"}],
+        sub_spans=[("name=A", "{1-1}{1-1}"), ("name=B", "{1-1}{1-1}")],
+        callout_name_map=None,
+    )
+    assert len(rendered) == 2
+    assert "A-right" in rendered[0]
+    assert "B-left" in rendered[1]
+
+    with pytest.raises(ValueError, match="Failed to render callouts"):
+        _render_matrix_callouts(
+            callouts=[{"name": "missing", "label": "X"}],
+            matrix_labels=None,
+            sub_spans=[("name=A", "{1-1}{1-1}")],
+            callout_name_map=None,
+        )
