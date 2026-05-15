@@ -2,10 +2,24 @@
 
 Rendering is delegated to `jupyter-tikz` under the hood.
 
+Install the render extra when SVG output is needed:
+
+```bash
+python -m pip install "matrixlayout[render]"
+```
+
+The extra pins `jupyter-tikz` to the maintained `ea42gh/jupyter-tikz` revision
+used in CI and Binder. Current PyPI releases do not provide the artifact-aware
+renderer that matrixlayout uses for reliable diagnostics. If an incompatible
+renderer is installed, matrixlayout raises an explicit version/capability error
+before running LaTeX.
+
 ## Prerequisites
 
 Rendering requires a LaTeX toolchain and a PDF/DVI-to-SVG converter
 (e.g., `latexmk` with `dvisvgm`, `pdf2svg`, or `pdftocairo`) available on PATH.
+The Python extra installs the Python renderer only; it does not install TeX Live,
+Ghostscript, `latexmk`, `dvisvgm`, `pdf2svg`, or Poppler.
 
 ## SVG output
 

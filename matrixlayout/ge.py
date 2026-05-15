@@ -19,6 +19,7 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 from __future__ import annotations
 
 import os
+import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .formatting import latexify
@@ -82,6 +83,181 @@ _normalize_label_rows = _ge_labels.normalize_label_rows
 grid_label_layouts = _ge_labels.grid_label_layouts
 
 
+def _merge_layout_string_hooks(
+    *,
+    spec: Optional[GELayoutSpec],
+    extension: str,
+    preamble: str,
+) -> Tuple[str, str]:
+    if spec is None:
+        return extension, preamble
+    if getattr(spec, "extension", None):
+        extension = (spec.extension or "") + ("\n" if (spec.extension and extension) else "") + (extension or "")
+    if getattr(spec, "preamble", None):
+        preamble = (spec.preamble or "") + ("\n" if (spec.preamble and preamble) else "") + (preamble or "")
+    return extension, preamble
+
+
+def _merge_layout_fields(
+    *,
+    spec: Optional[GELayoutSpec],
+    nice_options: Optional[str],
+    landscape: Optional[bool],
+    create_cell_nodes: Optional[bool],
+    create_extra_nodes: Optional[bool],
+    create_medium_nodes: Optional[bool],
+    outer_delims: Optional[bool],
+    outer_delims_name: Optional[str],
+    outer_delims_span: Optional[Tuple[int, int]],
+    codebefore: Optional[Sequence[str]],
+    submatrix_locs: Optional[Sequence[Any]],
+    submatrix_names: Optional[Sequence[str]],
+    pivot_locs: Optional[Sequence[Any]],
+    txt_with_locs: Optional[Sequence[Any]],
+    rowechelon_paths: Optional[Sequence[Any]],
+    callouts: Optional[Sequence[Any]],
+    matrix_labels: Optional[Sequence[Any]],
+) -> Tuple[
+    Optional[str],
+    Optional[bool],
+    Optional[bool],
+    Optional[bool],
+    Optional[bool],
+    Optional[bool],
+    Optional[str],
+    Optional[Tuple[int, int]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+    Optional[Sequence[Any]],
+]:
+    if spec is None:
+        return (
+            nice_options,
+            landscape,
+            create_cell_nodes,
+            create_extra_nodes,
+            create_medium_nodes,
+            outer_delims,
+            outer_delims_name,
+            outer_delims_span,
+            codebefore,
+            submatrix_locs,
+            submatrix_names,
+            pivot_locs,
+            txt_with_locs,
+            rowechelon_paths,
+            callouts,
+        )
+
+    nice_options = _merge_scalar("nice_options", nice_options, spec.nice_options)
+    landscape = _merge_scalar("landscape", landscape, spec.landscape)
+    create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec.create_cell_nodes)
+    create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec.create_extra_nodes)
+    create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec.create_medium_nodes)
+    outer_delims = _merge_scalar("outer_delims", outer_delims, spec.outer_delims)
+    outer_delims_name = _merge_scalar("outer_delims_name", outer_delims_name, spec.outer_delims_name)
+    outer_delims_span = _merge_scalar("outer_delims_span", outer_delims_span, spec.outer_delims_span)
+
+    codebefore = _merge_list(codebefore, spec.codebefore)
+    submatrix_locs = _merge_list(submatrix_locs, spec.submatrix_locs)
+    submatrix_names = _merge_list(submatrix_names, spec.submatrix_names)
+    pivot_locs = _merge_list(pivot_locs, spec.pivot_locs)
+    txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
+    rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
+    callouts = _merge_callouts(callouts, spec.callouts)
+    callouts = _merge_callouts(callouts, spec.matrix_labels)
+    callouts = _merge_callouts(callouts, matrix_labels)
+
+    return (
+        nice_options,
+        landscape,
+        create_cell_nodes,
+        create_extra_nodes,
+        create_medium_nodes,
+        outer_delims,
+        outer_delims_name,
+        outer_delims_span,
+        codebefore,
+        submatrix_locs,
+        submatrix_names,
+        pivot_locs,
+        txt_with_locs,
+        rowechelon_paths,
+        callouts,
+    )
+
+
+def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
+    if fig_scale is None:
+        return "", ""
+    if isinstance(fig_scale, (int, float)) and float(fig_scale) != 1.0:
+        return rf"\scalebox{{{fig_scale}}}{{%", "}"
+    if isinstance(fig_scale, str) and fig_scale.strip():
+        return fig_scale, ""
+    return "", ""
+
+
+def _submatrix_spans_with_outer_delims(
+    *,
+    submatrix_locs: Optional[Sequence[Any]],
+    outer_delims: bool,
+    outer_delims_name: str,
+    outer_delims_span: Optional[Tuple[int, int]],
+    mat_rep_norm: str,
+) -> List[Tuple[Any, ...]]:
+    sub_spans = _normalize_submatrix_locs(submatrix_locs)
+    if outer_delims and not sub_spans:
+        if outer_delims_span is None:
+            outer_delims_span = _guess_shape_from_mat_rep(mat_rep_norm)
+        nrows, ncols = outer_delims_span
+        if nrows <= 0 or ncols <= 0:
+            raise ValueError("Could not infer outer_delims_span; pass outer_delims_span=(nrows,ncols).")
+        sub_spans.append((f"name={outer_delims_name}", f"{{1-1}}{{{nrows}-{ncols}}}"))
+    return sub_spans
+
+
+def _extract_submatrix_names(spans: Sequence[Tuple[Any, ...]]) -> List[str]:
+    names: List[str] = []
+    for item in spans:
+        if not item:
+            continue
+        opts = item[0]
+        if not opts:
+            continue
+        m = re.search(r"(?:^|,)\s*name\s*=\s*([A-Za-z0-9_]+)", str(opts))
+        if m:
+            names.append(m.group(1))
+    return names
+
+
+def _render_matrix_callouts(
+    *,
+    callouts: Optional[Sequence[Any]],
+    matrix_labels: Optional[Sequence[Any]],
+    sub_spans: Sequence[Tuple[Any, ...]],
+    callout_name_map: Optional[Mapping[Tuple[int, int], str]],
+) -> List[str]:
+    if matrix_labels is not None:
+        callouts = _merge_callouts(callouts, matrix_labels)
+    if not callouts:
+        return []
+    try:
+        from .nicematrix_decor import render_delim_callouts
+
+        return render_delim_callouts(
+            callouts,
+            available_names=_extract_submatrix_names(sub_spans),
+            name_map=callout_name_map,
+            strict=True,
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to render callouts: {e}") from e
+
+
 def tex(
     *,
     mat_rep: str,
@@ -113,39 +289,44 @@ def tex(
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
     spec = _coerce_layout_spec(layout)
-    # Merge string hooks from layout spec *before* validation, so guardrails
-    # apply consistently regardless of whether the user supplies values via
-    # explicit kwargs or the layout object.
-    if spec is not None:
-        if getattr(spec, "extension", None):
-            # Layout spec is treated as the "base" template configuration.
-            # Explicit kwargs are appended so users can override definitions.
-            extension = (spec.extension or "") + ("\n" if (spec.extension and extension) else "") + (extension or "")
-        if getattr(spec, "preamble", None):
-            preamble = (spec.preamble or "") + ("\n" if (spec.preamble and preamble) else "") + (preamble or "")
-
+    extension, preamble = _merge_layout_string_hooks(spec=spec, extension=extension, preamble=preamble)
     _validate_body_preamble(preamble or "")
 
-    # Merge remaining layout fields.
-    if spec is not None:
-        nice_options = _merge_scalar("nice_options", nice_options, spec.nice_options)
-        landscape = _merge_scalar("landscape", landscape, spec.landscape)
-        create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec.create_cell_nodes)
-        create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec.create_extra_nodes)
-        create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec.create_medium_nodes)
-        outer_delims = _merge_scalar("outer_delims", outer_delims, spec.outer_delims)
-        outer_delims_name = _merge_scalar("outer_delims_name", outer_delims_name, spec.outer_delims_name)
-        outer_delims_span = _merge_scalar("outer_delims_span", outer_delims_span, spec.outer_delims_span)
-
-        codebefore = _merge_list(codebefore, spec.codebefore)
-        submatrix_locs = _merge_list(submatrix_locs, spec.submatrix_locs)
-        submatrix_names = _merge_list(submatrix_names, spec.submatrix_names)
-        pivot_locs = _merge_list(pivot_locs, spec.pivot_locs)
-        txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
-        rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
-        callouts = _merge_callouts(callouts, spec.callouts)
-        callouts = _merge_callouts(callouts, spec.matrix_labels)
-
+    (
+        nice_options,
+        landscape,
+        create_cell_nodes,
+        create_extra_nodes,
+        create_medium_nodes,
+        outer_delims,
+        outer_delims_name,
+        outer_delims_span,
+        codebefore,
+        submatrix_locs,
+        submatrix_names,
+        pivot_locs,
+        txt_with_locs,
+        rowechelon_paths,
+        callouts,
+    ) = _merge_layout_fields(
+        spec=spec,
+        nice_options=nice_options,
+        landscape=landscape,
+        create_cell_nodes=create_cell_nodes,
+        create_extra_nodes=create_extra_nodes,
+        create_medium_nodes=create_medium_nodes,
+        outer_delims=outer_delims,
+        outer_delims_name=outer_delims_name,
+        outer_delims_span=outer_delims_span,
+        codebefore=codebefore,
+        submatrix_locs=submatrix_locs,
+        submatrix_names=submatrix_names,
+        pivot_locs=pivot_locs,
+        txt_with_locs=txt_with_locs,
+        rowechelon_paths=rowechelon_paths,
+        callouts=callouts,
+        matrix_labels=matrix_labels,
+    )
     submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
     pivot_locs = _coerce_pivot_locs(pivot_locs)
     txt_with_locs = _coerce_txt_with_locs(txt_with_locs)
@@ -180,64 +361,20 @@ def tex(
     if create_medium_nodes:
         nice_options = _append_nicematrix_option(nice_options, "create-medium-nodes")
 
-    # figure scale: the GE template currently supports TeX wrappers in the template itself
-    fig_scale_open = fig_scale_close = ""
-    if fig_scale is not None:
-        if isinstance(fig_scale, (int, float)) and float(fig_scale) != 1.0:
-            fig_scale_open = rf"\scalebox{{{fig_scale}}}{{%"
-            fig_scale_close = "}"
-        elif isinstance(fig_scale, str) and fig_scale.strip():
-            fig_scale_open = fig_scale
-            fig_scale_close = ""
-
-    sub_spans = _normalize_submatrix_locs(submatrix_locs)
-
-    if outer_delims and not sub_spans:
-        if outer_delims_span is None:
-            outer_delims_span = _guess_shape_from_mat_rep(mat_rep_norm)
-        nrows, ncols = outer_delims_span
-        if nrows <= 0 or ncols <= 0:
-            raise ValueError("Could not infer outer_delims_span; pass outer_delims_span=(nrows,ncols).")
-        sub_spans.append((f"name={outer_delims_name}", f"{{1-1}}{{{nrows}-{ncols}}}"))
-
-    # Descriptor-based callouts (rendered to TikZ draw commands).
-    # We validate against the set of SubMatrix names declared in sub_spans.
-    rendered_callouts: List[str] = []
-    if matrix_labels is not None:
-        callouts = _merge_callouts(callouts, matrix_labels)
-    if callouts:
-        try:
-            import re
-
-            def _extract_names(spans: Sequence[Tuple[Any, ...]]) -> List[str]:
-                """Extract declared SubMatrix names from normalized spans.
-
-                ``_normalize_submatrix_locs`` can return tuples of length 2
-                ``(opts, span)`` or length 4 ``(opts, span, left, right)``.
-                We only care about the ``opts`` field.
-                """
-                names: List[str] = []
-                for item in spans:
-                    if not item:
-                        continue
-                    opts = item[0]
-                    if not opts:
-                        continue
-                    m = re.search(r"(?:^|,)\s*name\s*=\s*([A-Za-z0-9_]+)", str(opts))
-                    if m:
-                        names.append(m.group(1))
-                return names
-
-            from .nicematrix_decor import render_delim_callouts
-
-            rendered_callouts = render_delim_callouts(
-                callouts,
-                available_names=_extract_names(sub_spans),
-                name_map=callout_name_map,
-                strict=True,
-            )
-        except Exception as e:
-            raise ValueError(f"Failed to render callouts: {e}") from e
+    fig_scale_open, fig_scale_close = _figure_scale_wrappers(fig_scale)
+    sub_spans = _submatrix_spans_with_outer_delims(
+        submatrix_locs=submatrix_locs,
+        outer_delims=bool(outer_delims),
+        outer_delims_name=str(outer_delims_name),
+        outer_delims_span=outer_delims_span,
+        mat_rep_norm=mat_rep_norm,
+    )
+    rendered_callouts = _render_matrix_callouts(
+        callouts=callouts,
+        matrix_labels=None,
+        sub_spans=sub_spans,
+        callout_name_map=callout_name_map,
+    )
 
     ctx = {
         "extension": extension or "",

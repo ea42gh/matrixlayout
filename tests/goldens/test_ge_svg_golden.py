@@ -22,3 +22,34 @@ def test_render_ge_svg_golden():
     golden = Path(__file__).parent / "ge_basic.svg"
     expected = normalize_svg(golden.read_text())
     assert svg == expected
+
+
+@pytest.mark.render
+def test_render_ge_decorations_callout_golden():
+    if shutil.which("latexmk") is None:
+        pytest.skip("latexmk not installed")
+    if shutil.which("pdftocairo") is None:
+        pytest.skip("pdftocairo not installed")
+
+    svg = normalize_svg(
+        render_ge_svg(
+            matrices=[[[1, 0], [0, 1]]],
+            decorations=[
+                {"grid": (0, 0), "entries": [(0, 0), (1, 1)], "background": "yellow!25"},
+            ],
+            callouts=[
+                {
+                    "grid_pos": (0, 0),
+                    "label": "R",
+                    "side": "right",
+                    "angle_deg": -35,
+                    "length_mm": 8,
+                },
+            ],
+            create_medium_nodes=True,
+        )
+    )
+
+    golden = Path(__file__).parent / "ge_decorations_callout.svg"
+    expected = normalize_svg(golden.read_text())
+    assert svg == expected

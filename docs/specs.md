@@ -23,6 +23,32 @@ specs = [
 This page describes the layout specs consumed by matrixlayout. Specs are plain
 dictionaries passed to `*_tex` or `*_svg` helpers.
 
+## Typed spec objects
+
+The public renderers accept either plain dictionaries or typed dataclass specs:
+
+- `GEGridSpec` and `GEGridBundle` describe GE/matrix-grid inputs.
+- `GELayoutSpec` describes lower-level `tex()` layout hooks.
+- `QRGridSpec` describes QR/Gram-Schmidt layouts.
+
+Use `.from_dict(...)` when loading specs from another package or saved JSON-like
+data, and `.to_dict(drop_none=True)` when exporting a clean dictionary. Unknown
+fields are rejected by default; pass `strict=False` to ignore extra fields during
+incremental migrations.
+
+```python
+from matrixlayout.ge import render_ge_svg
+from matrixlayout.specs import GEGridSpec
+
+spec = GEGridSpec.from_dict(
+    {
+        "matrices": [[[1, 2], [3, 4]]],
+        "label_rows": [{"grid": (0, 0), "side": "above", "rows": [["x_1", "x_2"]]}],
+    }
+)
+svg = render_ge_svg(spec=spec)
+```
+
 ## Labels and callouts
 
 Row/column labels (labels are placed in blank rows/cols when available):

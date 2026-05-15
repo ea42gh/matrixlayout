@@ -85,6 +85,26 @@ decorations = [
 svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
+## Block callouts
+
+Use `callouts` when you already know a submatrix delimiter name, or
+`callouts=True` to label every available delimiter with a default label. In grid
+renderers, callouts can target a block with `grid_pos` or
+`block_row`/`block_col`.
+
+```python
+svg = render_ge_svg(
+    matrices=[[None, [[1, 2], [3, 4]]]],
+    callouts=[
+        {"grid_pos": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8}
+    ],
+)
+```
+
+`decorations` can also create callouts with a `label` action. Prefer
+`decorations` for one-line figure annotations, and reserve lower-level
+`decorators` for entry-formatting callables such as `decorator_box(...)`.
+
 ## Selectors
 
 - `sel_entry(i, j)`
