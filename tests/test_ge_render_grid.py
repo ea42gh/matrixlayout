@@ -80,6 +80,25 @@ def test_ge_render_parts_list_nrhs_legacy_format_and_user_submatrix_locs():
     ]
 
 
+def test_ge_render_parts_list_nrhs_current_format_without_legacy_separator():
+    parts = _parts(
+        [[[1, 2, 3, 4, 5]]],
+        Nrhs=[1, 2],
+        cell_align="c",
+    )
+
+    assert parts.mat_format == "cc|c|cc"
+
+
+def test_ge_render_parts_ignores_invalid_nrhs_partition_width():
+    parts = _parts(
+        [[[1, 2]]],
+        Nrhs=2,
+    )
+
+    assert parts.mat_format == "rr"
+
+
 def test_ge_render_parts_legacy_names_and_block_alignment():
     matrices = [
         [[[1]], [[1, 2], [3, 4]]],
@@ -98,6 +117,21 @@ def test_ge_render_parts_legacy_names_and_block_alignment():
         ("name=A0x1", "1-2", "2-3"),
     ]
     assert parts.name_map == {(0, 0): "A0x0", (0, 1): "A0x1"}
+
+
+def test_ge_render_parts_three_column_submatrix_names_are_column_indexed():
+    parts = _parts(
+        [
+            [[[1]], [[2]], [[3]]],
+        ],
+    )
+
+    assert parts.submatrix_locs == [
+        ("name=M00", "1-1", "1-1"),
+        ("name=M10", "1-2", "1-2"),
+        ("name=M20", "1-3", "1-3"),
+    ]
+    assert parts.name_map == {(0, 0): "M00", (0, 1): "M10", (0, 2): "M20"}
 
 
 def test_ge_render_parts_decorator_map_applies_entry_formatter_and_decorator():

@@ -60,6 +60,182 @@ def _pad_label_col(text: str, side: str, label_gap_mm: Optional[float]) -> str:
     return f"{text}{gap}" if side == "left" else f"{gap}{text}"
 
 
+def _block_padding_maps(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+    block_heights: Sequence[int],
+    block_widths: Sequence[int],
+    block_align: Optional[str],
+    block_valign: Optional[str],
+) -> Tuple[List[List[int]], List[List[int]]]:
+    pad_left, pad_top = _block_padding_maps(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        cell_cache=cell_cache,
+        block_heights=block_heights,
+        block_widths=block_widths,
+        block_align=block_align,
+        block_valign=block_valign,
+    )
+    return pad_left, pad_top
+
+
+def _total_block_sizes(
+    *,
+    block_heights: Sequence[int],
+    block_widths: Sequence[int],
+    extra_rows_above: Sequence[int],
+    extra_rows_below: Sequence[int],
+    extra_cols_left: Sequence[int],
+    extra_cols_right: Sequence[int],
+) -> Tuple[List[int], List[int]]:
+    total_block_heights = [
+        extra_rows_above[br] + block_heights[br] + extra_rows_below[br] for br in range(len(block_heights))
+    ]
+    total_block_widths = [
+        extra_cols_left[bc] + block_widths[bc] + extra_cols_right[bc] for bc in range(len(block_widths))
+    ]
+    return total_block_heights, total_block_widths
+
+
+def _rhs_column_format(
+    *,
+    base_width: int,
+    Nrhs: Any,
+    cell_align: str,
+    sep: str,
+    left_extra: int,
+    right_extra: int,
+) -> Optional[str]:
+    if not Nrhs:
+        return None
+    if isinstance(Nrhs, (list, tuple)):
+        rhs = [int(x) for x in Nrhs]
+        left = base_width - sum(rhs)
+        cuts: List[int] = [left]
+        for cut in rhs[:-1]:
+            cuts.append(cuts[-1] + cut)
+        cur = 0
+        fmt = cell_align * left_extra
+        for cut in cuts:
+            fmt += (cell_align * (cut - cur)) + sep
+            cur = cut
+        if cur < base_width:
+            fmt += cell_align * (base_width - cur)
+        return fmt + (cell_align * right_extra)
+    if 0 < int(Nrhs) < base_width:
+        left = base_width - int(Nrhs)
+        return (
+            (cell_align * left_extra)
+            + (cell_align * left)
+            + sep
+            + (cell_align * int(Nrhs))
+            + (cell_align * right_extra)
+        )
+    return None
+
+
+def _matrix_column_format(
+    *,
+    block_widths: Sequence[int],
+    Nrhs: Any,
+    format_nrhs: bool,
+    cell_align: str,
+    outer_hspace_mm: int,
+    extra_cols_left: Sequence[int],
+    extra_cols_right: Sequence[int],
+    legacy_format: bool,
+) -> str:
+    fmt_parts: List[str] = []
+    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
+    if legacy_format:
+        fmt_parts.append(spacer)
+
+    sep = "I" if legacy_format else "|"
+    last_block_col = len(block_widths) - 1
+    for bc, base_width in enumerate(block_widths):
+        if bc > 0:
+            fmt_parts.append(spacer)
+
+        left_extra = extra_cols_left[bc]
+        right_extra = extra_cols_right[bc]
+        rhs_format = None
+        if format_nrhs and bc == last_block_col:
+            rhs_format = _rhs_column_format(
+                base_width=base_width,
+                Nrhs=Nrhs,
+                cell_align=cell_align,
+                sep=sep,
+                left_extra=left_extra,
+                right_extra=right_extra,
+            )
+        fmt_parts.append(rhs_format or (cell_align * (left_extra + base_width + right_extra)))
+
+    return "".join(fmt_parts)
+
+
+def _starts_from_sizes(sizes: Sequence[int]) -> List[int]:
+    starts: List[int] = []
+    acc = 1
+    for size in sizes:
+        starts.append(acc)
+        acc += size
+    return starts
+
+
+def _submatrix_name(
+    *,
+    br: int,
+    bc: int,
+    n_block_cols: int,
+    legacy_submatrix_names: bool,
+) -> str:
+    if legacy_submatrix_names:
+        return f"A{br}x{bc}"
+    if n_block_cols == 2:
+        base = "E" if bc == 0 else "A"
+    else:
+        base = f"M{bc}"
+    return f"{base}{br}"
+
+
+def _submatrix_locations(
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+    row_starts: Sequence[int],
+    col_starts: Sequence[int],
+    extra_rows_above: Sequence[int],
+    extra_cols_left: Sequence[int],
+    pad_top: Sequence[Sequence[int]],
+    pad_left: Sequence[Sequence[int]],
+    legacy_submatrix_names: bool,
+) -> Tuple[List[Tuple[str, str, str]], Dict[Tuple[int, int], str]]:
+    submatrix_locs: List[Tuple[str, str, str]] = []
+    name_map: Dict[Tuple[int, int], str] = {}
+    for br in range(n_block_rows):
+        for bc in range(n_block_cols):
+            _, height, width = cell_cache[br][bc]
+            if height == 0 or width == 0:
+                continue
+            r0 = row_starts[br] + extra_rows_above[br] + pad_top[br][bc]
+            c0 = col_starts[bc] + extra_cols_left[bc] + pad_left[br][bc]
+            r1 = r0 + height - 1
+            c1 = c0 + width - 1
+            name = _submatrix_name(
+                br=br,
+                bc=bc,
+                n_block_cols=n_block_cols,
+                legacy_submatrix_names=legacy_submatrix_names,
+            )
+            submatrix_locs.append((f"name={name}", f"{r0}-{c0}", f"{r1}-{c1}"))
+            name_map[(br, bc)] = name
+    return submatrix_locs, name_map
+
+
 def build_ge_grid_render_parts(
     *,
     grid: Sequence[Sequence[Any]],
@@ -141,58 +317,24 @@ def build_ge_grid_render_parts(
         label_cols_map=label_cols_map,
     )
 
-    total_block_heights = [
-        extra_rows_above[br] + block_heights[br] + extra_rows_below[br] for br in range(n_block_rows)
-    ]
-    total_block_widths = [
-        extra_cols_left[bc] + block_widths[bc] + extra_cols_right[bc] for bc in range(n_block_cols)
-    ]
-
-    fmt_parts: List[str] = []
-    spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
-    if legacy_format:
-        fmt_parts.append(spacer)
-
-    sep = "I" if legacy_format else "|"
-    for bc, base_width in enumerate(block_widths):
-        if bc > 0:
-            fmt_parts.append(spacer)
-
-        left_extra = extra_cols_left[bc]
-        right_extra = extra_cols_right[bc]
-
-        if Nrhs and format_nrhs and bc == n_block_cols - 1:
-            if isinstance(Nrhs, (list, tuple)):
-                rhs = [int(x) for x in Nrhs]
-                left = base_width - sum(rhs)
-                cuts: List[int] = [left]
-                for cut in rhs[:-1]:
-                    cuts.append(cuts[-1] + cut)
-                cur = 0
-                fmt = cell_align * left_extra
-                for cut in cuts:
-                    fmt += (cell_align * (cut - cur)) + sep
-                    cur = cut
-                if cur < base_width:
-                    fmt += cell_align * (base_width - cur)
-                fmt += cell_align * right_extra
-                fmt_parts.append(fmt)
-            elif 0 < int(Nrhs) < base_width:
-                left = base_width - int(Nrhs)
-                fmt = (
-                    (cell_align * left_extra)
-                    + (cell_align * left)
-                    + sep
-                    + (cell_align * int(Nrhs))
-                    + (cell_align * right_extra)
-                )
-                fmt_parts.append(fmt)
-            else:
-                fmt_parts.append(cell_align * (left_extra + base_width + right_extra))
-        else:
-            fmt_parts.append(cell_align * (left_extra + base_width + right_extra))
-
-    mat_format = "".join(fmt_parts)
+    total_block_heights, total_block_widths = _total_block_sizes(
+        block_heights=block_heights,
+        block_widths=block_widths,
+        extra_rows_above=extra_rows_above,
+        extra_rows_below=extra_rows_below,
+        extra_cols_left=extra_cols_left,
+        extra_cols_right=extra_cols_right,
+    )
+    mat_format = _matrix_column_format(
+        block_widths=block_widths,
+        Nrhs=Nrhs,
+        format_nrhs=format_nrhs,
+        cell_align=cell_align,
+        outer_hspace_mm=outer_hspace_mm,
+        extra_cols_left=extra_cols_left,
+        extra_cols_right=extra_cols_right,
+        legacy_format=legacy_format,
+    )
 
     lines: List[str] = []
     for br in range(n_block_rows):
@@ -318,39 +460,20 @@ def build_ge_grid_render_parts(
         if block_vspace_mm and br < n_block_rows - 1:
             lines[-1] += rf"\noalign{{\vskip{int(block_vspace_mm)}mm}}"
 
-    row_starts: List[int] = []
-    acc = 1
-    for height in total_block_heights:
-        row_starts.append(acc)
-        acc += height
-
-    col_starts: List[int] = []
-    acc = 1
-    for width in total_block_widths:
-        col_starts.append(acc)
-        acc += width
-
-    submatrix_locs: List[Tuple[str, str, str]] = []
-    name_map: Dict[Tuple[int, int], str] = {}
-    for br in range(n_block_rows):
-        for bc in range(n_block_cols):
-            _, height, width = cell_cache[br][bc]
-            if height == 0 or width == 0:
-                continue
-            r0 = row_starts[br] + extra_rows_above[br] + pad_top[br][bc]
-            c0 = col_starts[bc] + extra_cols_left[bc] + pad_left[br][bc]
-            r1 = r0 + height - 1
-            c1 = c0 + width - 1
-            if legacy_submatrix_names:
-                name = f"A{br}x{bc}"
-            else:
-                if n_block_cols == 2:
-                    base = "E" if bc == 0 else "A"
-                else:
-                    base = f"M{bc}"
-                name = f"{base}{br}"
-            submatrix_locs.append((f"name={name}", f"{r0}-{c0}", f"{r1}-{c1}"))
-            name_map[(br, bc)] = name
+    row_starts = _starts_from_sizes(total_block_heights)
+    col_starts = _starts_from_sizes(total_block_widths)
+    submatrix_locs, name_map = _submatrix_locations(
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+        cell_cache=cell_cache,
+        row_starts=row_starts,
+        col_starts=col_starts,
+        extra_rows_above=extra_rows_above,
+        extra_cols_left=extra_cols_left,
+        pad_top=pad_top,
+        pad_left=pad_left,
+        legacy_submatrix_names=legacy_submatrix_names,
+    )
 
     if user_submatrix_locs:
         submatrix_locs.extend(list(user_submatrix_locs))
