@@ -9,6 +9,26 @@ EntryCoord = Tuple[int, int]
 EntryDecorator = Callable[..., str]
 
 
+def _filtered_dataclass_kwargs(
+    d: Optional[Dict[str, Any]],
+    *,
+    spec_name: str,
+    allowed: set[str],
+    required: str,
+    allow_extra: Optional[bool],
+) -> Dict[str, Any]:
+    if d is None:
+        raise ValueError(f"{spec_name}.from_dict requires a mapping")
+    if allow_extra is None:
+        allow_extra = not bool(d.get("strict", True))
+    extra = set(d.keys()) - allowed
+    if extra and not allow_extra:
+        raise ValueError(f"Unknown {spec_name} fields: {sorted(extra)}")
+    if required not in d:
+        raise ValueError(f"{spec_name} requires '{required}'")
+    return {k: v for k, v in d.items() if k in allowed}
+
+
 class GELabelRowsSpec(TypedDict, total=False):
     """Dictionary schema for GE row labels.
 
@@ -281,18 +301,15 @@ class GEGridSpec:
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "GEGridSpec":
-        if d is None:
-            raise ValueError("GEGridSpec.from_dict requires a mapping")
-        if allow_extra is None:
-            allow_extra = not bool(d.get("strict", True))
         allowed = set(GEGridSpec.__dataclass_fields__.keys())
-        extra = set(d.keys()) - allowed
-        if extra and not allow_extra:
-            raise ValueError(f"Unknown GEGridSpec fields: {sorted(extra)}")
-        if "matrices" not in d:
-            raise ValueError("GEGridSpec requires 'matrices'")
-        filtered = {k: v for k, v in d.items() if k in allowed}
-        return GEGridSpec(**filtered)
+        kwargs = _filtered_dataclass_kwargs(
+            d,
+            spec_name="GEGridSpec",
+            allowed=allowed,
+            required="matrices",
+            allow_extra=allow_extra,
+        )
+        return GEGridSpec(**kwargs)
 
     def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
         d = asdict(self)
@@ -325,18 +342,15 @@ class QRGridSpec:
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "QRGridSpec":
-        if d is None:
-            raise ValueError("QRGridSpec.from_dict requires a mapping")
-        if allow_extra is None:
-            allow_extra = not bool(d.get("strict", True))
         allowed = set(QRGridSpec.__dataclass_fields__.keys())
-        extra = set(d.keys()) - allowed
-        if extra and not allow_extra:
-            raise ValueError(f"Unknown QRGridSpec fields: {sorted(extra)}")
-        if "matrices" not in d:
-            raise ValueError("QRGridSpec requires 'matrices'")
-        filtered = {k: v for k, v in d.items() if k in allowed}
-        return QRGridSpec(**filtered)
+        kwargs = _filtered_dataclass_kwargs(
+            d,
+            spec_name="QRGridSpec",
+            allowed=allowed,
+            required="matrices",
+            allow_extra=allow_extra,
+        )
+        return QRGridSpec(**kwargs)
 
     def to_dict(self, *, drop_none: bool = True) -> Dict[str, Any]:
         d = asdict(self)
@@ -525,22 +539,42 @@ def _spec_mapping(spec: Any, *, name: str) -> Tuple[Optional[Mapping[str, Any]],
     return None, [f"{name} must be a mapping or typed spec object"]
 
 
-def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
-    """Validate a GE spec dict and return a list of errors.
-
-    This is intended as a lightweight preflight before rendering.
-    """
-    mapping, errors = _spec_mapping(spec, name="GE spec")
+def _validated_spec_mapping_and_matrices(
+    spec: Any,
+    *,
+    name: str,
+    factory: Callable[..., Any],
+    strict: bool,
+    missing_message: str,
+) -> Tuple[Optional[Mapping[str, Any]], Optional[Any], List[str]]:
+    mapping, errors = _spec_mapping(spec, name=name)
     if mapping is None:
-        return errors
+        return None, None, errors
     try:
-        GEGridSpec.from_dict(dict(mapping), allow_extra=not strict)
+        factory(dict(mapping), allow_extra=not strict)
     except Exception as exc:
         errors.append(str(exc))
     mats = mapping.get("matrices")
     if mats is None:
         if not any("requires 'matrices'" in e for e in errors):
-            errors.append("GE spec requires 'matrices'")
+            errors.append(missing_message)
+        return mapping, None, errors
+    return mapping, mats, errors
+
+
+def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
+    """Validate a GE spec dict and return a list of errors.
+
+    This is intended as a lightweight preflight before rendering.
+    """
+    mapping, mats, errors = _validated_spec_mapping_and_matrices(
+        spec,
+        name="GE spec",
+        factory=GEGridSpec.from_dict,
+        strict=strict,
+        missing_message="GE spec requires 'matrices'",
+    )
+    if mapping is None or mats is None:
         return errors
     grid = _grid_size(mats)
     errors.extend(_validate_grid_matrices(mats))
@@ -570,17 +604,14 @@ def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
 
 def validate_qr_spec(spec: Any, *, strict: bool = True) -> List[str]:
     """Validate a QR spec dict and return a list of errors."""
-    mapping, errors = _spec_mapping(spec, name="QR spec")
-    if mapping is None:
-        return errors
-    try:
-        QRGridSpec.from_dict(dict(mapping), allow_extra=not strict)
-    except Exception as exc:
-        errors.append(str(exc))
-    mats = mapping.get("matrices")
-    if mats is None:
-        if not any("requires 'matrices'" in e for e in errors):
-            errors.append("QR spec requires 'matrices'")
+    mapping, mats, errors = _validated_spec_mapping_and_matrices(
+        spec,
+        name="QR spec",
+        factory=QRGridSpec.from_dict,
+        strict=strict,
+        missing_message="QR spec requires 'matrices'",
+    )
+    if mapping is None or mats is None:
         return errors
     grid = _grid_size(mats)
     specs = mapping.get("specs")

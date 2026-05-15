@@ -60,6 +60,24 @@ def test_validate_ge_spec_rejects_non_mapping_or_typed_spec():
     assert errors == ["GE spec must be a mapping or typed spec object"]
 
 
+def test_ge_gridspec_from_dict_shared_filtering_rules():
+    assert GEGridSpec.from_dict({"matrices": [[1]], "strict": False, "unknown": 1}).matrices == [[1]]
+
+    try:
+        GEGridSpec.from_dict({"matrices": [[1]], "strict": True, "unknown": 1})
+    except ValueError as exc:
+        assert "Unknown GEGridSpec fields" in str(exc)
+    else:
+        raise AssertionError("expected unknown strict GEGridSpec field to raise")
+
+    try:
+        GEGridSpec.from_dict(None)
+    except ValueError as exc:
+        assert "GEGridSpec.from_dict requires a mapping" in str(exc)
+    else:
+        raise AssertionError("expected GEGridSpec.from_dict(None) to raise")
+
+
 def test_validate_qr_spec_requires_matrices():
     errors = validate_qr_spec({"array_names": True})
     assert any("requires 'matrices'" in msg for msg in errors)
@@ -114,3 +132,21 @@ def test_validate_qr_spec_accepts_typed_grid_spec():
     )
 
     assert validate_qr_spec(spec) == []
+
+
+def test_qr_gridspec_from_dict_shared_filtering_rules():
+    assert QRGridSpec.from_dict({"matrices": [[1]], "strict": False, "unknown": 1}).matrices == [[1]]
+
+    try:
+        QRGridSpec.from_dict({"matrices": [[1]], "strict": True, "unknown": 1})
+    except ValueError as exc:
+        assert "Unknown QRGridSpec fields" in str(exc)
+    else:
+        raise AssertionError("expected unknown strict QRGridSpec field to raise")
+
+    try:
+        QRGridSpec.from_dict(None)
+    except ValueError as exc:
+        assert "QRGridSpec.from_dict requires a mapping" in str(exc)
+    else:
+        raise AssertionError("expected QRGridSpec.from_dict(None) to raise")
