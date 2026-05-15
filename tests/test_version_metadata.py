@@ -35,4 +35,4 @@ def test_render_extra_requires_patched_jupyter_tikz():
 def test_coverage_gate_tracks_current_quality_level():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
-    assert "fail_under = 85" in text
+    assert "fail_under = 90" in text
