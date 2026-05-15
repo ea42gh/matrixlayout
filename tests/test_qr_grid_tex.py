@@ -47,3 +47,30 @@ def test_qr_callout_rules_apply_to_qt_and_r():
     assert r_label["angle_deg"] == 40.0
     assert r_label["label_shift_y_mm"] == -2.0
     assert r_label["length_mm"] == 6.0
+
+
+def test_qr_render_parts_collects_known_zero_labels_and_callouts():
+    from matrixlayout.qr import _qr_render_parts
+
+    matrices = [
+        [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
+        [None, [[1, 0], [0, 1]], [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
+        [[[1, 0], [0, 1]], [[1, 0], [0, 1]], [[1, 2], [3, 4]], None],
+    ]
+
+    decorators, label_rows, label_cols, callouts, create_extra_nodes = _qr_render_parts(
+        matrices,
+        decorators=None,
+        array_names=True,
+        label_color="blue",
+        label_text_color="red",
+        known_zero_color="brown",
+        create_extra_nodes=None,
+    )
+
+    assert any(item["grid"] == (1, 2) for item in decorators)
+    assert any(item["grid"] == (0, 2) and item["side"] == "above" for item in label_rows)
+    assert any(item["grid"] == (1, 1) and item["side"] == "left" for item in label_cols)
+    assert callouts is not None
+    assert any(item["label"] == r"\mathbf{A}" for item in callouts)
+    assert create_extra_nodes is True

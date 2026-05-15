@@ -694,6 +694,9 @@ def grid_bundle(
     regex-parsing the generated TeX.
     """
 
+    if matrices is None and spec is None:
+        raise ValueError("grid_bundle requires `matrices`")
+
     tex = render_ge_tex(
         matrices=matrices,
         Nrhs=Nrhs,
@@ -726,6 +729,8 @@ def grid_bundle(
         label_rows = None
         label_cols = None
         variable_labels = None
+    if matrices is None:
+        raise ValueError("grid_bundle requires `matrices`")
     spans = grid_submatrix_spans(
         matrices,
         Nrhs=Nrhs,

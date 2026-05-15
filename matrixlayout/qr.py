@@ -398,6 +398,54 @@ def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> T
     return _qr_label_layouts_impl(grid, label_text_color, mat_shape=_mat_shape)
 
 
+def _qr_render_parts(
+    grid: Sequence[Sequence[Any]],
+    *,
+    decorators: Optional[Sequence[Any]],
+    array_names: Any,
+    label_color: str,
+    label_text_color: str,
+    known_zero_color: str,
+    create_extra_nodes: Optional[bool],
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], Optional[List[Dict[str, Any]]], Optional[bool]]:
+    """Build QR-specific decorators, labels, callouts, and node requirements."""
+    n_block_rows = len(grid)
+    n_block_cols = max((len(r) for r in grid), default=0)
+
+    qr_decorators: List[Dict[str, Any]] = list(decorators or [])
+    brown = _make_decorator(text_color=known_zero_color, bf=True)
+    for (gM, gN), entries in _qr_known_zero_entries(grid):
+        qr_decorators.append({"grid": (gM, gN), "entries": entries, "decorator": brown})
+
+    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
+
+    callouts: Optional[List[Dict[str, Any]]] = None
+    if array_names:
+        name_specs = _qr_default_name_specs() if array_names is True else array_names
+        if name_specs:
+            name_specs = _filter_qr_name_specs(name_specs, grid=grid)
+        a_rows = a_cols = 0
+        if n_block_rows > 0 and n_block_cols > 2:
+            try:
+                a_rows, a_cols = _mat_shape(grid[0][2])
+            except Exception:
+                a_rows = a_cols = 0
+        label_shift_rules, length_rules = _qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
+        if name_specs:
+            callouts = _qr_name_specs_to_callouts(
+                name_specs,
+                color=label_color,
+                angle_deg=-35.0,
+                length_mm=6.0,
+                label_shift_rules=label_shift_rules,
+                length_rules=length_rules,
+            )
+            if create_extra_nodes is None:
+                create_extra_nodes = True
+
+    return qr_decorators, label_rows, label_cols, callouts, create_extra_nodes
+
+
 def render_qr_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
@@ -466,43 +514,15 @@ def render_qr_tex(
         formatter = latexify
 
     grid = _as_grid(matrices)
-    n_block_rows = len(grid)
-    n_block_cols = max((len(r) for r in grid), default=0)
-
-    # Known-zero decorators.
-    qr_decorators: List[Dict[str, Any]] = list(decorators or [])
-    brown = _make_decorator(text_color=known_zero_color, bf=True)
-    for (gM, gN), entries in _qr_known_zero_entries(grid):
-        qr_decorators.append(
-            {"grid": (gM, gN), "entries": entries, "decorator": brown},
-        )
-
-    # Gram–Schmidt labels via label rows/cols.
-    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
-
-    callouts: Optional[List[Dict[str, Any]]] = None
-    if array_names:
-        name_specs = _qr_default_name_specs() if array_names is True else array_names
-        if name_specs:
-            name_specs = _filter_qr_name_specs(name_specs, grid=grid)
-        a_rows = a_cols = 0
-        if n_block_rows > 0 and n_block_cols > 2:
-            try:
-                a_rows, a_cols = _mat_shape(grid[0][2])
-            except Exception:
-                a_rows = a_cols = 0
-        label_shift_rules, length_rules = _qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
-        if name_specs:
-            callouts = _qr_name_specs_to_callouts(
-                name_specs,
-                color=label_color,
-                angle_deg=-35.0,
-                length_mm=6.0,
-                label_shift_rules=label_shift_rules,
-                length_rules=length_rules,
-            )
-            if create_extra_nodes is None:
-                create_extra_nodes = True
+    qr_decorators, label_rows, label_cols, callouts, create_extra_nodes = _qr_render_parts(
+        grid,
+        decorators=decorators,
+        array_names=array_names,
+        label_color=label_color,
+        label_text_color=label_text_color,
+        known_zero_color=known_zero_color,
+        create_extra_nodes=create_extra_nodes,
+    )
 
     return render_ge_tex(
         matrices=grid,

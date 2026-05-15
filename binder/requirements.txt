@@ -1,4 +1,4 @@
-git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a
+jupyter-tikz>=0.5.8
 -e .[render]
 ipython
 nbconvert

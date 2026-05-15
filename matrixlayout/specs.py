@@ -429,60 +429,65 @@ def _validate_label_specs(
     return errors
 
 
+_GE_SPEC_ALLOWED_KEYS = {
+    "grid",
+    "entries",
+    "rows",
+    "cols",
+    "labels",
+    "overlay",
+    "submatrix",
+    "decorator",
+    "background",
+    "color",
+    "bold",
+    "outline",
+    "padding_pt",
+    "hlines",
+    "vlines",
+    "box",
+    "label",
+    "side",
+    "anchor",
+    "angle",
+    "angle_deg",
+    "length",
+    "length_mm",
+    "line_width_pt",
+    "tip",
+    "label_shift_y_mm",
+    "label_shift_x_mm",
+}
+
+
 def _validate_ge_decorations(
     decorations: Optional[Sequence[Any]],
     *,
     grid: Optional[Tuple[int, int]],
     strict: bool,
+    field: str = "decorations",
 ) -> List[str]:
     errors: List[str] = []
     if decorations is None:
         return errors
-    allowed_keys = {
-        "grid",
-        "entries",
-        "rows",
-        "cols",
-        "submatrix",
-        "decorator",
-        "background",
-        "color",
-        "bold",
-        "outline",
-        "padding_pt",
-        "hlines",
-        "vlines",
-        "box",
-        "label",
-        "side",
-        "anchor",
-        "angle",
-        "angle_deg",
-        "length",
-        "length_mm",
-        "line_width_pt",
-        "tip",
-        "label_shift_y_mm",
-        "label_shift_x_mm",
-    }
     for idx, item in enumerate(decorations):
         if not isinstance(item, Mapping):
-            errors.append(f"decorations[{idx}] must be a mapping")
+            errors.append(f"{field}[{idx}] must be a mapping")
             continue
         if strict:
-            extra = set(item) - allowed_keys
+            extra = set(item) - _GE_SPEC_ALLOWED_KEYS
             if extra:
-                errors.append(f"decorations[{idx}] has unknown field(s): {sorted(extra)}")
+                errors.append(f"{field}[{idx}] has unknown field(s): {sorted(extra)}")
         if "grid" in item:
-            errors.extend(_validate_grid_coord(item["grid"], field=f"decorations[{idx}].grid", grid=grid))
+            errors.extend(_validate_grid_coord(item["grid"], field=f"{field}[{idx}].grid", grid=grid))
         elif grid != (1, 1):
-            errors.append(f"decorations[{idx}] requires grid=(row, col) for multi-block grids")
+            errors.append(f"{field}[{idx}] requires grid=(row, col) for multi-block grids")
         if "decorator" in item and not callable(item["decorator"]):
-            errors.append(f"decorations[{idx}].decorator must be callable")
+            errors.append(f"{field}[{idx}].decorator must be callable")
         if "side" in item:
             side = str(item["side"]).strip().lower()
             if side not in {"left", "right", "above", "below", "top", "bottom"}:
-                errors.append(f"decorations[{idx}].side must be left/right/above/below")
+                errors.append(f"{field}[{idx}].side must be left/right/above/below")
     return errors
 
 
@@ -565,12 +570,16 @@ def validate_qr_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
         if not any("requires 'matrices'" in e for e in errors):
             errors.append("QR spec requires 'matrices'")
         return errors
+    grid = _grid_size(mats)
     specs = spec.get("specs")
-    if specs is not None and not isinstance(specs, Sequence):
+    if specs is not None and (isinstance(specs, (str, bytes)) or not isinstance(specs, Sequence)):
         errors.append("specs must be a sequence of mappings")
     elif specs is not None:
-        for idx, item in enumerate(specs):
-            if not isinstance(item, Mapping):
-                errors.append(f"specs[{idx}] must be a mapping")
+        errors.extend(_validate_ge_decorations(specs, grid=grid, strict=strict, field="specs"))
+    decorators = spec.get("decorators")
+    if decorators is not None and (isinstance(decorators, (str, bytes)) or not isinstance(decorators, Sequence)):
+        errors.append("decorators must be a sequence of mappings")
+    elif decorators is not None:
+        errors.extend(_validate_ge_decorations(decorators, grid=grid, strict=strict, field="decorators"))
     errors.extend(_validate_grid_matrices(mats))
     return errors
