@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, TypedDict, Union
 
 
@@ -517,17 +517,27 @@ def _validate_grid_matrices(mats: Sequence[Sequence[Any]]) -> List[str]:
     return errors
 
 
-def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[str]:
+def _spec_mapping(spec: Any, *, name: str) -> Tuple[Optional[Mapping[str, Any]], List[str]]:
+    if isinstance(spec, Mapping):
+        return spec, []
+    if is_dataclass(spec) and not isinstance(spec, type):
+        return asdict(spec), []
+    return None, [f"{name} must be a mapping or typed spec object"]
+
+
+def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
     """Validate a GE spec dict and return a list of errors.
 
     This is intended as a lightweight preflight before rendering.
     """
-    errors: List[str] = []
+    mapping, errors = _spec_mapping(spec, name="GE spec")
+    if mapping is None:
+        return errors
     try:
-        GEGridSpec.from_dict(dict(spec), allow_extra=not strict)
+        GEGridSpec.from_dict(dict(mapping), allow_extra=not strict)
     except Exception as exc:
         errors.append(str(exc))
-    mats = spec.get("matrices") if isinstance(spec, Mapping) else None
+    mats = mapping.get("matrices")
     if mats is None:
         if not any("requires 'matrices'" in e for e in errors):
             errors.append("GE spec requires 'matrices'")
@@ -536,7 +546,7 @@ def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
     errors.extend(_validate_grid_matrices(mats))
     errors.extend(
         _validate_label_specs(
-            spec.get("label_rows"),
+            mapping.get("label_rows"),
             field="label_rows",
             allowed_sides=("above", "below"),
             value_key="rows",
@@ -546,7 +556,7 @@ def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
     )
     errors.extend(
         _validate_label_specs(
-            spec.get("label_cols"),
+            mapping.get("label_cols"),
             field="label_cols",
             allowed_sides=("left", "right"),
             value_key="cols",
@@ -554,29 +564,31 @@ def validate_ge_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[st
             strict=strict,
         )
     )
-    errors.extend(_validate_ge_decorations(spec.get("decorations"), grid=grid, strict=strict))
+    errors.extend(_validate_ge_decorations(mapping.get("decorations"), grid=grid, strict=strict))
     return errors
 
 
-def validate_qr_spec(spec: Mapping[str, Any], *, strict: bool = True) -> List[str]:
+def validate_qr_spec(spec: Any, *, strict: bool = True) -> List[str]:
     """Validate a QR spec dict and return a list of errors."""
-    errors: List[str] = []
+    mapping, errors = _spec_mapping(spec, name="QR spec")
+    if mapping is None:
+        return errors
     try:
-        QRGridSpec.from_dict(dict(spec), allow_extra=not strict)
+        QRGridSpec.from_dict(dict(mapping), allow_extra=not strict)
     except Exception as exc:
         errors.append(str(exc))
-    mats = spec.get("matrices") if isinstance(spec, Mapping) else None
+    mats = mapping.get("matrices")
     if mats is None:
         if not any("requires 'matrices'" in e for e in errors):
             errors.append("QR spec requires 'matrices'")
         return errors
     grid = _grid_size(mats)
-    specs = spec.get("specs")
+    specs = mapping.get("specs")
     if specs is not None and (isinstance(specs, (str, bytes)) or not isinstance(specs, Sequence)):
         errors.append("specs must be a sequence of mappings")
     elif specs is not None:
         errors.extend(_validate_ge_decorations(specs, grid=grid, strict=strict, field="specs"))
-    decorators = spec.get("decorators")
+    decorators = mapping.get("decorators")
     if decorators is not None and (isinstance(decorators, (str, bytes)) or not isinstance(decorators, Sequence)):
         errors.append("decorators must be a sequence of mappings")
     elif decorators is not None:

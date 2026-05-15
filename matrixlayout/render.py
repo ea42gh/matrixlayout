@@ -18,7 +18,6 @@ import os
 import re
 import shutil
 import tempfile
-import inspect
 from pathlib import Path
 from typing import Any, Mapping, Optional, Union
 
@@ -37,6 +36,10 @@ _RENDER_OPTION_KEYS = frozenset(
         "exact_bbox",
         "output_dir",
     }
+)
+_MIN_JUPYTER_TIKZ_VERSION = (0, 5, 8)
+_PATCHED_JUPYTER_TIKZ_SOURCE = (
+    "git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a"
 )
 
 
@@ -65,6 +68,48 @@ def _validate_toolchain_name(jupyter_tikz: Any, toolchain_name: Optional[str]) -
         raise ValueError(
             f"Unknown jupyter_tikz toolchain: {toolchain_name!r}. "
             f"Available toolchains: {available}"
+        )
+
+
+def _parse_version_tuple(value: Any) -> Optional[tuple[int, ...]]:
+    if value is None:
+        return None
+    parts = []
+    for chunk in str(value).split("."):
+        digits = ""
+        for char in chunk:
+            if char.isdigit():
+                digits += char
+            else:
+                break
+        if digits == "":
+            break
+        parts.append(int(digits))
+    return tuple(parts) if parts else None
+
+
+def validate_jupyter_tikz_renderer(jupyter_tikz: Any) -> None:
+    """Validate that ``jupyter_tikz`` is the patched renderer package.
+
+    The PyPI ``jupyter-tikz`` package may lag behind the renderer APIs used by
+    matrixlayout. Fail before rendering when an environment resolves the wrong
+    package, so CI/Binder failures point at dependency setup instead of TeX.
+    """
+
+    version = _parse_version_tuple(getattr(jupyter_tikz, "__version__", None))
+    if version is None or version < _MIN_JUPYTER_TIKZ_VERSION:
+        found = getattr(jupyter_tikz, "__version__", "unknown")
+        raise RuntimeError(
+            "matrixlayout rendering requires the patched jupyter-tikz renderer "
+            f">= 0.5.8; found {found!r}. Install the render extra or use: "
+            f"pip install '{_PATCHED_JUPYTER_TIKZ_SOURCE}'"
+        )
+
+    if not hasattr(jupyter_tikz, "render_svg_with_artifacts"):
+        raise RuntimeError(
+            "matrixlayout rendering requires jupyter_tikz.render_svg_with_artifacts. "
+            "The PyPI jupyter-tikz package does not provide this API; use the "
+            f"patched renderer source: pip install '{_PATCHED_JUPYTER_TIKZ_SOURCE}'"
         )
 
 
@@ -126,58 +171,22 @@ def render_svg_with_artifacts(
 
     toolchain_name = norm_str(toolchain_name)
     crop = norm_str(crop)
+    validate_jupyter_tikz_renderer(jupyter_tikz)
     _validate_toolchain_name(jupyter_tikz, toolchain_name)
 
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    if hasattr(jupyter_tikz, "render_svg_with_artifacts"):
-        return jupyter_tikz.render_svg_with_artifacts(
-            tex_source,
-            output_dir=outdir,
-            toolchain_name=toolchain_name,
-            output_stem=output_stem,
-            crop=crop,
-            padding=padding,
-            frame=frame,
-            exact_bbox=exact_bbox,
-        )
-
-    if not hasattr(jupyter_tikz, "render_svg"):
-        raise AttributeError(
-            "jupyter_tikz must provide render_svg or render_svg_with_artifacts. "
-            "Upgrade jupyter-tikz or install matrixlayout with the render extra."
-        )
-
-    render_svg = jupyter_tikz.render_svg
-    kwargs = {
-        "toolchain_name": toolchain_name,
-        "output_stem": output_stem,
-        "crop": crop,
-        "padding": padding,
-        "frame": frame,
-        "exact_bbox": exact_bbox,
-    }
-    params: Mapping[str, inspect.Parameter]
-    try:
-        params = inspect.signature(render_svg).parameters
-    except (TypeError, ValueError):
-        params = {}
-    accepts_var_kwargs = any(p.kind == p.VAR_KEYWORD for p in params.values())
-    if "output_dir" in params:
-        kwargs["output_dir"] = outdir
-    elif "artifacts_path" in params:
-        kwargs["artifacts_path"] = outdir
-    if params and not accepts_var_kwargs:
-        kwargs = {key: value for key, value in kwargs.items() if key in params}
-
-    svg_text = render_svg(tex_source, **kwargs)
-
-    class _LegacyArtifacts:
-        def read_svg(self) -> str:
-            return str(svg_text)
-
-    return _LegacyArtifacts()
+    return jupyter_tikz.render_svg_with_artifacts(
+        tex_source,
+        output_dir=outdir,
+        toolchain_name=toolchain_name,
+        output_stem=output_stem,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        exact_bbox=exact_bbox,
+    )
 
 
 def render_svg(

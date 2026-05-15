@@ -40,6 +40,22 @@ def test_render_ge_tex_decorations_background_entry_selectors():
     assert "fit=(1-1-medium) (1-1-medium)" not in tex
 
 
+def test_render_ge_tex_multi_block_backgrounds_stay_on_target_grid():
+    matrices = [
+        [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
+        [[[9, 10], [11, 12]], [[13, 14], [15, 16]]],
+    ]
+    decorations = [
+        {"grid": (1, 1), "entries": [(0, 0)], "background": "yellow!25"},
+    ]
+
+    tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
+
+    assert tex.count("fill=yellow!25") == 1
+    assert "fit=(3-3-medium) (3-3-medium)" in tex
+    assert "fit=(1-1-medium) (1-1-medium)" not in tex
+
+
 def test_render_ge_tex_decorations_accept_callable_decorator_specs():
     matrices = [[[1, 2], [0, -2], [0, 0]]]
     decorations = [

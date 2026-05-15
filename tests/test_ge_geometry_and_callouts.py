@@ -105,3 +105,21 @@ def test_render_ge_tex_threads_extension_and_fig_scale():
 
     # fig_scale should wrap the figure.
     assert r"\scalebox{0.75}" in tex
+
+
+def test_render_ge_tex_left_column_labels_align_with_distinct_rows():
+    """Left labels should occupy their matching matrix rows, not collapse into row one."""
+
+    from matrixlayout.ge import render_ge_tex
+
+    tex = render_ge_tex(
+        matrices=[[[1, 0], [0, 1], [0, 0]]],
+        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x1", "x2"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["p1"], ["p2"], [""]]}],
+        create_medium_nodes=True,
+    )
+
+    assert r"\NotEmpty & \text{x1} & \text{x2}" in tex
+    assert r"\text{p1}\hspace{0.8mm} & 1 & 0" in tex
+    assert r"\text{p2}\hspace{0.8mm} & 0 & 1" in tex
+    assert r"\text{p1}\hspace{0.8mm} & \text{p2}" not in tex

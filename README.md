@@ -48,6 +48,11 @@ For eigenproblem vector rows, selectors use `(group, vector, entry)` tuples.
 from matrixlayout.ge import render_ge_svg
 ```
 
+Use `pip install "matrixlayout[render]"` for rendering. The render extra pins
+the patched `ea42gh/jupyter-tikz` renderer because the PyPI `jupyter-tikz`
+package does not provide the `render_svg_with_artifacts` API that matrixlayout
+requires.
+
 ## Documentation
 
 MkDocs configuration lives in `mkdocs.yml` with content under `docs/`.

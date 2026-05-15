@@ -28,6 +28,7 @@ def test_matrixlayout_render_svg_uses_with_artifacts_and_forwards_options(monkey
         calls.append((tex_source, kwargs))
         return _FakeArtifacts("<svg/>")
 
+    fake.__version__ = "0.5.8"
     fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
 
     # matrixlayout.render imports jupyter_tikz lazily inside the function.
@@ -59,6 +60,7 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
         calls.append((tex_source, kwargs))
         return _FakeArtifacts("<svg/>")
 
+    fake.__version__ = "0.5.8"
     fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
 
     monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
@@ -82,7 +84,7 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
 
 
 def test_matrixlayout_render_svg_rejects_unknown_toolchain_early(monkeypatch, tmp_path):
-    fake = types.SimpleNamespace(TOOLCHAINS={"pdftex_pdftocairo": object()})
+    fake = types.SimpleNamespace(TOOLCHAINS={"pdftex_pdftocairo": object()}, __version__="0.5.8")
 
     def fake_render_svg_with_artifacts(tex_source, **kwargs):
         raise AssertionError("rendering should not be called for an unknown toolchain")
@@ -148,56 +150,20 @@ def test_merge_render_opts_applies_non_none_overrides():
     assert opts["frame"] is False
 
 
-def test_matrixlayout_render_svg_falls_back_to_legacy_render_svg(monkeypatch, tmp_path):
-    calls = []
-
-    fake = types.SimpleNamespace()
-
-    def fake_render_svg(tex_source, **kwargs):
-        calls.append((tex_source, kwargs))
-        return "<svg>legacy</svg>"
-
-    fake.render_svg = fake_render_svg
-
+def test_matrixlayout_render_svg_rejects_unpatched_pypi_jupyter_tikz(monkeypatch, tmp_path):
+    fake = types.SimpleNamespace(__version__="0.5.6")
     monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
 
-    out = ml_render.render_svg(
-        "TEX",
-        crop="tight",
-        padding=(1, 2, 3, 4),
-        output_dir=tmp_path,
-    )
-
-    assert out == "<svg>legacy</svg>"
-    assert len(calls) == 1
-    tex_source, kwargs = calls[0]
-    assert tex_source == "TEX"
-    assert kwargs["crop"] == "tight"
-    assert kwargs["padding"] == (1, 2, 3, 4)
-    assert "output_dir" not in kwargs
+    with pytest.raises(RuntimeError, match="patched jupyter-tikz renderer"):
+        ml_render.render_svg("TEX", output_dir=tmp_path)
 
 
-def test_matrixlayout_render_svg_fallback_uses_artifacts_path_when_available(monkeypatch, tmp_path):
-    calls = []
-
-    fake = types.SimpleNamespace()
-
-    def fake_render_svg(tex_source, *, artifacts_path=None):
-        calls.append((tex_source, artifacts_path))
-        return "<svg>legacy-artifacts</svg>"
-
-    fake.render_svg = fake_render_svg
-
+def test_matrixlayout_render_svg_rejects_missing_artifacts_api(monkeypatch, tmp_path):
+    fake = types.SimpleNamespace(__version__="0.5.8", render_svg=lambda tex_source, **kwargs: "<svg/>")
     monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
 
-    out = ml_render.render_svg("TEX", output_dir=tmp_path)
-
-    assert out == "<svg>legacy-artifacts</svg>"
-    assert len(calls) == 1
-    tex_source, artifacts_path = calls[0]
-    assert tex_source == "TEX"
-    assert Path(artifacts_path).parent == tmp_path
-    assert Path(artifacts_path).name.startswith("matrixlayout_render_")
+    with pytest.raises(RuntimeError, match="render_svg_with_artifacts"):
+        ml_render.render_svg("TEX", output_dir=tmp_path)
 
 
 def test_backsubst_svg_passes_through_options(monkeypatch):

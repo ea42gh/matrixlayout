@@ -1,4 +1,5 @@
 from matrixlayout import validate_ge_spec, validate_qr_spec
+from matrixlayout.specs import GEGridSpec, QRGridSpec
 
 
 def test_validate_ge_spec_requires_matrices():
@@ -41,6 +42,22 @@ def test_validate_ge_spec_checks_nested_decorations():
     assert any("decorator must be callable" in msg for msg in errors)
     assert any("unknown field" in msg for msg in errors)
     assert any("outside" in msg for msg in errors)
+
+
+def test_validate_ge_spec_accepts_typed_grid_spec():
+    spec = GEGridSpec(
+        matrices=[[[[1, 2], [3, 4]]]],
+        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x", "y"]]}],
+        decorations=[{"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!40"}],
+    )
+
+    assert validate_ge_spec(spec) == []
+
+
+def test_validate_ge_spec_rejects_non_mapping_or_typed_spec():
+    errors = validate_ge_spec(["not", "a", "spec"])
+
+    assert errors == ["GE spec must be a mapping or typed spec object"]
 
 
 def test_validate_qr_spec_requires_matrices():
@@ -88,3 +105,12 @@ def test_validate_qr_spec_checks_nested_specs_and_decorators():
     assert any("specs[1] requires grid" in msg for msg in errors)
     assert any("specs[2] has unknown field" in msg for msg in errors)
     assert any("decorators[0].decorator must be callable" in msg for msg in errors)
+
+
+def test_validate_qr_spec_accepts_typed_grid_spec():
+    spec = QRGridSpec(
+        matrices=[[[[1, 0], [0, 1]]]],
+        specs=[{"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!40"}],
+    )
+
+    assert validate_qr_spec(spec) == []
