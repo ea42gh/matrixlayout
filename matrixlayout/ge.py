@@ -916,7 +916,7 @@ def _pnicearray_tex(
 
 def render_ge_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
-    Nrhs: Any = 0,
+    Nrhs: Any = None,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     block_vspace_mm: int = 1,
@@ -925,10 +925,10 @@ def render_ge_tex(
     block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
-    format_nrhs: bool = True,
+    format_nrhs: Optional[bool] = None,
     decorators: Optional[Sequence[Any]] = None,
     decorations: Optional[Sequence[Any]] = None,
-    strict: bool = False,
+    strict: Optional[bool] = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
@@ -1034,6 +1034,13 @@ def render_ge_tex(
             label_cols=label_cols,
             decorations=decorations,
         )
+
+    if Nrhs is None:
+        Nrhs = 0
+    if format_nrhs is None:
+        format_nrhs = True
+    if strict is None:
+        strict = False
 
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
@@ -2150,22 +2157,25 @@ def grid_bundle(
 
 def render_ge_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
-    Nrhs: int = 0,
+    Nrhs: Any = None,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
+    block_vspace_mm: int = 1,
     cell_align: str = "r",
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
     extension: str = "",
     fig_scale: Optional[Union[float, int, str]] = None,
+    format_nrhs: Optional[bool] = None,
     preamble: Optional[str] = None,
     nice_options: Optional[str] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
     exact_bbox: Optional[bool] = None,
+    decorators: Optional[Sequence[Any]] = None,
     decorations: Optional[Sequence[Any]] = None,
-    strict: bool = False,
+    strict: Optional[bool] = None,
     output_dir: Optional[Union[str, "os.PathLike[str]"]] = None,
     output_stem: str = "output",
     frame: Any = None,
@@ -2173,6 +2183,10 @@ def render_ge_svg(
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
+    label_rows: Optional[Sequence[Any]] = None,
+    label_cols: Optional[Sequence[Any]] = None,
+    label_gap_mm: Optional[float] = None,
+    variable_labels: Optional[Sequence[Any]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Render the GE matrix stack to SVG.
@@ -2182,7 +2196,7 @@ def render_ge_svg(
 
     Parameters
     ----------
-    matrices, Nrhs, formatter, outer_hspace_mm, cell_align:
+    matrices, Nrhs, formatter, outer_hspace_mm, block_vspace_mm, cell_align:
         See :func:`render_ge_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
@@ -2202,17 +2216,24 @@ def render_ge_svg(
         Nrhs=Nrhs,
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
+        block_vspace_mm=block_vspace_mm,
         cell_align=cell_align,
         block_align=block_align,
         block_valign=block_valign,
         extension=extension,
         fig_scale=fig_scale,
+        format_nrhs=format_nrhs,
         preamble=preamble,
         nice_options=nice_options,
+        decorators=decorators,
         decorations=decorations,
         strict=strict,
         spec=spec,
         specs=specs,
+        label_rows=label_rows,
+        label_cols=label_cols,
+        label_gap_mm=label_gap_mm,
+        variable_labels=variable_labels,
         **kwargs,
     )
     opts = merge_render_opts(

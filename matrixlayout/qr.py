@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 from .formatting import latexify
 from .ge import grid_submatrix_spans, render_ge_tex
 from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
+from .qr_spec_merge import merge_scalar_default as _merge_scalar_default
 from .qr_spec_merge import merge_scalar as _merge_scalar
 from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
 from .qr_spec_merge import qr_known_zero_entries as _qr_known_zero_entries_impl
@@ -421,20 +422,30 @@ def render_qr_tex(
     if spec_obj is not None:
         matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
         formatter = _merge_scalar("formatter", formatter, spec_obj.formatter)
-        array_names = _merge_scalar("array_names", array_names, spec_obj.array_names)
+        array_names = _merge_scalar_default("array_names", array_names, spec_obj.array_names, True)
         fig_scale = _merge_scalar("fig_scale", fig_scale, spec_obj.fig_scale)
-        preamble = _merge_scalar("preamble", preamble, spec_obj.preamble)
-        extension = _merge_scalar("extension", extension, spec_obj.extension)
-        nice_options = _merge_scalar("nice_options", nice_options, spec_obj.nice_options)
-        label_color = _merge_scalar("label_color", label_color, spec_obj.label_color)
-        label_text_color = _merge_scalar("label_text_color", label_text_color, spec_obj.label_text_color)
-        known_zero_color = _merge_scalar("known_zero_color", known_zero_color, spec_obj.known_zero_color)
+        preamble = _merge_scalar_default(
+            "preamble",
+            preamble,
+            spec_obj.preamble,
+            r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
+        )
+        extension = _merge_scalar_default("extension", extension, spec_obj.extension, "")
+        nice_options = _merge_scalar_default(
+            "nice_options",
+            nice_options,
+            spec_obj.nice_options,
+            "vlines-in-sub-matrix = I",
+        )
+        label_color = _merge_scalar_default("label_color", label_color, spec_obj.label_color, "blue")
+        label_text_color = _merge_scalar_default("label_text_color", label_text_color, spec_obj.label_text_color, "red")
+        known_zero_color = _merge_scalar_default("known_zero_color", known_zero_color, spec_obj.known_zero_color, "brown")
         landscape = _merge_scalar("landscape", landscape, spec_obj.landscape)
-        create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec_obj.create_cell_nodes)
-        create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec_obj.create_extra_nodes)
-        create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes)
+        create_cell_nodes = _merge_scalar_default("create_cell_nodes", create_cell_nodes, spec_obj.create_cell_nodes, True)
+        create_extra_nodes = _merge_scalar_default("create_extra_nodes", create_extra_nodes, spec_obj.create_extra_nodes, True)
+        create_medium_nodes = _merge_scalar_default("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes, True)
         decorators = _merge_scalar("decorators", decorators, spec_obj.decorators)
-        strict = _merge_scalar("strict", strict, spec_obj.strict)
+        strict = _merge_scalar_default("strict", strict, spec_obj.strict, False)
         if spec_obj.specs is not None:
             specs = _merge_scalar("specs", specs, spec_obj.specs)
 

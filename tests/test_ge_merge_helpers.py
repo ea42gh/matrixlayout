@@ -4,7 +4,9 @@ from matrixlayout.ge import (
     _merge_label_specs,
     _build_label_maps,
     latexify,
+    render_ge_tex,
 )
+from matrixlayout.ge_spec_merge import merge_scalar_default
 from matrixlayout.ge_labels import build_label_maps, grid_label_layouts, merge_label_specs
 
 
@@ -58,6 +60,38 @@ def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
     )
     assert matrices == [[None, [[1]]]]
     assert outer_hspace_mm == 9
+
+
+def test_ge_merge_scalar_default_lets_spec_override_renderer_default():
+    assert merge_scalar_default("Nrhs", None, 1, 0) == 1
+
+
+def test_ge_merge_scalar_default_preserves_non_default_explicit_over_spec_default():
+    assert merge_scalar_default("format_nrhs", False, True, True) is False
+
+
+def test_render_ge_tex_spec_nrhs_and_format_nrhs_override_defaults():
+    spec = GEGridSpec(matrices=[[[1, 2, 3]]], Nrhs=1, format_nrhs=False)
+
+    tex = render_ge_tex(spec=spec)
+
+    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rrr}" in tex
+    assert r"{rr|r}" not in tex
+
+
+def test_render_ge_tex_spec_strict_is_not_overridden_by_default_false():
+    spec = GEGridSpec(
+        matrices=[[[1]]],
+        decorators=[{"grid": (0, 0), "entries": [(9, 9)], "decorator": lambda tex: tex}],
+        strict=True,
+    )
+
+    try:
+        render_ge_tex(spec=spec)
+    except ValueError as exc:
+        assert "decorator selector did not match" in str(exc)
+    else:
+        raise AssertionError("expected spec strict=True to be honored")
 
 
 def test_merge_label_specs_preserves_explicit_rows():

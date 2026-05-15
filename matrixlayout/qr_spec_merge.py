@@ -19,6 +19,19 @@ def merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
     return explicit
 
 
+def merge_scalar_default(field: str, explicit: Any, spec_val: Any, default: Any) -> Any:
+    """Merge a QR spec field, treating renderer defaults as unset."""
+    if spec_val is None:
+        return explicit
+    if spec_val == default:
+        return explicit
+    if explicit is None or explicit == default:
+        return spec_val
+    if explicit != spec_val:
+        raise ValueError(f"Conflicting values for {field}: explicit={explicit!r} spec={spec_val!r}")
+    return explicit
+
+
 def coerce_qr_spec(spec: Optional[Union[Dict[str, Any], QRGridSpec]]) -> Optional[QRGridSpec]:
     if spec is None:
         return None
@@ -147,4 +160,3 @@ def qr_name_specs_to_callouts(
             callout["label_shift_y_mm"] = float(label_shift_y_mm)
         out.append(callout)
     return out
-

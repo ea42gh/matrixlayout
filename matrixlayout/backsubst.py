@@ -58,7 +58,20 @@ def _apply_line_decorators(
     *,
     strict: bool,
 ) -> List[str]:
-    if not decorators or not lines:
+    if not decorators:
+        return lines
+    if not lines:
+        if strict:
+            block_key = block.lower()
+            for spec_item in decorators:
+                if not isinstance(spec_item, dict):
+                    raise ValueError("decorators must be dict specs")
+                key = spec_item.get("block", spec_item.get("target"))
+                if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
+                    continue
+                if not callable(spec_item.get("decorator")):
+                    raise ValueError("decorator must be callable")
+                raise ValueError("decorator selector did not match any entries")
         return lines
     nrows, ncols = len(lines), 1
     block_key = block.lower()

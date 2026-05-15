@@ -58,6 +58,16 @@ def merge_scalar_prefer_explicit(field: str, explicit: Any, spec_val: Any) -> An
     return explicit
 
 
+def merge_scalar_default(field: str, explicit: Any, spec_val: Any, default: Any) -> Any:
+    """Merge a field whose renderer default is represented as ``None``."""
+    _ = (field, default)
+    if spec_val is None:
+        return explicit
+    if explicit is None:
+        return spec_val
+    return explicit
+
+
 def grid_spec_defaults(
     outer_hspace_mm: Optional[int],
     block_vspace_mm: Optional[int],
@@ -117,20 +127,20 @@ def merge_grid_spec_inputs(
     default_outer_hspace_mm, default_block_vspace_mm = grid_spec_defaults(outer_hspace_mm, block_vspace_mm)
 
     matrices = merge_scalar_prefer_explicit("matrices", matrices, grid_spec.matrices)
-    Nrhs = merge_scalar_prefer_explicit("Nrhs", Nrhs, grid_spec.Nrhs)
-    formatter = merge_scalar_prefer_explicit("formatter", formatter, grid_spec.formatter or latexify)
+    Nrhs = merge_scalar_default("Nrhs", Nrhs, grid_spec.Nrhs, 0)
+    formatter = merge_scalar_default("formatter", formatter, grid_spec.formatter or latexify, latexify)
     outer_hspace_mm = int(
         merge_scalar_prefer_explicit("outer_hspace_mm", default_outer_hspace_mm, grid_spec.outer_hspace_mm)
     )
     block_vspace_mm = int(
         merge_scalar_prefer_explicit("block_vspace_mm", default_block_vspace_mm, grid_spec.block_vspace_mm)
     )
-    cell_align = str(merge_scalar_prefer_explicit("cell_align", cell_align, grid_spec.cell_align))
+    cell_align = str(merge_scalar_default("cell_align", cell_align, grid_spec.cell_align, "r"))
     block_align = merge_scalar_prefer_explicit("block_align", block_align, grid_spec.block_align)
     block_valign = merge_scalar_prefer_explicit("block_valign", block_valign, grid_spec.block_valign)
-    extension = str(merge_scalar_prefer_explicit("extension", extension, grid_spec.extension))
+    extension = str(merge_scalar_default("extension", extension, grid_spec.extension, ""))
     fig_scale = merge_scalar_prefer_explicit("fig_scale", fig_scale, grid_spec.fig_scale)
-    format_nrhs = bool(merge_scalar_prefer_explicit("format_nrhs", format_nrhs, grid_spec.format_nrhs))
+    format_nrhs = bool(merge_scalar_default("format_nrhs", format_nrhs, grid_spec.format_nrhs, True))
     kwargs["legacy_submatrix_names"] = bool(
         merge_scalar_prefer_explicit(
             "legacy_submatrix_names",
@@ -195,11 +205,11 @@ def merge_grid_spec_inputs(
         kwargs["layout"] = merge_scalar_prefer_explicit("layout", kwargs.get("layout"), grid_spec.layout)
     label_rows = merge_scalar_prefer_explicit("label_rows", label_rows, grid_spec.label_rows)
     label_cols = merge_scalar_prefer_explicit("label_cols", label_cols, grid_spec.label_cols)
-    label_gap_mm = merge_scalar_prefer_explicit("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm)
+    label_gap_mm = merge_scalar_default("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm, 0.8)
     variable_labels = merge_scalar_prefer_explicit("variable_labels", variable_labels, grid_spec.variable_labels)
     decorators = merge_scalar_prefer_explicit("decorators", decorators, grid_spec.decorators)
     decorations = merge_scalar_prefer_explicit("decorations", decorations, grid_spec.decorations)
-    strict = bool(merge_scalar_prefer_explicit("strict", strict, grid_spec.strict))
+    strict = bool(merge_scalar_default("strict", strict, grid_spec.strict, False))
 
     return (
         matrices,

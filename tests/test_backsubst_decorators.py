@@ -31,3 +31,22 @@ def test_backsubst_tex_decorators_strict_raises_on_empty():
     except ValueError:
         return
     raise AssertionError("strict decorator selection should raise")
+
+
+def test_backsubst_tex_decorators_strict_raises_on_targeted_empty_block():
+    from matrixlayout.backsubst import backsubst_tex
+
+    def dec(tex: str) -> str:
+        return tex
+
+    try:
+        backsubst_tex(
+            cascade_txt=["L1"],
+            show_solution=False,
+            decorators=[{"block": "system", "entries": [0], "decorator": dec}],
+            strict=True,
+        )
+    except ValueError as err:
+        assert "decorator selector did not match" in str(err)
+        return
+    raise AssertionError("strict decorator selection should raise for empty targeted block")

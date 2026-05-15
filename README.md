@@ -50,8 +50,7 @@ from matrixlayout.ge import render_ge_svg
 
 ## Documentation
 
-MkDocs configuration lives in `matrixlayout/mkdocs.yml` with content under
-`matrixlayout/docs/`.
+MkDocs configuration lives in `mkdocs.yml` with content under `docs/`.
 
 Build the docs:
 

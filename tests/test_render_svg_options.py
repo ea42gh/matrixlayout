@@ -266,6 +266,30 @@ def test_render_ge_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["output_stem"] == "ge_opts"
 
 
+def test_render_ge_svg_exposes_ge_layout_options(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_ge, "_render_svg", fake_render_svg)
+
+    out = ml_ge.render_ge_svg(
+        matrices=[[[1, 2]]],
+        Nrhs=1,
+        format_nrhs=False,
+        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x", "b"]]}],
+        decorators=[{"grid": (0, 0), "entries": [(0, 0)], "decorator": lambda tex: rf"\boxed{{{tex}}}"}],
+    )
+
+    assert out == "<svg/>"
+    assert r"\boxed{1}" in recorded["tex_source"]
+    assert "x" in recorded["tex_source"]
+    assert "{rr}" in recorded["tex_source"]
+    assert "{r|r}" not in recorded["tex_source"]
+
+
 def test_render_ge_svg_rejects_unknown_render_opts(monkeypatch):
     monkeypatch.setattr(
         ml_ge,
