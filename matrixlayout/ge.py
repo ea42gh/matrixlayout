@@ -19,7 +19,6 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 from __future__ import annotations
 
 import os
-import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .formatting import _normalize_unicode_tex, latexify
@@ -44,16 +43,20 @@ from .ge_grid_specs import (
 )
 from .ge_render_grid import build_ge_grid_render_parts
 from .ge_template import (
+    append_nicematrix_option as _append_nicematrix_option,
     coerce_pivot_locs as _coerce_pivot_locs,
     coerce_rowechelon_paths as _coerce_rowechelon_paths,
     coerce_submatrix_locs as _coerce_submatrix_locs,
     coerce_txt_with_locs as _coerce_txt_with_locs,
     guess_shape_from_mat_rep as _guess_shape_from_mat_rep,
+    merge_callouts as _merge_callouts,
+    merge_list as _merge_list,
     normalize_mat_format as _normalize_mat_format,
     normalize_mat_rep as _normalize_mat_rep,
     normalize_pivot_locs as _normalize_pivot_locs,
     normalize_submatrix_locs as _normalize_submatrix_locs,
     normalize_txt_with_locs as _normalize_txt_with_locs,
+    validate_body_preamble as _validate_body_preamble,
 )
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg as _render_svg
@@ -78,68 +81,6 @@ _normalize_label_cols = _ge_labels.normalize_label_cols
 _normalize_label_rows = _ge_labels.normalize_label_rows
 _split_label_dollar_segments = _ge_labels.split_label_dollar_segments
 grid_label_layouts = _ge_labels.grid_label_layouts
-
-
-_BODY_PREAMBLE_FORBIDDEN = (
-    r"\\documentclass",
-    r"\\usepackage",
-    r"\\RequirePackage",
-    # Note: use regex whitespace (\s), not a literal backslash-s.
-    r"\\geometry\s*\{",
-)
-
-
-def _validate_body_preamble(preamble: str) -> None:
-    """Guardrail for the GE template's ``preamble`` hook.
-
-    The GE template injects ``preamble`` into the document *body* (after
-    ``\\begin{document}``). Users must not place LaTeX preamble directives here.
-    Use ``extension=...`` for true preamble insertions.
-    """
-    if not preamble:
-        return
-    for pat in _BODY_PREAMBLE_FORBIDDEN:
-        if re.search(pat, preamble):
-            raise ValueError(
-                "The `preamble` parameter is injected into the document body. "
-                "Do not include LaTeX preamble directives (e.g. \\usepackage, \\geometry). "
-                "Use `extension=` for preamble insertions."
-            )
-
-
-def _append_nicematrix_option(nice_options: Optional[str], opt: str) -> str:
-    opts = (nice_options or "").strip()
-    if not opts:
-        return opt
-    if opt in opts:
-        return opts
-    return f"{opts}, {opt}"
-
-
-def _merge_list(explicit: Optional[Sequence[Any]], spec_val: Optional[Sequence[Any]]) -> Optional[List[Any]]:
-    """Merge list-like fields by concatenation (explicit first)."""
-    if explicit is None and spec_val is None:
-        return None
-    out: List[Any] = []
-    if explicit is not None:
-        out.extend(list(explicit))
-    if spec_val is not None:
-        out.extend(list(spec_val))
-    return out
-
-
-def _merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optional[Any]:
-    """Merge callouts, preserving boolean auto-callout flags."""
-    if isinstance(explicit, bool) or isinstance(spec_val, bool):
-        if explicit is None:
-            return spec_val
-        if spec_val is None:
-            return explicit
-        if explicit != spec_val:
-            raise ValueError(f"Conflicting values for callouts: explicit={explicit!r} spec={spec_val!r}")
-        return explicit
-    return _merge_list(explicit, spec_val)
-
 
 
 def tex(

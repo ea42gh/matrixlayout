@@ -9,6 +9,61 @@ from .formatting import norm_str
 from .specs import PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
 
 
+BODY_PREAMBLE_FORBIDDEN = (
+    r"\\documentclass",
+    r"\\usepackage",
+    r"\\RequirePackage",
+    r"\\geometry\s*\{",
+)
+
+
+def validate_body_preamble(preamble: str) -> None:
+    """Reject LaTeX preamble directives in the GE body preamble hook."""
+    if not preamble:
+        return
+    for pattern in BODY_PREAMBLE_FORBIDDEN:
+        if re.search(pattern, preamble):
+            raise ValueError(
+                "The `preamble` parameter is injected into the document body. "
+                "Do not include LaTeX preamble directives (e.g. \\usepackage, \\geometry). "
+                "Use `extension=` for preamble insertions."
+            )
+
+
+def append_nicematrix_option(nice_options: Optional[str], opt: str) -> str:
+    opts = (nice_options or "").strip()
+    if not opts:
+        return opt
+    if opt in opts:
+        return opts
+    return f"{opts}, {opt}"
+
+
+def merge_list(explicit: Optional[Sequence[Any]], spec_val: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+    """Merge list-like fields by concatenation, preserving explicit values first."""
+    if explicit is None and spec_val is None:
+        return None
+    out: List[Any] = []
+    if explicit is not None:
+        out.extend(list(explicit))
+    if spec_val is not None:
+        out.extend(list(spec_val))
+    return out
+
+
+def merge_callouts(explicit: Optional[Any], spec_val: Optional[Any]) -> Optional[Any]:
+    """Merge callouts while preserving boolean auto-callout flags."""
+    if isinstance(explicit, bool) or isinstance(spec_val, bool):
+        if explicit is None:
+            return spec_val
+        if spec_val is None:
+            return explicit
+        if explicit != spec_val:
+            raise ValueError(f"Conflicting values for callouts: explicit={explicit!r} spec={spec_val!r}")
+        return explicit
+    return merge_list(explicit, spec_val)
+
+
 def julia_str(value: Any) -> str:
     """Normalize Julia/PythonCall/PyCall string-like values to plain strings."""
     if value is None:

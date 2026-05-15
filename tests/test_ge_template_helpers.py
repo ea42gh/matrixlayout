@@ -2,6 +2,7 @@ import pytest
 
 from matrixlayout.ge import tex
 from matrixlayout.ge_template import (
+    append_nicematrix_option,
     coerce_pivot_locs,
     coerce_rowechelon_paths,
     coerce_submatrix_locs,
@@ -11,11 +12,14 @@ from matrixlayout.ge_template import (
     fit_span,
     fit_target,
     guess_shape_from_mat_rep,
+    merge_callouts,
+    merge_list,
     normalize_mat_format,
     normalize_mat_rep,
     normalize_pivot_locs,
     normalize_submatrix_locs,
     normalize_txt_with_locs,
+    validate_body_preamble,
 )
 from matrixlayout.specs import PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
 
@@ -46,6 +50,31 @@ def test_matrix_body_normalizers_and_shape_guessing():
     assert guess_shape_from_mat_rep("") == (0, 0)
 
 
+def test_template_option_and_merge_helpers():
+    assert append_nicematrix_option(None, "create-extra-nodes") == "create-extra-nodes"
+    assert append_nicematrix_option("", "create-extra-nodes") == "create-extra-nodes"
+    assert append_nicematrix_option("foo", "bar") == "foo, bar"
+    assert append_nicematrix_option("foo, bar", "bar") == "foo, bar"
+
+    assert merge_list(None, None) is None
+    assert merge_list(["explicit"], ["spec"]) == ["explicit", "spec"]
+    assert merge_callouts(None, True) is True
+    assert merge_callouts(False, None) is False
+    assert merge_callouts(True, True) is True
+    assert merge_callouts([1], [2]) == [1, 2]
+    with pytest.raises(ValueError, match="Conflicting values"):
+        merge_callouts(True, False)
+
+
+def test_validate_body_preamble_rejects_preamble_directives():
+    validate_body_preamble("")
+    validate_body_preamble(r"\small")
+
+    for preamble in [r"\documentclass{article}", r"\usepackage{amsmath}", r"\RequirePackage{xcolor}", r"\geometry{margin=1in}"]:
+        with pytest.raises(ValueError, match="injected into the document body"):
+            validate_body_preamble(preamble)
+
+
 def test_normalize_submatrix_locs_all_supported_forms():
     assert normalize_submatrix_locs(None) == []
     assert normalize_submatrix_locs(
@@ -72,6 +101,21 @@ def test_normalize_submatrix_locs_rejects_bad_spans_and_arity():
         normalize_submatrix_locs([("name=A", "{1-1}")])
     with pytest.raises(ValueError, match="2-, 3-, 4-, or 5-tuple"):
         normalize_submatrix_locs([("name=A", "1-1", "2-2", "(", ")", "extra")])
+
+
+def test_normalize_submatrix_locs_delimited_coordinate_variants():
+    assert normalize_submatrix_locs(
+        [
+            ("name=A", ((1, 2), (3, 4)), "[", "]"),
+            ("name=B", "(5-6)", "(7-8)", r"\{", r"\}"),
+        ]
+    ) == [
+        ("name=A", "{1-2}{3-4}", "[", "]"),
+        ("name=B", "{5-6}{7-8}", r"\{", r"\}"),
+    ]
+
+    with pytest.raises(ValueError, match="Bad span"):
+        normalize_submatrix_locs([("name=C", "(1-1)", "[", "]")])
 
 
 def test_pivot_and_text_location_normalizers():
