@@ -158,6 +158,7 @@ def render_svg_with_artifacts(
         "frame": frame,
         "exact_bbox": exact_bbox,
     }
+    params: Mapping[str, inspect.Parameter]
     try:
         params = inspect.signature(render_svg).parameters
     except (TypeError, ValueError):

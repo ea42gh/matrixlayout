@@ -138,22 +138,21 @@ class QRGridLayout:
     def array_format_string_list(
         self,
         *,
-        partitions: Optional[Dict[int, Sequence[int]]] = None,
+        partitions: Optional[Mapping[int, Sequence[int]]] = None,
         spacer_string: str = r"@{\hspace{9mm}}",
         p_str: str = "I",
         last_col_format: str = r"l@{\hspace{2cm}}",
     ) -> None:
-        if partitions is None:
-            partitions = {}
+        local_partitions: Dict[int, Optional[Sequence[int]]] = dict(partitions or {})
         for i in range(self.nGridCols):
-            if i not in partitions:
-                partitions[i] = None
+            if i not in local_partitions:
+                local_partitions[i] = None
 
         fmt = "r" * self.extra_cols[0]
         last = self.nGridCols - 1
         for i in range(self.nGridCols):
             n = self.mat_col_width[i]
-            fmt += spacer_string + self.matrix_array_format(n, p_str=p_str, vpartitions=partitions[i])
+            fmt += spacer_string + self.matrix_array_format(n, p_str=p_str, vpartitions=local_partitions[i])
 
             extra = self.extra_cols[i + 1]
             if extra > 0:
@@ -262,7 +261,7 @@ class QRGridLayout:
             bl = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south west) + (-0.02,-0.02) $) -- +(220:0.6cm)  node[COLOR, below left=-3pt]{TXT};".replace(
                 "COLOR", color
             )
-            br = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south east) + (0.02,-0.02) $) -- +(-40:0.6cm)   node[COLOR, below right=-3pt]{TXT};".replace(
+            br_tmpl = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south east) + (0.02,-0.02) $) -- +(-40:0.6cm)   node[COLOR, below right=-3pt]{TXT};".replace(
                 "COLOR", color
             )
             b = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.south) + (0,0) $) -- +(0cm,-0.6cm) node[COLOR, below=1pt] {TXT};".replace(
@@ -283,7 +282,7 @@ class QRGridLayout:
                 elif pos == "bl":
                     t = bl.replace("NAME", nm).replace("TXT", txt)
                 elif pos == "br":
-                    t = br.replace("NAME", nm).replace("TXT", txt)
+                    t = br_tmpl.replace("NAME", nm).replace("TXT", txt)
                 if t is not None:
                     array_names.append(t)
             self.array_names = array_names
