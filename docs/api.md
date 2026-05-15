@@ -11,6 +11,11 @@ Public APIs are stable and documented below. Internal helpers are either
 prefixed with `_` or live in modules that are not intended to be called
 directly by users. If you need an internal helper, prefer a public wrapper.
 
+Prefer descriptive renderer names such as `render_ge_tex` and `render_ge_svg`
+over generic aliases. The package top level intentionally does not export
+`tex` or `svg`; use `matrixlayout.ge.tex`/`matrixlayout.ge.svg` only when
+working with the lower-level GE template interface.
+
 ## GE
 
 - `matrixlayout.ge.render_ge_tex(matrices, **opts)`: emit TeX for a GE grid (supports `block_align`/`block_valign` for narrower blocks).

@@ -14,8 +14,6 @@ from .jinja_env import get_environment
 from .backsubst import backsubst_tex, backsubst_svg
 from .eigproblem import render_eig_tex, render_eig_svg
 from .ge import (
-    tex,
-    svg,
     render_ge_tex,
     render_ge_svg,
     resolve_ge_grid_name,
@@ -72,8 +70,6 @@ __all__ = [
     "backsubst_svg",
     "render_eig_tex",
     "render_eig_svg",
-    "tex",
-    "svg",
     "render_ge_tex",
     "render_ge_svg",
     "grid_line_specs",

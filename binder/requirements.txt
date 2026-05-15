@@ -1,4 +1,5 @@
 git+https://github.com/ea42gh/jupyter-tikz.git
 -e .[render]
 ipython
+nbconvert
 sympy

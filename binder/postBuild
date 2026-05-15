@@ -3,3 +3,8 @@ set -euo pipefail
 
 kpsewhich systeme.sty
 python render_smoke.py
+jupyter nbconvert \
+  --to notebook \
+  --execute matrixlayout_demo.ipynb \
+  --output /tmp/matrixlayout_demo.executed.ipynb \
+  --ExecutePreprocessor.timeout=240
