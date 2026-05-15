@@ -5,6 +5,7 @@ from matrixlayout.ge import (
     _build_label_maps,
     latexify,
 )
+from matrixlayout.ge_labels import build_label_maps, grid_label_layouts, merge_label_specs
 
 
 def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
@@ -84,6 +85,41 @@ def test_merge_label_specs_uses_specs_when_no_explicit():
     assert label_rows_out is not None
     assert "spec" in str(label_rows_out)
     assert label_cols_out is None
+
+
+def test_ge_label_module_helpers_match_compatibility_aliases():
+    targets = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
+    rows, cols = grid_label_layouts(targets)
+    assert rows == [{"grid": (0, 0), "side": "above", "rows": [["x", "y"]]}]
+    assert cols == []
+
+    direct_rows, direct_cols, direct_decorations = merge_label_specs(
+        specs=targets,
+        label_rows=None,
+        label_cols=None,
+        decorations=None,
+    )
+    compat_rows, compat_cols, compat_decorations = _merge_label_specs(
+        specs=targets,
+        label_rows=None,
+        label_cols=None,
+        decorations=None,
+    )
+    assert (direct_rows, direct_cols, direct_decorations) == (compat_rows, compat_cols, compat_decorations)
+
+    direct_maps = build_label_maps(
+        n_block_rows=1,
+        n_block_cols=1,
+        label_rows=direct_rows,
+        label_cols=direct_cols,
+    )
+    compat_maps = _build_label_maps(
+        n_block_rows=1,
+        n_block_cols=1,
+        label_rows=compat_rows,
+        label_cols=compat_cols,
+    )
+    assert direct_maps == compat_maps
 
 
 def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():

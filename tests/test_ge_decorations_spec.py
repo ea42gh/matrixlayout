@@ -1,4 +1,5 @@
 from matrixlayout.ge import render_ge_tex
+from matrixlayout.ge_decorations import normalize_index_list
 from matrixlayout.formatting import decorator_bg, decorator_box, sel_col, sel_entry
 
 
@@ -9,6 +10,13 @@ def test_render_ge_tex_decorations_background_submatrix():
     ]
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
     assert "fill=yellow!25" in tex
+
+
+def test_ge_decorations_module_normalizes_index_selectors():
+    assert normalize_index_list("1:2", 4) == [1, 2]
+    assert normalize_index_list(slice(1, 3), 4) == [1, 2]
+    assert normalize_index_list((2, 0), 4) == [0, 1, 2]
+    assert normalize_index_list(None, 3) == [0, 1, 2]
 
 
 def test_render_ge_tex_decorations_background_entries_do_not_fill_whole_block():
