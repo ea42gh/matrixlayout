@@ -22,7 +22,7 @@ import os
 import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-from .formatting import _normalize_unicode_tex, apply_decorator, expand_entry_selectors, latexify, norm_str
+from .formatting import _normalize_unicode_tex, apply_decorator, expand_entry_selectors, latexify
 from . import ge_decorations as _ge_decorations
 from . import ge_labels as _ge_labels
 from .ge_decorations import parse_ge_decorations as _parse_ge_decorations_impl
@@ -38,17 +38,25 @@ from .ge_grid import (
     block_pad_top as _block_pad_top,
     normalize_grid_input as _normalize_grid_input,
 )
+from .ge_template import (
+    coerce_pivot_locs as _coerce_pivot_locs,
+    coerce_rowechelon_paths as _coerce_rowechelon_paths,
+    coerce_submatrix_locs as _coerce_submatrix_locs,
+    coerce_txt_with_locs as _coerce_txt_with_locs,
+    guess_shape_from_mat_rep as _guess_shape_from_mat_rep,
+    normalize_mat_format as _normalize_mat_format,
+    normalize_mat_rep as _normalize_mat_rep,
+    normalize_pivot_locs as _normalize_pivot_locs,
+    normalize_submatrix_locs as _normalize_submatrix_locs,
+    normalize_txt_with_locs as _normalize_txt_with_locs,
+)
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg as _render_svg
 from .specs import (
     GEGridBundle,
     GEGridSpec,
     GELayoutSpec,
-    PivotBox,
-    RowEchelonPath,
-    SubMatrixLoc,
     SubMatrixSpan,
-    TextAt,
 )
 
 LatexFormatter = Callable[[Any], str]
@@ -66,349 +74,6 @@ _normalize_label_cols = _ge_labels.normalize_label_cols
 _normalize_label_rows = _ge_labels.normalize_label_rows
 _split_label_dollar_segments = _ge_labels.split_label_dollar_segments
 grid_label_layouts = _ge_labels.grid_label_layouts
-
-
-def _julia_str(x: Any) -> str:
-    """Normalize Julia/PythonCall/PyCall "string-like" values to plain strings."""
-    if x is None:
-        return ""
-    return str(norm_str(x))
-
-
-def _coord_token(x: Any) -> str:
-    """Convert a coordinate into an ``i-j`` token (1-based indices).
-
-    Accepted forms:
-    - ``"(i-j)"`` or ``"i-j"``
-    - ``(i, j)`` / ``[i, j]``
-    """
-    if isinstance(x, (tuple, list)) and len(x) == 2:
-        i, j = x
-        return f"{int(i)}-{int(j)}"
-    s = str(x).strip()
-    if s.startswith("(") and s.endswith(")"):
-        s = s[1:-1].strip()
-    return s
-
-
-def _coord_paren(x: Any) -> str:
-    """Convert a coordinate into a parenthesized form ``(i-j)``."""
-    tok = _coord_token(x)
-    if tok.startswith("(") and tok.endswith(")"):
-        return tok
-    return f"({tok})"
-
-
-def _fit_target(x: Any) -> str:
-    """Normalize a fit target into the TeX form ``(i-j)(k-l)``.
-
-    Accepted forms:
-    - ``"(i-j)(k-l)"``
-    - ``"{i-j}{k-l}"``
-    - ``((i, j), (k, l))`` or ``[(i, j), (k, l)]``
-    """
-    if isinstance(x, (tuple, list)) and len(x) == 2 and all(isinstance(t, (tuple, list, str, int)) for t in x):
-        first, last = x
-        return f"{_coord_paren(first)}{_coord_paren(last)}"
-
-    s = str(x).strip()
-    if s.startswith("{") and "}{" in s and s.endswith("}"):
-        # "{i-j}{k-l}" -> "(i-j)(k-l)"
-        import re
-        parts = re.findall(r"\{\s*([^}]+?)\s*\}", s)
-        if len(parts) == 2:
-            return f"({_coord_token(parts[0])})({_coord_token(parts[1])})"
-    return s
-
-
-def _fit_span(x: Any) -> str:
-    """Convert a span-like input into a fit target ``(i-j)(k-l)``."""
-    if isinstance(x, str):
-        s = x.strip()
-        # Already the desired form
-        if "(" in s and ")" in s and "{" not in s:
-            return s
-    if isinstance(x, (tuple, list)) and len(x) == 2:
-        a, b = x
-        return _coord_paren(a) + _coord_paren(b)
-    # Fallback: try to parse braces ``{i-j}{k-l}``
-    s = str(x).strip()
-    import re
-    parts = re.findall(r"\{\s*([^}]+?)\s*\}", s)
-    if len(parts) == 2:
-        return f"({parts[0]})({parts[1]})"
-    return s
-
-
-def _normalize_mat_format(mat_format: str) -> str:
-    """Normalize a LaTeX array preamble (accepts ``"cc"`` or ``"{cc}"``)."""
-    s = (mat_format or "").strip()
-    if s.startswith("{") and s.endswith("}"):
-        s = s[1:-1].strip()
-    return s
-
-
-def _normalize_mat_rep(mat_rep: str) -> str:
-    r"""Normalize the matrix body.
-
-    If a user accidentally writes a single backslash followed by whitespace
-    instead of TeX's row separator ``\\``, convert it to ``\\``.
-    """
-    if mat_rep is None:
-        return ""
-    s = str(mat_rep)
-    import re
-    return re.sub(r"(?<!\\)\\(?!\\)(\s+)", r"\\\\\1", s)
-
-
-def _guess_shape_from_mat_rep(mat_rep: str) -> Tuple[int, int]:
-    """Best-effort (nrows, ncols) inferred from a TeX body like ``a & b \\\\ c & d``."""
-    body = _normalize_mat_rep(mat_rep)
-    rows = [r.strip() for r in body.split(r"\\") if r.strip()]
-    nrows = len(rows) if rows else 0
-    ncols = 0
-    for r in rows:
-        ncols = max(ncols, r.count("&") + 1)
-    return nrows, ncols
-
-
-def _normalize_submatrix_locs(
-    submatrix_locs: Optional[
-        Sequence[Union[Tuple[str, str], Tuple[str, str, str]]]
-    ]
-) -> List[Tuple[str, str]]:
-    r"""Normalize submatrix descriptors to ``(options, span)``.
-
-    Accepted input forms:
-    - ``(opts, "{1-1}{2-2}")`` (alternate span encoding)
-    - ``(opts, "(1-1)(2-2)")`` (two parenthesized tokens)
-    - ``(opts, "(1-1)", "(2-2)")`` (explicit first/last, with parentheses)
-    - ``(opts, "1-1", "2-2")`` (explicit first/last)
-
-    Output span is always ``"{first}{last}"`` (including braces) and is meant to be
-    used inside ``\SubMatrix({span})``.
-    """
-    if not submatrix_locs:
-        return []
-    # Each normalized entry is either (opts, span) or (opts, span, left, right)
-    # where left/right are optional delimiters passed as _{...}^{...} to \SubMatrix.
-    out: List[Tuple[str, ...]] = []
-    import re
-
-    for item in submatrix_locs:
-        if len(item) == 2:
-            opts, loc = item
-            left_delim = right_delim = None
-            opts = _julia_str(opts)
-
-            # Accept a coord-pair span: ((i,j),(k,l))
-            if isinstance(loc, (tuple, list)) and len(loc) == 2 and all(isinstance(t, (tuple, list)) for t in loc):
-                first, last = loc
-                first_tok = _coord_token(first)
-                last_tok = _coord_token(last)
-                span = f"{{{first_tok}}}{{{last_tok}}}"
-                out.append((opts, span))
-                continue
-
-            loc_s = str(loc).strip()
-
-            if "{" in loc_s and "}" in loc_s:
-                # "{r1-c1}{r2-c2}" span encoding
-                parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
-                if len(parts) != 2:
-                    raise ValueError(f"Bad span for submatrix_locs: {item!r}")
-                first, last = parts[0], parts[1]
-            else:
-                # "(r1-c1)(r2-c2)"
-                parts = re.findall(r"\(\s*([^)]+?)\s*\)", loc_s)
-                if len(parts) != 2:
-                    raise ValueError(f"Bad span for submatrix_locs: {item!r}")
-                first, last = parts[0], parts[1]
-
-        elif len(item) == 3:
-            opts, first, last = item
-            left_delim = right_delim = None
-            opts = _julia_str(opts)
-
-            # Coordinates may be tuples/lists.
-            if isinstance(first, (tuple, list)) and len(first) == 2:
-                first = _coord_token(first)
-            else:
-                first = str(first).strip()
-                if first.startswith("(") and first.endswith(")"):
-                    first = first[1:-1].strip()
-
-            if isinstance(last, (tuple, list)) and len(last) == 2:
-                last = _coord_token(last)
-            else:
-                last = str(last).strip()
-                if last.startswith("(") and last.endswith(")"):
-                    last = last[1:-1].strip()
-        elif len(item) == 4:
-            # (opts, span, left, right)
-            opts, loc, left_delim, right_delim = item
-            opts = _julia_str(opts)
-
-            # Re-use the same span parsing logic as the 2-tuple case.
-            if isinstance(loc, (tuple, list)) and len(loc) == 2 and all(isinstance(t, (tuple, list)) for t in loc):
-                first, last = loc
-                first_tok = _coord_token(first)
-                last_tok = _coord_token(last)
-                span = f"{{{first_tok}}}{{{last_tok}}}"
-            else:
-                loc_s = str(loc).strip()
-                if "{" in loc_s and "}" in loc_s:
-                    parts = re.findall(r"\{\s*([^}]+?)\s*\}", loc_s)
-                    if len(parts) != 2:
-                        raise ValueError(f"Bad span for submatrix_locs: {item!r}")
-                    first, last = parts[0], parts[1]
-                else:
-                    parts = re.findall(r"\(\s*([^)]+?)\s*\)", loc_s)
-                    if len(parts) != 2:
-                        raise ValueError(f"Bad span for submatrix_locs: {item!r}")
-                    first, last = parts[0], parts[1]
-                span = f"{{{first}}}{{{last}}}"
-
-            left = _julia_str(left_delim)
-            right = _julia_str(right_delim)
-            out.append((opts, span, left, right))
-            continue
-
-        elif len(item) == 5:
-            # (opts, start, end, left, right)
-            opts, first, last, left_delim, right_delim = item
-            opts = _julia_str(opts)
-
-            if isinstance(first, (tuple, list)) and len(first) == 2:
-                first = _coord_token(first)
-            else:
-                first = str(first).strip()
-                if first.startswith("(") and first.endswith(")"):
-                    first = first[1:-1].strip()
-
-            if isinstance(last, (tuple, list)) and len(last) == 2:
-                last = _coord_token(last)
-            else:
-                last = str(last).strip()
-                if last.startswith("(") and last.endswith(")"):
-                    last = last[1:-1].strip()
-
-            span = f"{{{first}}}{{{last}}}"
-            left = _julia_str(left_delim)
-            right = _julia_str(right_delim)
-            out.append((opts, span, left, right))
-            continue
-        else:
-            raise ValueError(
-                "submatrix_locs entry must be a 2-, 3-, 4-, or 5-tuple, got: "
-                f"{item!r}"
-            )
-
-        span = f"{{{first}}}{{{last}}}"
-        out.append((opts, span))
-
-    return out
-
-
-def _normalize_pivot_locs(pivot_locs: Optional[Sequence[Tuple[Any, Any]]]) -> List[Tuple[str, str]]:
-    """Normalize pivot box descriptors for tikz ``fit``.
-
-    Accepts entries of the form:
-    - ``(fit_target, style)`` where ``fit_target`` is either a string
-      like ``"(1-1)(1-1)"`` or a pair ``((i,j),(k,l))``.
-    """
-    if not pivot_locs:
-        return []
-    out: List[Tuple[str, str]] = []
-    for fit_target, style in pivot_locs:
-        out.append((_fit_target(fit_target), _julia_str(style)))
-    return out
-
-
-def _normalize_txt_with_locs(txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]]) -> List[Tuple[str, str, str]]:
-    """Normalize label descriptors (coord, text, style)."""
-    if not txt_with_locs:
-        return []
-    out: List[Tuple[str, str, str]] = []
-    for coord, txt, style in txt_with_locs:
-        out.append((_coord_paren(coord), str(txt), _julia_str(style)))
-    return out
-
-
-def _coerce_submatrix_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
-    if items is None:
-        return None
-    out: List[Any] = []
-    for it in items:
-        if isinstance(it, SubMatrixLoc):
-            out.append(it.to_tuple())
-        elif isinstance(it, dict):
-            out.append(
-                SubMatrixLoc(
-                    opts=str(it.get("opts", "")),
-                    start=str(it.get("start", "")),
-                    end=str(it.get("end", "")),
-                    left_delim=it.get("left_delim"),
-                    right_delim=it.get("right_delim"),
-                ).to_tuple()
-            )
-        else:
-            out.append(it)
-    return out
-
-
-def _coerce_pivot_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
-    if items is None:
-        return None
-    out: List[Any] = []
-    for it in items:
-        if isinstance(it, PivotBox):
-            out.append(it.to_tuple())
-        elif isinstance(it, dict):
-            out.append(
-                PivotBox(
-                    fit_target=str(it.get("fit_target", "")),
-                    style=str(it.get("style", "")),
-                ).to_tuple()
-            )
-        else:
-            out.append(it)
-    return out
-
-
-def _coerce_txt_with_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
-    if items is None:
-        return None
-    out: List[Any] = []
-    for it in items:
-        if isinstance(it, TextAt):
-            out.append(it.to_tuple())
-        elif isinstance(it, dict):
-            out.append(
-                TextAt(
-                    coord=str(it.get("coord", "")),
-                    text=str(it.get("text", "")),
-                    style=str(it.get("style", "")),
-                ).to_tuple()
-            )
-        else:
-            out.append(it)
-    return out
-
-
-def _coerce_rowechelon_paths(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
-    if items is None:
-        return None
-    out: List[Any] = []
-    for it in items:
-        if isinstance(it, RowEchelonPath):
-            out.append(it.to_str())
-        elif isinstance(it, dict):
-            out.append(str(it.get("tikz", "")))
-        else:
-            out.append(str(it))
-    return out
-
 
 
 _BODY_PREAMBLE_FORBIDDEN = (
