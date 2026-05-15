@@ -240,51 +240,13 @@ def render_delim_callouts(
     """Render multiple callouts, optionally validating submatrix names."""
 
     avail = set(available_names or []) if available_names is not None else None
-    # Notebook ergonomics: allow `callouts=True` to mean
-    # "auto-generate a default callout for every available SubMatrix name".
-    if callouts is True:
-        if available_names is None:
-            raise ValueError("callouts=True requires available_names to be provided")
-
-        def _default_label(n: str) -> str:
-            m = re.fullmatch(r"([A-Za-z]+)(\d+)", n)
-            if not m:
-                return n
-            head, k = m.group(1), m.group(2)
-            return rf"{head}_{{{k}}}"
-
-        auto: List[CalloutLike] = []
-        for n in sorted(str(x) for x in available_names):
-            side = "left" if n.startswith("E") else "right"
-            auto.append({"name": n, "label": _default_label(n), "side": side, "angle_deg": -35.0, "length_mm": 6.0})
-        callouts = auto
-    elif not callouts:
+    callout_items = _normalize_callout_sequence(callouts, available_names=available_names)
+    if not callout_items:
         return []
 
-
-    def _resolve_name(obj: CalloutLike) -> CalloutLike:
-        if not isinstance(obj, Mapping):
-            return obj
-        if "name" in obj:
-            return obj
-        if name_map is None:
-            raise ValueError("Callout is missing 'name' and no name_map was provided")
-        if "grid_pos" in obj:
-            r, c = obj["grid_pos"]
-        elif "block_row" in obj and "block_col" in obj:
-            r, c = obj["block_row"], obj["block_col"]
-        else:
-            raise ValueError("Callout is missing 'name' (expected grid_pos or block_row/block_col)")
-        key = (int(r), int(c))
-        if key not in name_map:
-            raise ValueError(f"Callout grid_pos {key} not found in name_map")
-        d = dict(obj)
-        d["name"] = name_map[key]
-        return d
-
     out: List[str] = []
-    for obj in callouts or []:
-        resolved = _resolve_name(obj)
+    for obj in callout_items:
+        resolved = _resolve_callout_name(obj, name_map=name_map)
         c = _coerce_callout(resolved)
         if avail is not None and c.name not in avail:
             msg = f"Callout references unknown SubMatrix name {c.name!r}. Available: {sorted(avail)}"
@@ -293,6 +255,60 @@ def render_delim_callouts(
             continue
         out.append(render_delim_callout(c))
     return out
+
+
+def _auto_callout_label(name: str) -> str:
+    m = re.fullmatch(r"([A-Za-z]+)(\d+)", name)
+    if not m:
+        return name
+    head, k = m.group(1), m.group(2)
+    return rf"{head}_{{{k}}}"
+
+
+def _auto_callout_for_name(name: str) -> CalloutLike:
+    side = "left" if name.startswith("E") else "right"
+    return {"name": name, "label": _auto_callout_label(name), "side": side, "angle_deg": -35.0, "length_mm": 6.0}
+
+
+def _normalize_callout_sequence(
+    callouts: Optional[Union[Sequence[CalloutLike], bool]],
+    *,
+    available_names: Optional[Iterable[str]],
+) -> List[CalloutLike]:
+    # Notebook ergonomics: allow `callouts=True` to mean
+    # "auto-generate a default callout for every available SubMatrix name".
+    if callouts is True:
+        if available_names is None:
+            raise ValueError("callouts=True requires available_names to be provided")
+        return [_auto_callout_for_name(name) for name in sorted(str(x) for x in available_names)]
+    if not callouts:
+        return []
+    return list(callouts)
+
+
+def _resolve_callout_name(
+    obj: CalloutLike,
+    *,
+    name_map: Optional[Mapping[Tuple[int, int], str]],
+) -> CalloutLike:
+    if not isinstance(obj, Mapping):
+        return obj
+    if "name" in obj:
+        return obj
+    if name_map is None:
+        raise ValueError("Callout is missing 'name' and no name_map was provided")
+    if "grid_pos" in obj:
+        r, c = obj["grid_pos"]
+    elif "block_row" in obj and "block_col" in obj:
+        r, c = obj["block_row"], obj["block_col"]
+    else:
+        raise ValueError("Callout is missing 'name' (expected grid_pos or block_row/block_col)")
+    key = (int(r), int(c))
+    if key not in name_map:
+        raise ValueError(f"Callout grid_pos {key} not found in name_map")
+    d = dict(obj)
+    d["name"] = name_map[key]
+    return d
 
 
 def validate_callouts(

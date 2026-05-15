@@ -1,6 +1,11 @@
 import pytest
 
-from matrixlayout.nicematrix_decor import infer_ge_layer_callouts, render_delim_callout, validate_callouts
+from matrixlayout.nicematrix_decor import (
+    infer_ge_layer_callouts,
+    render_delim_callout,
+    render_delim_callouts,
+    validate_callouts,
+)
 
 
 def test_render_delim_callout_math_mode_wraps_label():
@@ -56,3 +61,22 @@ def test_ge_layer_callouts_merges_style_without_mutating_it():
     assert style == {"color": "red", "angle_deg": -20.0}
     assert {"grid_pos": (0, 1), "label": r"A_{0}", "side": "right", **style} in callouts
     assert {"grid_pos": (1, 0), "label": r"E_{1}", "side": "left", **style} in callouts
+
+
+def test_render_delim_callouts_true_generates_default_callouts():
+    rendered = render_delim_callouts(True, available_names=["A0", "E1"])
+
+    assert len(rendered) == 2
+    assert any("(A0-right.north)" in item and r"$A_{0}$" in item for item in rendered)
+    assert any("(E1-left.north)" in item and r"$E_{1}$" in item for item in rendered)
+
+
+def test_render_delim_callouts_resolves_block_row_and_column():
+    rendered = render_delim_callouts(
+        [{"block_row": 2, "block_col": 1, "label": "B", "side": "right"}],
+        available_names=["A2"],
+        name_map={(2, 1): "A2"},
+    )
+
+    assert len(rendered) == 1
+    assert "(A2-right.north)" in rendered[0]
