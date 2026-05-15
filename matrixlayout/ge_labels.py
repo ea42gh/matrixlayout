@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+LabelMap = Dict[Tuple[int, int, str], List[List[Any]]]
+CellCache = Sequence[Sequence[Tuple[List[List[Any]], int, int]]]
+
 
 def _coerce_label_text_for_layout(val: Any) -> str:
     if isinstance(val, dict):
@@ -363,6 +366,64 @@ def append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels:
     return out
 
 
+def _single_block_default_grid(
+    grid_pos: Any,
+    *,
+    n_block_rows: int,
+    n_block_cols: int,
+) -> Any:
+    if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+        return (0, 0)
+    return grid_pos
+
+
+def _label_grid_position(
+    spec_item: Mapping[str, Any],
+    *,
+    field: str,
+    n_block_rows: int,
+    n_block_cols: int,
+    strict: bool,
+) -> Optional[Tuple[int, int]]:
+    grid_pos = _single_block_default_grid(
+        spec_item.get("grid"),
+        n_block_rows=n_block_rows,
+        n_block_cols=n_block_cols,
+    )
+    if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+        if strict:
+            raise ValueError(f"{field} grid must be a (row,col) pair")
+        return None
+    gM, gN = int(grid_pos[0]), int(grid_pos[1])
+    if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
+        if strict:
+            raise ValueError(f"{field} grid position out of range")
+        return None
+    return (gM, gN)
+
+
+def _label_side(
+    spec_item: Mapping[str, Any],
+    *,
+    field: str,
+    default: str,
+    allowed: Tuple[str, str],
+    strict: bool,
+) -> Optional[str]:
+    side = str(spec_item.get("side", default)).strip().lower()
+    if side not in allowed:
+        if strict:
+            joined = " or ".join(repr(item) for item in allowed)
+            raise ValueError(f"{field} side must be {joined}")
+        return None
+    return side
+
+
+def _is_empty_block(cell_cache: CellCache, br: int, bc: int) -> bool:
+    _, h, w = cell_cache[br][bc]
+    return h == 0 or w == 0
+
+
 def build_label_maps(
     *,
     n_block_rows: int,
@@ -372,68 +433,72 @@ def build_label_maps(
     variable_labels: Optional[Sequence[Any]] = None,
     allow_overlay: bool = False,
     strict: bool = False,
-) -> Tuple[Dict[Tuple[int, int, str], List[List[Any]]], Dict[Tuple[int, int, str], List[List[Any]]], List[Dict[str, Any]]]:
+) -> Tuple[LabelMap, LabelMap, List[Dict[str, Any]]]:
     """Build label-row/label-col maps and collect overlay label specs."""
     label_rows = append_variable_labels(label_rows, variable_labels)
-    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
-    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]] = {}
+    label_rows_map: LabelMap = {}
+    label_cols_map: LabelMap = {}
     overlay_label_specs: List[Dict[str, Any]] = []
 
     for spec_item in label_rows or []:
-        if not isinstance(spec_item, dict):
+        if not isinstance(spec_item, Mapping):
             if strict:
                 raise ValueError("label_rows entries must be dict specs")
             continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            if strict:
-                raise ValueError("label_rows grid must be a (row,col) pair")
+        grid_pos = _label_grid_position(
+            spec_item,
+            field="label_rows",
+            n_block_rows=n_block_rows,
+            n_block_cols=n_block_cols,
+            strict=strict,
+        )
+        if grid_pos is None:
             continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
-            if strict:
-                raise ValueError("label_rows grid position out of range")
-            continue
-        side = str(spec_item.get("side", "above")).strip().lower()
-        if side not in ("above", "below"):
-            if strict:
-                raise ValueError("label_rows side must be 'above' or 'below'")
+        side = _label_side(
+            spec_item,
+            field="label_rows",
+            default="above",
+            allowed=("above", "below"),
+            strict=strict,
+        )
+        if side is None:
             continue
         rows = normalize_label_rows(spec_item.get("rows", spec_item.get("labels")))
         if not rows:
             continue
+        gM, gN = grid_pos
         label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
 
     for spec_item in label_cols or []:
-        if not isinstance(spec_item, dict):
+        if not isinstance(spec_item, Mapping):
             if strict:
                 raise ValueError("label_cols entries must be dict specs")
             continue
-        grid_pos = spec_item.get("grid")
-        if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
-            grid_pos = (0, 0)
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
-            if strict:
-                raise ValueError("label_cols grid must be a (row,col) pair")
+        grid_pos = _label_grid_position(
+            spec_item,
+            field="label_cols",
+            n_block_rows=n_block_rows,
+            n_block_cols=n_block_cols,
+            strict=strict,
+        )
+        if grid_pos is None:
             continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
-        if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
-            if strict:
-                raise ValueError("label_cols grid position out of range")
-            continue
-        side = str(spec_item.get("side", "left")).strip().lower()
-        if side not in ("left", "right"):
-            if strict:
-                raise ValueError("label_cols side must be 'left' or 'right'")
+        side = _label_side(
+            spec_item,
+            field="label_cols",
+            default="left",
+            allowed=("left", "right"),
+            strict=strict,
+        )
+        if side is None:
             continue
         if allow_overlay and spec_item.get("overlay"):
-            overlay_label_specs.append(spec_item)
+            overlay_label_specs.append(dict(spec_item))
             continue
         cols = normalize_label_cols(spec_item.get("cols", spec_item.get("labels")))
         if not cols:
             continue
+        gM, gN = grid_pos
         label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
 
     return label_rows_map, label_cols_map, overlay_label_specs
@@ -443,8 +508,8 @@ def compute_label_extras(
     *,
     n_block_rows: int,
     n_block_cols: int,
-    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]],
-    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    label_rows_map: LabelMap,
+    label_cols_map: LabelMap,
 ) -> Tuple[List[int], List[int], List[int], List[int]]:
     """Compute extra row/column counts needed for label padding."""
     extra_rows_above = [0] * n_block_rows
@@ -472,17 +537,13 @@ def embed_row_labels(
     *,
     n_block_rows: int,
     n_block_cols: int,
-    label_rows_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    label_rows_map: LabelMap,
     block_heights: Sequence[int],
     block_pad_left: Sequence[Sequence[int]],
-    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+    cell_cache: CellCache,
 ) -> Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]]:
     """Embed label rows into empty blocks above/below target blocks."""
     embedded_row_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], int]]] = {}
-
-    def _is_empty_block(br: int, bc: int) -> bool:
-        _, h, w = cell_cache[br][bc]
-        return h == 0 or w == 0
 
     def _row_label_target_width(gM: int, gN: int) -> int:
         return cell_cache[gM][gN][2]
@@ -496,7 +557,7 @@ def embed_row_labels(
         if side == "above":
             idx = len(remaining) - 1
             for br in range(gM - 1, -1, -1):
-                if not _is_empty_block(br, gN):
+                if not _is_empty_block(cell_cache, br, gN):
                     continue
                 H = block_heights[br]
                 for offset in range(H - 1, -1, -1):
@@ -511,7 +572,7 @@ def embed_row_labels(
         elif side == "below":
             idx = 0
             for br in range(gM + 1, n_block_rows):
-                if not _is_empty_block(br, gN):
+                if not _is_empty_block(cell_cache, br, gN):
                     continue
                 H = block_heights[br]
                 for offset in range(0, H):
@@ -536,17 +597,13 @@ def embed_col_labels(
     *,
     n_block_rows: int,
     n_block_cols: int,
-    label_cols_map: Dict[Tuple[int, int, str], List[List[Any]]],
+    label_cols_map: LabelMap,
     block_widths: Sequence[int],
     block_pad_top: Sequence[Sequence[int]],
-    cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
+    cell_cache: CellCache,
 ) -> Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]]:
     """Embed label columns into empty blocks left/right of target blocks."""
     embedded_col_labels: Dict[Tuple[int, int], List[Tuple[int, int, List[Any], str]]] = {}
-
-    def _is_empty_block(br: int, bc: int) -> bool:
-        _, h, w = cell_cache[br][bc]
-        return h == 0 or w == 0
 
     def _col_label_target_height(gM: int, gN: int) -> int:
         return cell_cache[gM][gN][1]
@@ -572,7 +629,7 @@ def embed_col_labels(
         if side == "left":
             idx = len(embed_queue) - 1
             for bc in range(gN - 1, -1, -1):
-                if not _is_empty_block(gM, bc):
+                if not _is_empty_block(cell_cache, gM, bc):
                     continue
                 W = block_widths[bc]
                 for offset in range(W - 1, -1, -1):
@@ -588,7 +645,7 @@ def embed_col_labels(
         elif side == "right":
             idx = 0
             for bc in range(gN + 1, n_block_cols):
-                if not _is_empty_block(gM, bc):
+                if not _is_empty_block(cell_cache, gM, bc):
                     continue
                 W = block_widths[bc]
                 for offset in range(0, W):

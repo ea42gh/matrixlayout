@@ -134,6 +134,23 @@ def test_append_variable_labels_and_build_label_maps_defaults_and_non_strict_ign
     assert overlay == []
 
 
+def test_build_label_maps_collects_overlay_col_labels_without_embedding():
+    rows_map, cols_map, overlay = build_label_maps(
+        n_block_rows=1,
+        n_block_cols=1,
+        label_rows=None,
+        label_cols=[
+            {"grid": (0, 0), "side": "left", "cols": [["overlay"]], "overlay": True},
+            {"grid": (0, 0), "side": "right", "cols": [["normal"]]},
+        ],
+        allow_overlay=True,
+    )
+
+    assert rows_map == {}
+    assert cols_map == {(0, 0, "right"): [["normal"]]}
+    assert overlay == [{"grid": (0, 0), "side": "left", "cols": [["overlay"]], "overlay": True}]
+
+
 def test_build_label_maps_strict_rejects_label_cols_variants():
     for label_cols, message in [
         ([["x"]], "dict"),
@@ -191,6 +208,32 @@ def test_embed_row_labels_moves_labels_into_empty_neighbor_blocks():
     assert label_rows_map == {}
 
 
+def test_embed_row_labels_keeps_edge_labels_when_no_neighbor_block_exists():
+    label_rows_map = {
+        (0, 0, "above"): [["top"]],
+        (1, 0, "below"): [["bottom"]],
+    }
+    cell_cache = [
+        [([[1]], 1, 1)],
+        [([[2]], 1, 1)],
+    ]
+
+    embedded = embed_row_labels(
+        n_block_rows=2,
+        n_block_cols=1,
+        label_rows_map=label_rows_map,
+        block_heights=[1, 1],
+        block_pad_left=[[0], [0]],
+        cell_cache=cell_cache,
+    )
+
+    assert embedded == {}
+    assert label_rows_map == {
+        (0, 0, "above"): [["top"]],
+        (1, 0, "below"): [["bottom"]],
+    }
+
+
 def test_embed_col_labels_moves_labels_into_empty_neighbor_blocks_and_keeps_shared_labels():
     label_cols_map = {
         (0, 1, "left"): [["l1"], ["l2"]],
@@ -216,3 +259,28 @@ def test_embed_col_labels_moves_labels_into_empty_neighbor_blocks_and_keeps_shar
     assert label_cols_map[(1, 1, "left")] == [["keep"]]
     assert embedded[(1, 2)] == [(0, 0, ["r1"], "right")]
     assert (1, 0, "right") not in label_cols_map
+
+
+def test_embed_col_labels_keeps_edge_labels_when_no_neighbor_block_exists():
+    label_cols_map = {
+        (0, 0, "left"): [["left"]],
+        (0, 1, "right"): [["right"]],
+    }
+    cell_cache = [
+        [([[1]], 1, 1), ([[2]], 1, 1)],
+    ]
+
+    embedded = embed_col_labels(
+        n_block_rows=1,
+        n_block_cols=2,
+        label_cols_map=label_cols_map,
+        block_widths=[1, 1],
+        block_pad_top=[[0, 0]],
+        cell_cache=cell_cache,
+    )
+
+    assert embedded == {}
+    assert label_cols_map == {
+        (0, 0, "left"): [["left"]],
+        (0, 1, "right"): [["right"]],
+    }
