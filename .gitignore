@@ -62,6 +62,7 @@ render_artifacts/
 # If you create a local scratch output directory
 _out/
 _tmp/
+docs/notebooks/tmp/
 
 # -----------------------------------------------------------------------------
 # TeX auxiliary outputs (common when running render toolchains locally)
