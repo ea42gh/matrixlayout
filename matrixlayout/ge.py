@@ -18,13 +18,13 @@ Therefore, this module normalizes submatrix locations into `(options, span)` whe
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union, Any, Dict, Callable, Iterable, Mapping
 import os
 import re
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
+from .formatting import _normalize_unicode_tex, apply_decorator, expand_entry_selectors, latexify, make_decorator, norm_str
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg as _render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str, make_decorator, _normalize_unicode_tex
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -35,6 +35,8 @@ from .specs import (
     SubMatrixSpan,
     TextAt,
 )
+
+LatexFormatter = Callable[[Any], str]
 
 def _coerce_label_text_for_layout(val: Any) -> str:
     if isinstance(val, dict):
@@ -2086,7 +2088,6 @@ def render_ge_tex(
                     continue
                 out_cells: List[str] = [blank] * Wtot
                 left_cols = extra_cols_left[bc]
-                right_cols = extra_cols_right[bc]
                 matrix_start = left_cols
                 matrix_end = left_cols + W
                 pad_top = block_pad_top[br][bc]

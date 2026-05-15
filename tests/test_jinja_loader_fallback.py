@@ -1,6 +1,3 @@
-import jinja2
-
-
 def test_jinja_loader_fallback_when_packageloader_unavailable(monkeypatch):
     """If PackageLoader fails (common in interop / non-standard installs),
     matrixlayout should still be able to locate templates from disk.

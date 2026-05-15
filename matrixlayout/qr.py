@@ -7,13 +7,14 @@ upstream in la_figures; this module focuses on layout + formatting only.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, Iterable, Mapping
+import os
 import re
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .formatting import latexify
-from .ge import render_ge_tex, grid_submatrix_spans
+from .ge import grid_submatrix_spans, render_ge_tex
 from .render import merge_render_opts, render_svg
-from .specs import QRGridSpec, QRGridBundle
+from .specs import QRGridBundle, QRGridSpec
 
 
 def _as_grid(matrices: Any) -> List[List[Any]]:

@@ -16,7 +16,7 @@ them into the Jinja template verbatim. ``matrixlayout`` preserves that separatio
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, MutableMapping, Sequence, Tuple, TypedDict, Union, cast
+from typing import Any, Mapping, Sequence, TypedDict, Union
 
 from .formatting import latexify
 

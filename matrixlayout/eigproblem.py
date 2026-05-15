@@ -16,12 +16,11 @@ Out of scope:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, List, Dict
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
+from .formatting import apply_decorator, expand_entry_selectors, latexify, norm_str
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg
-from .formatting import latexify, apply_decorator, expand_entry_selectors, norm_str
 
 
 LatexFormatter = Callable[[Any], str]
@@ -415,8 +414,6 @@ def render_eig_tex(
             sz = None
     sz = (n, n) if sz is None else tuple(sz)
 
-    # Value rows use an interleaved "value, gap, value" scheme.
-    value_cols = max(1, 2 * len(lambdas_distinct) - 1)
     # Matrix blocks span only the *distinct* value columns.
     matrix_span_cols = max(1, len(lambdas_distinct))
 

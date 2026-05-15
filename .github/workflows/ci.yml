@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  schedule:
+    # Weekly notebook/render smoke to catch upstream toolchain drift.
+    - cron: "21 9 * * 1"
   push:
     branches:
       - main
@@ -39,6 +42,55 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
+  lint:
+    name: Ruff lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lint dependency
+        run: python -m pip install ruff
+
+      - name: Run ruff
+        run: ruff check matrixlayout tests render_smoke.py
+
+  package:
+    name: Build package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          python -m twine check dist/*
+          python -m pip install dist/*.whl
+
+      - name: Verify packaged templates
+        run: |
+          cd /tmp
+          python - <<'PY'
+          from importlib.resources import files
+
+          root = files("matrixlayout") / "templates"
+          required = {"ge.tex.j2", "backsubst.tex.j2", "eigproblem.tex.j2"}
+          present = {path.name for path in root.iterdir()}
+          missing = required - present
+          if missing:
+              raise SystemExit(f"missing packaged templates: {sorted(missing)}")
+          PY
+
   render-smoke:
     name: Render smoke - Python 3.11
     runs-on: ubuntu-latest
@@ -76,3 +128,47 @@ jobs:
 
       - name: Run render smoke
         run: python render_smoke.py
+
+  notebook-smoke:
+    name: Demo notebook smoke - Python 3.11
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install TeX and SVG toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dvisvgm \
+            fonts-lmodern \
+            ghostscript \
+            latexmk \
+            pdf2svg \
+            poppler-utils \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-latex-recommended \
+            texlive-pictures \
+            texlive-plain-generic \
+            texlive-science
+
+      - name: Install notebook dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a
+          python -m pip install -e .[render]
+          python -m pip install ipython nbconvert sympy
+
+      - name: Execute demo notebook
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute matrixlayout_demo.ipynb \
+            --output /tmp/matrixlayout_demo.executed.ipynb \
+            --ExecutePreprocessor.timeout=240

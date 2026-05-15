@@ -13,7 +13,7 @@ from fractions import Fraction
 import inspect
 import numbers
 import re
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, Optional, Sequence, Tuple
 
 
 _UNICODE_TEX_REPLACEMENTS = {

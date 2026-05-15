@@ -26,9 +26,9 @@ This module does not import ``nicematrix``; it only emits TeX strings.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import re
-from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Sequence, Tuple, TypedDict, Union
+from dataclasses import dataclass
+from typing import Any, Iterable, List, Literal, Mapping, Optional, Sequence, Tuple, TypedDict, Union
 
 
 Side = Literal["left", "right", "auto"]

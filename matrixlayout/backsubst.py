@@ -13,12 +13,12 @@ The template is treated as a layout/presentation artifact only:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Sequence, Union, List, Tuple, Dict
+from typing import Any, List, Mapping, Optional, Sequence, Union
 
+from .formatting import apply_decorator, expand_entry_selectors
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg
 from .shortcascade import mk_shortcascade_lines
-from .formatting import apply_decorator, expand_entry_selectors
 
 
 def _as_lines(value: Union[str, Sequence[str], None]) -> list[str]:

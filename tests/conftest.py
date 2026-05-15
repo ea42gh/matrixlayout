@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 
 
 def _ensure_monorepo_imports() -> None:
@@ -49,8 +49,6 @@ def pytest_collection_modifyitems(config, items):
     skip = config.getoption("--skip-render-tests") or os.environ.get("ITIKZ_SKIP_RENDER_TESTS") == "1"
     if not skip:
         return
-
-    import pytest
 
     marker = pytest.mark.skip(reason="render tests skipped (set ITIKZ_SKIP_RENDER_TESTS=0 / omit --skip-render-tests)")
     for item in items:
