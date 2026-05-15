@@ -23,6 +23,12 @@ import re
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .formatting import _normalize_unicode_tex, apply_decorator, expand_entry_selectors, latexify, make_decorator, norm_str
+from .ge_spec_merge import (
+    coerce_grid_spec as _coerce_grid_spec,
+    coerce_layout_spec as _coerce_layout_spec,
+    merge_grid_spec_inputs as _merge_grid_spec_inputs,
+    merge_scalar as _merge_scalar,
+)
 from .jinja_env import render_template
 from .render import merge_render_opts, render_svg as _render_svg
 from .specs import (
@@ -526,27 +532,6 @@ def _coerce_rowechelon_paths(items: Optional[Sequence[Any]]) -> Optional[List[An
 
 
 
-def _coerce_layout_spec(layout: Any) -> Optional[GELayoutSpec]:
-    """Coerce ``layout`` into a :class:`GELayoutSpec` (or None)."""
-    if layout is None:
-        return None
-    if isinstance(layout, GELayoutSpec):
-        return layout
-    if isinstance(layout, dict):
-        return GELayoutSpec.from_dict(layout)
-    raise TypeError(f"layout must be a GELayoutSpec or dict, not {type(layout).__name__}")
-
-
-def _coerce_grid_spec(spec: Any) -> Optional[GEGridSpec]:
-    if spec is None:
-        return None
-    if isinstance(spec, GEGridSpec):
-        return spec
-    if isinstance(spec, dict):
-        return GEGridSpec.from_dict(spec)
-    raise TypeError(f"spec must be a GEGridSpec or dict, not {type(spec).__name__}")
-
-
 _BODY_PREAMBLE_FORBIDDEN = (
     r"\\documentclass",
     r"\\usepackage",
@@ -581,148 +566,6 @@ def _append_nicematrix_option(nice_options: Optional[str], opt: str) -> str:
     if opt in opts:
         return opts
     return f"{opts}, {opt}"
-
-
-def _merge_scalar(field: str, explicit: Any, spec_val: Any) -> Any:
-    """Merge a scalar field from explicit kwargs and layout spec.
-
-    Raise on conflicting values when both are explicitly provided.
-    """
-    if spec_val is None:
-        return explicit
-    if explicit is None:
-        return spec_val
-    if explicit != spec_val:
-        raise ValueError(f"Conflicting values for {field}: explicit={explicit!r} spec={spec_val!r}")
-    return explicit
-
-
-def _merge_scalar_prefer_explicit(field: str, explicit: Any, spec_val: Any) -> Any:
-    """Merge a scalar field, preferring explicit kwargs when provided."""
-    if explicit is None:
-        return spec_val
-    return explicit
-
-
-def _grid_spec_defaults(outer_hspace_mm: Optional[int], block_vspace_mm: Optional[int]) -> Tuple[Optional[int], Optional[int]]:
-    """Treat default spacing values as unset when a grid spec is provided."""
-    if outer_hspace_mm == 6:
-        outer_hspace_mm = None
-    if block_vspace_mm == 1:
-        block_vspace_mm = None
-    return outer_hspace_mm, block_vspace_mm
-
-
-def _merge_grid_spec_inputs(
-    *,
-    grid_spec: GEGridSpec,
-    matrices: Optional[Sequence[Sequence[Any]]],
-    Nrhs: Any,
-    formatter: LatexFormatter,
-    outer_hspace_mm: int,
-    block_vspace_mm: int,
-    cell_align: str,
-    block_align: Optional[str],
-    block_valign: Optional[str],
-    extension: str,
-    fig_scale: Optional[Union[float, int, str]],
-    format_nrhs: bool,
-    decorators: Optional[Sequence[Any]],
-    decorations: Optional[Sequence[Any]],
-    strict: bool,
-    label_rows: Optional[Sequence[Any]],
-    label_cols: Optional[Sequence[Any]],
-    label_gap_mm: Optional[float],
-    variable_labels: Optional[Sequence[Any]],
-    kwargs: Dict[str, Any],
-) -> Tuple[
-    Optional[Sequence[Sequence[Any]]],
-    Any,
-    LatexFormatter,
-    int,
-    int,
-    str,
-    Optional[str],
-    Optional[str],
-    str,
-    Optional[Union[float, int, str]],
-    bool,
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    bool,
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[float],
-    Optional[Sequence[Any]],
-    Dict[str, Any],
-]:
-    """Merge grid spec values into explicit kwargs (explicit wins)."""
-    outer_hspace_mm, block_vspace_mm = _grid_spec_defaults(outer_hspace_mm, block_vspace_mm)
-
-    matrices = _merge_scalar_prefer_explicit("matrices", matrices, grid_spec.matrices)
-    Nrhs = _merge_scalar_prefer_explicit("Nrhs", Nrhs, grid_spec.Nrhs)
-    formatter = _merge_scalar_prefer_explicit("formatter", formatter, grid_spec.formatter)
-    outer_hspace_mm = int(_merge_scalar_prefer_explicit("outer_hspace_mm", outer_hspace_mm, grid_spec.outer_hspace_mm))
-    block_vspace_mm = int(_merge_scalar_prefer_explicit("block_vspace_mm", block_vspace_mm, grid_spec.block_vspace_mm))
-    cell_align = str(_merge_scalar_prefer_explicit("cell_align", cell_align, grid_spec.cell_align))
-    block_align = _merge_scalar_prefer_explicit("block_align", block_align, grid_spec.block_align)
-    block_valign = _merge_scalar_prefer_explicit("block_valign", block_valign, grid_spec.block_valign)
-    extension = str(_merge_scalar_prefer_explicit("extension", extension, grid_spec.extension))
-    fig_scale = _merge_scalar_prefer_explicit("fig_scale", fig_scale, grid_spec.fig_scale)
-    format_nrhs = bool(_merge_scalar_prefer_explicit("format_nrhs", format_nrhs, grid_spec.format_nrhs))
-    kwargs["legacy_submatrix_names"] = bool(_merge_scalar_prefer_explicit("legacy_submatrix_names", kwargs.get("legacy_submatrix_names"), grid_spec.legacy_submatrix_names))
-    kwargs["legacy_format"] = bool(_merge_scalar_prefer_explicit("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format))
-    if grid_spec.preamble is not None:
-        kwargs["preamble"] = _merge_scalar_prefer_explicit("preamble", kwargs.get("preamble"), grid_spec.preamble)
-    if grid_spec.nice_options is not None:
-        kwargs["nice_options"] = _merge_scalar_prefer_explicit("nice_options", kwargs.get("nice_options"), grid_spec.nice_options)
-    if grid_spec.outer_delims is not None:
-        kwargs["outer_delims"] = bool(_merge_scalar_prefer_explicit("outer_delims", kwargs.get("outer_delims"), grid_spec.outer_delims))
-    if grid_spec.pivot_locs is not None:
-        kwargs["pivot_locs"] = _merge_scalar_prefer_explicit("pivot_locs", kwargs.get("pivot_locs"), grid_spec.pivot_locs)
-    if grid_spec.txt_with_locs is not None:
-        kwargs["txt_with_locs"] = _merge_scalar_prefer_explicit("txt_with_locs", kwargs.get("txt_with_locs"), grid_spec.txt_with_locs)
-    if grid_spec.rowechelon_paths is not None:
-        kwargs["rowechelon_paths"] = _merge_scalar_prefer_explicit("rowechelon_paths", kwargs.get("rowechelon_paths"), grid_spec.rowechelon_paths)
-    if grid_spec.callouts is not None:
-        kwargs["callouts"] = _merge_scalar_prefer_explicit("callouts", kwargs.get("callouts"), grid_spec.callouts)
-    if grid_spec.codebefore is not None:
-        kwargs["codebefore"] = _merge_scalar_prefer_explicit("codebefore", kwargs.get("codebefore"), grid_spec.codebefore)
-    if grid_spec.create_cell_nodes is not None:
-        kwargs["create_cell_nodes"] = _merge_scalar_prefer_explicit("create_cell_nodes", kwargs.get("create_cell_nodes"), grid_spec.create_cell_nodes)
-    if grid_spec.create_medium_nodes is not None:
-        kwargs["create_medium_nodes"] = _merge_scalar_prefer_explicit("create_medium_nodes", kwargs.get("create_medium_nodes"), grid_spec.create_medium_nodes)
-    if grid_spec.layout is not None:
-        kwargs["layout"] = _merge_scalar_prefer_explicit("layout", kwargs.get("layout"), grid_spec.layout)
-    label_rows = _merge_scalar_prefer_explicit("label_rows", label_rows, grid_spec.label_rows)
-    label_cols = _merge_scalar_prefer_explicit("label_cols", label_cols, grid_spec.label_cols)
-    label_gap_mm = _merge_scalar_prefer_explicit("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm)
-    variable_labels = _merge_scalar_prefer_explicit("variable_labels", variable_labels, grid_spec.variable_labels)
-    decorators = _merge_scalar_prefer_explicit("decorators", decorators, grid_spec.decorators)
-    decorations = _merge_scalar_prefer_explicit("decorations", decorations, grid_spec.decorations)
-    strict = bool(_merge_scalar_prefer_explicit("strict", strict, grid_spec.strict))
-
-    return (
-        matrices,
-        Nrhs,
-        formatter,
-        outer_hspace_mm,
-        block_vspace_mm,
-        cell_align,
-        block_align,
-        block_valign,
-        extension,
-        fig_scale,
-        format_nrhs,
-        decorators,
-        decorations,
-        strict,
-        label_rows,
-        label_cols,
-        label_gap_mm,
-        variable_labels,
-        kwargs,
-    )
 
 
 def _merge_label_specs(

@@ -1,7 +1,71 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, TypedDict, Union
+
+
+GridCoord = Tuple[int, int]
+EntryCoord = Tuple[int, int]
+EntryDecorator = Callable[..., str]
+
+
+class GELabelRowsSpec(TypedDict, total=False):
+    """Dictionary schema for GE row labels.
+
+    ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"above"``
+    or ``"below"``. ``rows`` contains one or more label rows; each inner value
+    is rendered as a label cell.
+    """
+
+    grid: GridCoord
+    side: str
+    rows: Sequence[Sequence[Any]]
+    labels: Sequence[Sequence[Any]]
+    overlay: bool
+
+
+class GELabelColsSpec(TypedDict, total=False):
+    """Dictionary schema for GE column labels.
+
+    ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"left"``
+    or ``"right"``. ``cols`` contains one or more label columns; each inner
+    value is rendered as a label cell.
+    """
+
+    grid: GridCoord
+    side: str
+    cols: Sequence[Sequence[Any]]
+    labels: Sequence[Sequence[Any]]
+    overlay: bool
+
+
+class GEDecorationSpec(TypedDict, total=False):
+    """Dictionary schema for GE decoration entries.
+
+    Decorations style entries, rows, columns, submatrices, lines, and callout
+    labels. Flexible selector values are still accepted at runtime for
+    Julia/Python interoperability; this TypedDict documents the common public
+    keys used by ``render_ge_tex`` and ``render_ge_svg``.
+    """
+
+    grid: GridCoord
+    entries: Sequence[Any]
+    rows: Sequence[int]
+    cols: Sequence[int]
+    submatrix: Any
+    decorator: EntryDecorator
+    background: str
+    color: str
+    bold: bool
+    outline: bool
+    padding_pt: float
+    hlines: Any
+    vlines: Any
+    label: str
+    side: str
+    angle: float
+    length: float
+    length_mm: float
 
 
 @dataclass(frozen=True)
@@ -91,7 +155,7 @@ class GELayoutSpec:
     def from_dict(d: Dict[str, Any]) -> "GELayoutSpec":
         if d is None:
             return GELayoutSpec()
-        allowed = set(GELayoutSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        allowed = set(GELayoutSpec.__dataclass_fields__.keys())
         extra = set(d.keys()) - allowed
         if extra:
             raise ValueError(f"Unknown GELayoutSpec fields: {sorted(extra)}")
@@ -194,13 +258,13 @@ class GEGridSpec:
     layout: Optional[Any] = None
     legacy_submatrix_names: bool = False
     legacy_format: bool = False
-    label_rows: Optional[Sequence[Any]] = None
-    label_cols: Optional[Sequence[Any]] = None
+    label_rows: Optional[Sequence[Union[GELabelRowsSpec, Mapping[str, Any]]]] = None
+    label_cols: Optional[Sequence[Union[GELabelColsSpec, Mapping[str, Any]]]] = None
     label_gap_mm: Optional[float] = 0.8
     variable_labels: Optional[Sequence[Any]] = None
     format_nrhs: bool = True
     decorators: Optional[Sequence[Any]] = None
-    decorations: Optional[Sequence[Any]] = None
+    decorations: Optional[Sequence[Union[GEDecorationSpec, Mapping[str, Any]]]] = None
     pivot_locs: Optional[Sequence[Any]] = None
     txt_with_locs: Optional[Sequence[Any]] = None
     rowechelon_paths: Optional[Sequence[Any]] = None
@@ -221,7 +285,7 @@ class GEGridSpec:
             raise ValueError("GEGridSpec.from_dict requires a mapping")
         if allow_extra is None:
             allow_extra = not bool(d.get("strict", True))
-        allowed = set(GEGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        allowed = set(GEGridSpec.__dataclass_fields__.keys())
         extra = set(d.keys()) - allowed
         if extra and not allow_extra:
             raise ValueError(f"Unknown GEGridSpec fields: {sorted(extra)}")
@@ -265,7 +329,7 @@ class QRGridSpec:
             raise ValueError("QRGridSpec.from_dict requires a mapping")
         if allow_extra is None:
             allow_extra = not bool(d.get("strict", True))
-        allowed = set(QRGridSpec.__dataclass_fields__.keys())  # type: ignore[attr-defined]
+        allowed = set(QRGridSpec.__dataclass_fields__.keys())
         extra = set(d.keys()) - allowed
         if extra and not allow_extra:
             raise ValueError(f"Unknown QRGridSpec fields: {sorted(extra)}")
