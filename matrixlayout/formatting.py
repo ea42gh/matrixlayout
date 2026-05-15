@@ -40,7 +40,7 @@ def latexify(x: Any) -> str:
         return rf"\frac{{{x.numerator}}}{{{x.denominator}}}"
 
     try:
-        import sympy as sym  # type: ignore
+        import sympy as sym
 
         if isinstance(x, sym.Basic):
             return sym.latex(x)
