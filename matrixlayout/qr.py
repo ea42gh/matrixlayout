@@ -17,6 +17,7 @@ from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
 from .qr_spec_merge import filter_qr_name_specs as _filter_qr_name_specs_impl
 from .qr_spec_merge import merge_scalar_default as _merge_scalar_default
 from .qr_spec_merge import merge_scalar as _merge_scalar
+from .qr_spec_merge import qr_callout_rules as _qr_callout_rules_impl
 from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
 from .qr_spec_merge import qr_known_zero_entries as _qr_known_zero_entries_impl
 from .qr_spec_merge import qr_label_layouts as _qr_label_layouts_impl
@@ -389,6 +390,10 @@ def _filter_qr_name_specs(name_specs: Sequence[Any], *, grid: Sequence[Sequence[
     return _filter_qr_name_specs_impl(name_specs, grid=grid)
 
 
+def _qr_callout_rules(*, a_rows: int, a_cols: int) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
+    return _qr_callout_rules_impl(a_rows=a_rows, a_cols=a_cols)
+
+
 def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     return _qr_label_layouts_impl(grid, label_text_color, mat_shape=_mat_shape)
 
@@ -486,24 +491,7 @@ def render_qr_tex(
                 a_rows, a_cols = _mat_shape(grid[0][2])
             except Exception:
                 a_rows = a_cols = 0
-        r_shift = -1.0
-        if a_cols and a_cols < 3:
-            r_shift = -2.0
-        label_shift_rules = [
-            (r"\mathbf{W^T W}", 1.0),
-            (r"\mathbf{W^T A}", 1.0),
-            (r"\mathbf{W^T}", 1.0),
-            (r"\mathbf{S = \left( W^T W \right)^{-\tfrac{1}{2}}}", 1.0),
-            (r"\mathbf{W}", 1.0),
-            (r"\mathbf{A}", 1.0),
-            (r"\mathbf{Q^T = S W^T}", -1.0),
-            (r"\mathbf{R = S W^T A}", r_shift),
-        ]
-        length_rules = []
-        if a_cols and a_cols < 3:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
-        if a_rows == 2 and a_cols == 2:
-            length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
+        label_shift_rules, length_rules = _qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
         if name_specs:
             callouts = _qr_name_specs_to_callouts(
                 name_specs,

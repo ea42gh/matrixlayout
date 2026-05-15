@@ -61,6 +61,42 @@ def test_render_ge_tex_specs_mixed_text_latex():
     assert any(t == "plain" for t in texts)
 
 
+def test_render_ge_tex_specs_label_value_variants_and_alias_sides():
+    matrices = [[[1, 2], [3, 4]]]
+    specs = render_ge_tex_specs(
+        matrices,
+        [
+            {"grid": (0, 0), "side": "top", "labels": [{"text": "top"}, ("ignored", "pair")]},
+            {"grid": (0, 0), "side": "bottom", "labels": [["b1", "b2"], ["c1", "c2"]], "line_gap_mm": 6},
+            {"grid": (0, 0), "side": "left", "labels": [["L1", "L2"], ["M1", "M2"]], "line_gap_mm": 2},
+        ],
+    )
+
+    assert ("(1-1.center)", "top", "anchor=center") in specs
+    assert ("(1-2.center)", "pair", "anchor=center") in specs
+    assert any(coord == "(2-1.center)" and text == "b1" for coord, text, _ in specs)
+    assert any("yshift=-6.0mm" in opts for _, _, opts in specs)
+    assert any(text == "M1" and "xshift=-2.0mm" in opts for _, text, opts in specs)
+
+
+def test_render_ge_tex_specs_ignores_bad_label_row_metadata():
+    matrices = [[[1, 2], [3, 4]]]
+    specs = render_ge_tex_specs(
+        matrices,
+        [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}],
+        label_rows=[
+            object(),
+            {"grid": (0,), "side": "above", "rows": [["bad"]]},
+            {"grid": (0, 0), "side": "left", "rows": [["bad"]]},
+        ],
+    )
+
+    assert specs == [
+        ("(1-1.center)", "x", "anchor=center"),
+        ("(1-2.center)", "y", "anchor=center"),
+    ]
+
+
 def test_render_ge_tex_label_rows_mixed_text_latex():
     matrices = [[[1, 2], [3, 4]]]
     tex = render_ge_tex(

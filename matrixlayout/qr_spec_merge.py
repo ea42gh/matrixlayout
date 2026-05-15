@@ -103,6 +103,33 @@ def filter_qr_name_specs(
     return filtered_specs
 
 
+def qr_callout_rules(
+    *,
+    a_rows: int,
+    a_cols: int,
+) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
+    """Return label-shift and length rules for QR matrix-name callouts."""
+    r_shift = -1.0
+    if a_cols and a_cols < 3:
+        r_shift = -2.0
+    label_shift_rules = [
+        (r"\mathbf{W^T W}", 1.0),
+        (r"\mathbf{W^T A}", 1.0),
+        (r"\mathbf{W^T}", 1.0),
+        (r"\mathbf{S = \left( W^T W \right)^{-\tfrac{1}{2}}}", 1.0),
+        (r"\mathbf{W}", 1.0),
+        (r"\mathbf{A}", 1.0),
+        (r"\mathbf{Q^T = S W^T}", -1.0),
+        (r"\mathbf{R = S W^T A}", r_shift),
+    ]
+    length_rules: List[Tuple[str, float]] = []
+    if a_cols and a_cols < 3:
+        length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
+    if a_rows == 2 and a_cols == 2:
+        length_rules = [(r"\mathbf{Q^T = S W^T}", 14.0)]
+    return label_shift_rules, length_rules
+
+
 def qr_label_layouts(
     grid: Sequence[Sequence[Any]],
     label_text_color: str,

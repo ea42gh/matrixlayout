@@ -29,11 +29,11 @@ def normalize_index_list(val: Any, max_len: int) -> List[int]:
             start = int(left) if left.strip() else 0
             end = int(right) if right.strip() else (max_len - 1)
             lo, hi = (start, end) if start <= end else (end, start)
-            return [i for i in range(max(0, lo), min(max_len - 1, hi) + 1)]
+            return list(range(max(0, lo), min(max_len - 1, hi) + 1))
     if isinstance(val, (tuple, list)) and len(val) == 2 and all(isinstance(x, int) for x in val):
         a, b = int(val[0]), int(val[1])
         lo, hi = (a, b) if a <= b else (b, a)
-        return [i for i in range(max(0, lo), min(max_len - 1, hi) + 1)]
+        return list(range(max(0, lo), min(max_len - 1, hi) + 1))
     if isinstance(val, (list, tuple, set)):
         return sorted({int(x) for x in val if 0 <= int(x) < max_len})
     if isinstance(val, int):

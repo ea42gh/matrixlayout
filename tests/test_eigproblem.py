@@ -1,6 +1,7 @@
 import re
 
 import matrixlayout
+from matrixlayout.eigproblem import _is_zero_like, _mk_diag_matrix, _mk_sigma_matrix, _mk_values, _mk_vecs_matrix
 
 
 def test_templates_load():
@@ -67,3 +68,51 @@ def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():
     tex = matrixlayout.render_eig_tex(spec, case="SVD", formatter=str, fig_scale=None)
     assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex
     assert r"2 & 0 \\ 0 & 0 \\ 0 & 0 \\" in tex
+
+
+def test_eig_zero_like_and_values_helpers():
+    class IsZero:
+        is_zero = True
+
+    class NotZero:
+        is_zero = False
+
+    class FloatBad:
+        @property
+        def is_zero(self):
+            raise TypeError("unknown")
+
+        def __float__(self):
+            raise TypeError("not numeric")
+
+    assert _is_zero_like(None) is False
+    assert _is_zero_like(" 0 ") is True
+    assert _is_zero_like("x") is False
+    assert _is_zero_like(IsZero()) is True
+    assert _is_zero_like(NotZero()) is False
+    assert _is_zero_like(0.0) is True
+    assert _is_zero_like(FloatBad()) is False
+    assert _mk_values([3, 0, "0"], formatter=str, zero_blank=True) == ["$3$", "", "$$", "", "$$"]
+
+
+def test_eig_matrix_helpers_cover_spacing_and_invalid_shapes():
+    diag = _mk_diag_matrix([2], [2], formatter=str, sz=(2, 2), extra_space=r"\quad ")
+    assert r"\quad 2" in diag
+    assert r"0\quad" in diag
+
+    sigma = _mk_sigma_matrix([3], [1], formatter=str, sz=(2, 3), extra_space=r"\quad ")
+    assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c@{\hspace{8mm}}c}" in sigma
+    assert r"\quad 3" in sigma
+
+    try:
+        _mk_sigma_matrix([1], [1], formatter=str, sz=(0, 2))
+    except ValueError as exc:
+        assert "Invalid sz" in str(exc)
+    else:
+        raise AssertionError("expected invalid sigma shape to raise")
+
+
+def test_eig_vecs_matrix_returns_none_for_unusable_vector_sets():
+    assert _mk_vecs_matrix([], formatter=str, sz=2) is None
+    assert _mk_vecs_matrix([[[1, 2, 3]]], formatter=str, sz=2) is None
+    assert _mk_vecs_matrix([[[1, 0]]], formatter=str, sz=2) is None

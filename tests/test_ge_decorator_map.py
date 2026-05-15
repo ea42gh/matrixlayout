@@ -118,15 +118,15 @@ def test_build_ge_decorator_map_ignores_unresolved_when_not_strict():
 def test_build_ge_decorator_map_strict_and_validation_errors():
     grid, cell_cache, n_block_rows, n_block_cols = _grid_parts([[[1]]])
 
-    common = dict(
-        matrices=grid,
-        cell_cache=cell_cache,
-        n_block_rows=n_block_rows,
-        n_block_cols=n_block_cols,
-        formatter=str,
-        legacy_submatrix_names=False,
-        resolve_grid_name=lambda *_: None,
-    )
+    common = {
+        "matrices": grid,
+        "cell_cache": cell_cache,
+        "n_block_rows": n_block_rows,
+        "n_block_cols": n_block_cols,
+        "formatter": str,
+        "legacy_submatrix_names": False,
+        "resolve_grid_name": lambda *_: None,
+    }
 
     with pytest.raises(ValueError, match="dict specs"):
         build_ge_decorator_map(decorators=["bad"], strict=True, **common)

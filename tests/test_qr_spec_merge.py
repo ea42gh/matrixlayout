@@ -1,10 +1,18 @@
-from matrixlayout.qr import _filter_qr_name_specs, _mat_shape, _qr_known_zero_entries, _qr_label_layouts, _qr_name_specs_to_callouts
+from matrixlayout.qr import (
+    _filter_qr_name_specs,
+    _mat_shape,
+    _qr_callout_rules,
+    _qr_known_zero_entries,
+    _qr_label_layouts,
+    _qr_name_specs_to_callouts,
+)
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
     coerce_qr_spec,
     filter_qr_name_specs,
     merge_scalar_default,
     merge_scalar,
+    qr_callout_rules,
     qr_default_name_specs,
     qr_known_zero_entries,
     qr_label_layouts,
@@ -60,6 +68,24 @@ def test_filter_qr_name_specs_module_matches_compatibility_alias():
     expected = [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
     assert filter_qr_name_specs(specs, grid=grid) == expected
     assert _filter_qr_name_specs(specs, grid=grid) == expected
+
+
+def test_qr_callout_rules_module_matches_compatibility_alias():
+    assert qr_callout_rules(a_rows=2, a_cols=2) == _qr_callout_rules(a_rows=2, a_cols=2)
+
+
+def test_qr_callout_rules_adjust_compact_a_block():
+    label_shift_rules, length_rules = qr_callout_rules(a_rows=3, a_cols=2)
+
+    assert (r"\mathbf{R = S W^T A}", -2.0) in label_shift_rules
+    assert length_rules == [(r"\mathbf{Q^T = S W^T}", 14.0)]
+
+
+def test_qr_callout_rules_default_width_uses_default_r_shift():
+    label_shift_rules, length_rules = qr_callout_rules(a_rows=3, a_cols=4)
+
+    assert (r"\mathbf{R = S W^T A}", -1.0) in label_shift_rules
+    assert length_rules == []
 
 
 def test_merge_scalar_default_lets_spec_override_renderer_default():

@@ -47,7 +47,7 @@ line-length = 120
 extend-exclude = ["docs/notebooks/*.ipynb", "matrixlayout_demo.ipynb"]
 
 [tool.ruff.lint]
-select = ["E9", "F", "B"]
+select = ["E9", "F", "B", "C4"]
 
 [tool.mypy]
 python_version = "3.10"

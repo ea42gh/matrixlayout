@@ -233,7 +233,7 @@ def _mk_vecs_matrix(
     cols: List[List[str]] = []
     for group in vec_groups:
         for vec in group:
-            entries = [v for v in vec]
+            entries = list(vec)
             cols.append(entries)
 
     if not cols:

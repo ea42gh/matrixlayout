@@ -239,25 +239,25 @@ def tex(
         except Exception as e:
             raise ValueError(f"Failed to render callouts: {e}") from e
 
-    ctx = dict(
-        extension=extension or "",
-        preamble=preamble or "",
-        fig_scale_open=fig_scale_open,
-        fig_scale_close=fig_scale_close,
-        landscape=bool(landscape),
-        nice_options=(nice_options or "").strip(),
-        mat_format=mat_format_norm,
-        create_cell_nodes=bool(create_cell_nodes),
-        create_extra_nodes=bool(create_extra_nodes),
-        create_medium_nodes=bool(create_medium_nodes),
-        codebefore=list(codebefore or []),
-        mat_rep=mat_rep_norm,
-        submatrix_spans=sub_spans,   # list[(opts, "{i-j}{k-l}")]
-        submatrix_names=list(submatrix_names or []),
-        pivot_locs=_normalize_pivot_locs(pivot_locs),
-        txt_with_locs=_normalize_txt_with_locs(txt_with_locs),
-        rowechelon_paths=list(rowechelon_paths or []) + rendered_callouts,
-    )
+    ctx = {
+        "extension": extension or "",
+        "preamble": preamble or "",
+        "fig_scale_open": fig_scale_open,
+        "fig_scale_close": fig_scale_close,
+        "landscape": bool(landscape),
+        "nice_options": (nice_options or "").strip(),
+        "mat_format": mat_format_norm,
+        "create_cell_nodes": bool(create_cell_nodes),
+        "create_extra_nodes": bool(create_extra_nodes),
+        "create_medium_nodes": bool(create_medium_nodes),
+        "codebefore": list(codebefore or []),
+        "mat_rep": mat_rep_norm,
+        "submatrix_spans": sub_spans,  # list[(opts, "{i-j}{k-l}")]
+        "submatrix_names": list(submatrix_names or []),
+        "pivot_locs": _normalize_pivot_locs(pivot_locs),
+        "txt_with_locs": _normalize_txt_with_locs(txt_with_locs),
+        "rowechelon_paths": list(rowechelon_paths or []) + rendered_callouts,
+    }
     return render_template("ge.tex.j2", ctx)
 
 
