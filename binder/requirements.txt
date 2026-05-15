@@ -1,4 +1,4 @@
-jupyter-tikz>=0.5.8
+jupyter-tikz>=0.5.6
 -e .[render]
 ipython
 nbconvert
