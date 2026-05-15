@@ -14,14 +14,14 @@ This project is **layout-only** by design: it does not implement linear algebra 
 - Place annotations (arrows, braces, highlights, labels)
 - Convert symbolic objects to LaTeX strings for display (e.g. `sympy.latex`)
 - Generate LaTeX/TikZ that describes the layout
-- Render to SVG by calling `jupyter_tikz.render_svg(tex: str) -> str`
+- Render to SVG by delegating to `jupyter_tikz`
 
 ### What `matrixlayout` *does not* do
 - Compute matrix factorizations or decompositions (QR/LU/SVD/eigen, etc.)
 - Perform Gaussian elimination / RREF / back-substitution or any solver logic
 - Modify or simplify symbolic expressions
-- Manage rendering toolchains, subprocesses, cropping, or SVG normalization
-- Choose between rendering backends
+- Install or manage rendering toolchains
+- Implement rendering backends itself
 
 Algorithmic work lives in a separate package (`la_figures`) that produces **layout descriptions** consumed by `matrixlayout`.
 
@@ -42,10 +42,10 @@ For eigenproblem vector rows, selectors use `(group, vector, entry)` tuples.
 
 ## Rendering boundary
 
-`matrixlayout` depends on `jupyter_tikz` and **always** renders through:
+`matrixlayout` delegates SVG rendering to `jupyter_tikz`:
 
 ```python
-from jupyter_tikz import render_svg
+from matrixlayout.ge import render_ge_svg
 ```
 
 ## Documentation

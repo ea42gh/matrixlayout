@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "matrixlayout"
 version = "0.0.1"
-description = "Layout-only TeX generators for matrix-themed figures (no toolchain execution)."
+description = "Layout-only TeX generators for matrix-themed figures with delegated SVG rendering."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

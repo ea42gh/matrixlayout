@@ -35,8 +35,8 @@ matrixlayout does not manage toolchain installation or environment setup.
 
 | Component | Minimum | Notes |
 | --- | --- | --- |
-| Python | 3.9 | Tested with 3.9–3.12. |
-| jupyter_tikz | itikz_port | TeX toolchains + SVG. |
+| Python | 3.10 | Tested with 3.10–3.13. |
+| jupyter-tikz | 0.5.6 | TeX toolchains + SVG. |
 | TeX toolchain | TeX Live 2022+ | Needed for SVG rendering. |
 
 ## Data flow

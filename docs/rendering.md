@@ -1,6 +1,6 @@
 # Rendering
 
-Rendering uses `jupyter_tikz` under the hood.
+Rendering is delegated to `jupyter-tikz` under the hood.
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ svg = render_ge_svg(matrices=[[None, [[1]]]])
 ## render_opts pass-through
 
 All SVG renderers accept a `render_opts` mapping that is forwarded verbatim to
-`jupyter_tikz.render_svg`. Explicit keyword arguments (e.g., `crop`, `padding`,
+`jupyter-tikz`. Explicit keyword arguments (e.g., `crop`, `padding`,
 `toolchain_name`) override any values supplied in `render_opts`.
 
 ```python
