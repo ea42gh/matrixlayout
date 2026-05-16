@@ -566,10 +566,6 @@ def render_ge_tex(
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
         tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
-    if "Nrhs" in kwargs:
-        if n_rhs is not None:
-            raise TypeError("Use either n_rhs or Nrhs, not both.")
-        n_rhs = kwargs.pop("Nrhs")
     if document_preamble is not None:
         if extension and extension != document_preamble:
             raise ValueError("Use either document_preamble or extension, not conflicting values.")
@@ -878,9 +874,6 @@ def grid_bundle(
     regex-parsing the generated TeX.
     """
 
-    if "Nrhs" in kwargs:
-        n_rhs = kwargs.pop("Nrhs")
-
     if matrices is None and spec is None:
         raise ValueError("grid_bundle requires `matrices`")
 
@@ -991,11 +984,6 @@ def render_ge_svg(
     str
         SVG text.
     """
-    if "Nrhs" in kwargs:
-        if n_rhs is not None:
-            raise TypeError("Use either n_rhs or Nrhs, not both.")
-        n_rhs = kwargs.pop("Nrhs")
-
     if "label_targets" in kwargs:
         raise ValueError("label_targets is removed; use annotations instead.")
 

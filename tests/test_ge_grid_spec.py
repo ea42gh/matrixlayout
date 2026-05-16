@@ -36,7 +36,7 @@ def test_render_ge_tex_accepts_spec_dict_with_layout():
 
 
 def test_ge_grid_spec_accepts_legacy_nrhs_key():
-    spec = GEGridSpec.from_dict({"matrices": [[[1, 2, 3]]], "Nrhs": 1})
+    spec = GEGridSpec.from_dict({"matrices": [[[1, 2, 3]]], "n_rhs": 1})
 
     assert spec.n_rhs == 1
 

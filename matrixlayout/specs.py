@@ -334,10 +334,6 @@ class GEGridSpec:
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "GEGridSpec":
-        if d is not None and "Nrhs" in d and "n_rhs" not in d:
-            old_n_rhs = d["Nrhs"]
-            d = {k: v for k, v in d.items() if k != "Nrhs"}
-            d["n_rhs"] = old_n_rhs
         if d is not None:
             d = _coalesce_alias(d, canonical="document_preamble", alias="extension", spec_name="GEGridSpec")
             d = _coalesce_alias(d, canonical="body_preamble", alias="preamble", spec_name="GEGridSpec")

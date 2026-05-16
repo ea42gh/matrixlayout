@@ -37,7 +37,7 @@ def test_render_ge_tex_accepts_legacy_nrhs_keyword():
     from matrixlayout.ge import render_ge_tex
 
     matrices = [[None, [[1, 2, 3], [4, 5, 6]]]]
-    tex = render_ge_tex(matrices=matrices, Nrhs=1, preamble="")
+    tex = render_ge_tex(matrices=matrices, n_rhs=1, preamble="")
     assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
 
 
