@@ -301,14 +301,8 @@ def _resolve_callout_name(
     if "grid" in obj:
         r, c = obj["grid"]
         field = "grid"
-    elif "grid_pos" in obj:
-        r, c = obj["grid_pos"]
-        field = "grid_pos"
-    elif "block_row" in obj and "block_col" in obj:
-        r, c = obj["block_row"], obj["block_col"]
-        field = "block_row/block_col"
     else:
-        raise ValueError("Callout is missing 'name' (expected grid, grid_pos, or block_row/block_col)")
+        raise ValueError("Callout is missing 'name' (expected grid)")
     key = (int(r), int(c))
     if key not in name_map:
         raise ValueError(f"Callout {field} {key} not found in name_map")
