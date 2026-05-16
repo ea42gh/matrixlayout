@@ -89,14 +89,15 @@ svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_no
 
 Use `callouts` when you already know a submatrix delimiter name, or
 `callouts=True` to label every available delimiter with a default label. In grid
-renderers, callouts can target a block with `grid_pos` or
-`block_row`/`block_col`.
+renderers, callouts should target a block with `grid=(block_row, block_col)`.
+The older `grid_pos` and `block_row`/`block_col` spellings are still accepted
+for compatibility.
 
 ```python
 svg = render_ge_svg(
     matrices=[[None, [[1, 2], [3, 4]]]],
     callouts=[
-        {"grid_pos": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8}
+        {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8}
     ],
 )
 ```

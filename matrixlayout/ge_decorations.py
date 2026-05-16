@@ -80,7 +80,7 @@ def parse_ge_decorations(
             key = (int(grid[0]), int(grid[1]))
 
         if "label" in item:
-            callout: Dict[str, Any] = {"grid_pos": key, "label": str(item["label"])}
+            callout: Dict[str, Any] = {"grid": key, "label": str(item["label"])}
             for src, dst in [
                 ("side", "side"),
                 ("anchor", "anchor"),

@@ -93,7 +93,7 @@ def test_parse_callout_copies_supported_fields():
     assert codebefore == []
     assert callouts == [
         {
-            "grid_pos": (0, 0),
+            "grid": (0, 0),
             "label": "rank 2",
             "side": "right",
             "angle_deg": -35,

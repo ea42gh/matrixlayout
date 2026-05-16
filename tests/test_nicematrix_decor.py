@@ -38,7 +38,7 @@ def test_validate_callouts_non_strict_returns_errors():
 
 def test_validate_callouts_passes_on_known_name():
     errs = validate_callouts(
-        [{"grid_pos": (0, 0), "label": "A", "side": "left"}],
+        [{"grid": (0, 0), "label": "A", "side": "left"}],
         available_names=["A0"],
         name_map={(0, 0): "A0"},
         strict=False,
@@ -59,8 +59,8 @@ def test_ge_layer_callouts_merges_style_without_mutating_it():
     callouts = infer_ge_layer_callouts([[[None, [[1]]]], [[[1]], [[2]]]], **style)
 
     assert style == {"color": "red", "angle_deg": -20.0}
-    assert {"grid_pos": (0, 1), "label": r"A_{0}", "side": "right", **style} in callouts
-    assert {"grid_pos": (1, 0), "label": r"E_{1}", "side": "left", **style} in callouts
+    assert {"grid": (0, 1), "label": r"A_{0}", "side": "right", **style} in callouts
+    assert {"grid": (1, 0), "label": r"E_{1}", "side": "left", **style} in callouts
 
 
 def test_render_delim_callouts_true_generates_default_callouts():

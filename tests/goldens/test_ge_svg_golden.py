@@ -39,7 +39,7 @@ def test_render_ge_decorations_callout_golden():
             ],
             callouts=[
                 {
-                    "grid_pos": (0, 0),
+                    "grid": (0, 0),
                     "label": "R",
                     "side": "right",
                     "angle_deg": -35,

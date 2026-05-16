@@ -55,6 +55,7 @@ class DelimCalloutDict(TypedDict, total=False):
     label_shift_mm: float
     label_shift_y_mm: float
     label_shift_x_mm: float
+    grid: Tuple[int, int]
     grid_pos: Tuple[int, int]
     block_row: int
     block_col: int
@@ -297,15 +298,20 @@ def _resolve_callout_name(
         return obj
     if name_map is None:
         raise ValueError("Callout is missing 'name' and no name_map was provided")
-    if "grid_pos" in obj:
+    if "grid" in obj:
+        r, c = obj["grid"]
+        field = "grid"
+    elif "grid_pos" in obj:
         r, c = obj["grid_pos"]
+        field = "grid_pos"
     elif "block_row" in obj and "block_col" in obj:
         r, c = obj["block_row"], obj["block_col"]
+        field = "block_row/block_col"
     else:
-        raise ValueError("Callout is missing 'name' (expected grid_pos or block_row/block_col)")
+        raise ValueError("Callout is missing 'name' (expected grid, grid_pos, or block_row/block_col)")
     key = (int(r), int(c))
     if key not in name_map:
-        raise ValueError(f"Callout grid_pos {key} not found in name_map")
+        raise ValueError(f"Callout {field} {key} not found in name_map")
     d = dict(obj)
     d["name"] = name_map[key]
     return d
@@ -359,7 +365,7 @@ def infer_ge_matrix_labels(
     Returns
     -------
     list[dict]
-        A list of :class:`DelimCalloutDict` using ``grid_pos`` (block-row,
+        A list of :class:`DelimCalloutDict` using ``grid`` (block-row,
         block-col) addressing. Labels are LaTeX by default (math mode).
 
     Notes
@@ -378,7 +384,7 @@ def infer_ge_matrix_labels(
                 DelimCalloutDict,
                 {
                     **style,
-                    "grid_pos": (br, 1),
+                    "grid": (br, 1),
                     "label": (label_A % br) if "%d" in label_A else label_A,
                     "side": "right",
                 },
@@ -390,7 +396,7 @@ def infer_ge_matrix_labels(
                 DelimCalloutDict,
                 {
                     **style,
-                    "grid_pos": (br, 0),
+                    "grid": (br, 0),
                     "label": (label_E % br) if "%d" in label_E else label_E,
                     "side": "left",
                 },

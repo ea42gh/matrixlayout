@@ -202,7 +202,7 @@ def qr_name_specs_to_callouts(
                     local_length = float(override)
                     break
         callout = {
-            "grid_pos": (int(grid[0]), int(grid[1])),
+            "grid": (int(grid[0]), int(grid[1])),
             "label": label_str,
             "side": side,
             "anchor": anchor,
