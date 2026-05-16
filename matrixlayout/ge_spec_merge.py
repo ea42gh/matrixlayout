@@ -84,7 +84,7 @@ def merge_grid_spec_inputs(
     *,
     grid_spec: GEGridSpec,
     matrices: Optional[Sequence[Sequence[Any]]],
-    Nrhs: Any,
+    n_rhs: Any,
     formatter: LatexFormatter,
     outer_hspace_mm: int,
     block_vspace_mm: int,
@@ -127,7 +127,7 @@ def merge_grid_spec_inputs(
     default_outer_hspace_mm, default_block_vspace_mm = grid_spec_defaults(outer_hspace_mm, block_vspace_mm)
 
     matrices = merge_scalar_prefer_explicit("matrices", matrices, grid_spec.matrices)
-    Nrhs = merge_scalar_default("Nrhs", Nrhs, grid_spec.Nrhs, 0)
+    n_rhs = merge_scalar_default("n_rhs", n_rhs, grid_spec.n_rhs, 0)
     formatter = merge_scalar_default("formatter", formatter, grid_spec.formatter or latexify, latexify)
     outer_hspace_mm = int(
         merge_scalar_prefer_explicit("outer_hspace_mm", default_outer_hspace_mm, grid_spec.outer_hspace_mm)
@@ -213,7 +213,7 @@ def merge_grid_spec_inputs(
 
     return (
         matrices,
-        Nrhs,
+        n_rhs,
         formatter,
         outer_hspace_mm,
         block_vspace_mm,

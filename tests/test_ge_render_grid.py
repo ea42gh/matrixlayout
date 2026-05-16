@@ -13,7 +13,7 @@ def _parts(matrices, **kwargs):
         cell_cache=cell_cache,
         block_heights=block_heights,
         block_widths=block_widths,
-        Nrhs=kwargs.pop("Nrhs", 0),
+        n_rhs=kwargs.pop("n_rhs", 0),
         formatter=kwargs.pop("formatter", str),
         outer_hspace_mm=kwargs.pop("outer_hspace_mm", 6),
         block_vspace_mm=kwargs.pop("block_vspace_mm", 1),
@@ -39,7 +39,7 @@ def test_ge_render_parts_basic_grid_nrhs_names_and_spans():
         [[[1, 0], [0, 1]], [[1, 0, 0], [0, 1, 0]]],
     ]
 
-    parts = _parts(matrices, Nrhs=1)
+    parts = _parts(matrices, n_rhs=1)
 
     assert parts.mat_format == r"rr@{\hspace{6mm}}rr|r"
     assert r"\NotEmpty & \NotEmpty & 1 & 2 & 3 \\" in parts.mat_rep
@@ -67,7 +67,7 @@ def test_ge_render_parts_labels_and_label_gap():
 def test_ge_render_parts_list_nrhs_legacy_format_and_user_submatrix_locs():
     parts = _parts(
         [[[1, 2, 3, 4]]],
-        Nrhs=[1, 1],
+        n_rhs=[1, 1],
         legacy_format=True,
         cell_align="c",
         user_submatrix_locs=[("name=extra", "9-9", "10-10")],
@@ -83,7 +83,7 @@ def test_ge_render_parts_list_nrhs_legacy_format_and_user_submatrix_locs():
 def test_ge_render_parts_list_nrhs_current_format_without_legacy_separator():
     parts = _parts(
         [[[1, 2, 3, 4, 5]]],
-        Nrhs=[1, 2],
+        n_rhs=[1, 2],
         cell_align="c",
     )
 
@@ -93,7 +93,7 @@ def test_ge_render_parts_list_nrhs_current_format_without_legacy_separator():
 def test_ge_render_parts_ignores_invalid_nrhs_partition_width():
     parts = _parts(
         [[[1, 2]]],
-        Nrhs=2,
+        n_rhs=2,
     )
 
     assert parts.mat_format == "rr"

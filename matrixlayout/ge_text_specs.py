@@ -45,7 +45,7 @@ def render_ge_tex_specs(
     matrices: Sequence[Sequence[Any]],
     targets: Sequence[Mapping[str, Any]],
     *,
-    Nrhs: int = 0,
+    n_rhs: int = 0,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     block_align: Optional[str] = None,
@@ -68,7 +68,7 @@ def render_ge_tex_specs(
 
     spans = grid_submatrix_spans(
         matrices,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
         block_align=block_align,

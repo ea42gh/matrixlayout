@@ -167,7 +167,7 @@ def matrix_body_tex(matrix: Any, *, formatter: LatexFormatter) -> str:
 def pnicearray_tex(
     matrix: Any,
     *,
-    Nrhs: int = 0,
+    n_rhs: int = 0,
     formatter: LatexFormatter,
     align: str = "r",
 ) -> str:
@@ -176,9 +176,9 @@ def pnicearray_tex(
     if nrows == 0 or ncols == 0:
         return r"\NotEmpty"
 
-    if Nrhs and 0 < Nrhs < ncols:
-        left = ncols - Nrhs
-        fmt = (align * left) + "|" + (align * Nrhs)
+    if n_rhs and 0 < n_rhs < ncols:
+        left = ncols - n_rhs
+        fmt = (align * left) + "|" + (align * n_rhs)
     else:
         fmt = align * ncols
 

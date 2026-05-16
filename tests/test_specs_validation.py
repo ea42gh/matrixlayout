@@ -3,7 +3,7 @@ from matrixlayout.specs import GEGridSpec, QRGridSpec
 
 
 def test_validate_ge_spec_requires_matrices():
-    errors = validate_ge_spec({"Nrhs": 1})
+    errors = validate_ge_spec({"n_rhs": 1})
     assert any("requires 'matrices'" in msg for msg in errors)
 
 

@@ -81,16 +81,16 @@ def _total_block_sizes(
 def _rhs_column_format(
     *,
     base_width: int,
-    Nrhs: Any,
+    n_rhs: Any,
     cell_align: str,
     sep: str,
     left_extra: int,
     right_extra: int,
 ) -> Optional[str]:
-    if not Nrhs:
+    if not n_rhs:
         return None
-    if isinstance(Nrhs, (list, tuple)):
-        rhs = [int(x) for x in Nrhs]
+    if isinstance(n_rhs, (list, tuple)):
+        rhs = [int(x) for x in n_rhs]
         left = base_width - sum(rhs)
         cuts: List[int] = [left]
         for cut in rhs[:-1]:
@@ -103,13 +103,13 @@ def _rhs_column_format(
         if cur < base_width:
             fmt += cell_align * (base_width - cur)
         return fmt + (cell_align * right_extra)
-    if 0 < int(Nrhs) < base_width:
-        left = base_width - int(Nrhs)
+    if 0 < int(n_rhs) < base_width:
+        left = base_width - int(n_rhs)
         return (
             (cell_align * left_extra)
             + (cell_align * left)
             + sep
-            + (cell_align * int(Nrhs))
+            + (cell_align * int(n_rhs))
             + (cell_align * right_extra)
         )
     return None
@@ -118,7 +118,7 @@ def _rhs_column_format(
 def _matrix_column_format(
     *,
     block_widths: Sequence[int],
-    Nrhs: Any,
+    n_rhs: Any,
     format_nrhs: bool,
     cell_align: str,
     outer_hspace_mm: int,
@@ -143,7 +143,7 @@ def _matrix_column_format(
         if format_nrhs and bc == last_block_col:
             rhs_format = _rhs_column_format(
                 base_width=base_width,
-                Nrhs=Nrhs,
+                n_rhs=n_rhs,
                 cell_align=cell_align,
                 sep=sep,
                 left_extra=left_extra,
@@ -220,7 +220,7 @@ def build_ge_grid_render_parts(
     cell_cache: Sequence[Sequence[Tuple[List[List[Any]], int, int]]],
     block_heights: Sequence[int],
     block_widths: Sequence[int],
-    Nrhs: Any,
+    n_rhs: Any,
     formatter: Callable[[Any], str],
     outer_hspace_mm: int,
     block_vspace_mm: int,
@@ -305,7 +305,7 @@ def build_ge_grid_render_parts(
     )
     mat_format = _matrix_column_format(
         block_widths=block_widths,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         format_nrhs=format_nrhs,
         cell_align=cell_align,
         outer_hspace_mm=outer_hspace_mm,

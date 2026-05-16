@@ -13,7 +13,7 @@ def test_render_ge_tex_accepts_spec_object():
     matrices = _sample_grid()
     spec = GEGridSpec(
         matrices=matrices,
-        Nrhs=0,
+        n_rhs=0,
         outer_hspace_mm=9,
         legacy_submatrix_names=True,
     )
@@ -26,13 +26,19 @@ def test_render_ge_tex_accepts_spec_dict_with_layout():
     matrices = _sample_grid()
     spec = {
         "matrices": matrices,
-        "Nrhs": 0,
+        "n_rhs": 0,
         "outer_hspace_mm": 9,
         "legacy_submatrix_names": True,
         "layout": {"preamble": "%spec-preamble"},
     }
     tex = matrixlayout.render_ge_tex(spec=spec)
     assert "%spec-preamble" in tex
+
+
+def test_ge_grid_spec_accepts_legacy_nrhs_key():
+    spec = GEGridSpec.from_dict({"matrices": [[[1, 2, 3]]], "Nrhs": 1})
+
+    assert spec.n_rhs == 1
 
 
 def test_render_ge_tex_prefers_explicit_label_rows_over_spec():
@@ -66,6 +72,6 @@ def test_render_ge_tex_explicit_block_align_overrides_spec():
 
 def test_render_ge_tex_explicit_format_nrhs_overrides_spec():
     matrices = _sample_grid()
-    spec = {"matrices": matrices, "Nrhs": 1, "format_nrhs": False}
-    tex = matrixlayout.render_ge_tex(matrices=matrices, Nrhs=1, format_nrhs=True, spec=spec)
+    spec = {"matrices": matrices, "n_rhs": 1, "format_nrhs": False}
+    tex = matrixlayout.render_ge_tex(matrices=matrices, n_rhs=1, format_nrhs=True, spec=spec)
     assert "|" in tex

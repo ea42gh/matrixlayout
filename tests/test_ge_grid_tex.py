@@ -23,10 +23,21 @@ def test_render_ge_tex_smoke_builds_tex():
         [[[1, 0], [0, 1]], [[1, 0, 0], [0, 1, 0]]],
     ]
 
-    tex = render_ge_tex(matrices=matrices, Nrhs=1, preamble="")
+    tex = render_ge_tex(matrices=matrices, n_rhs=1, preamble="")
     assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
     # RHS partition should appear in the pNiceArray column spec.
+    assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
+
+
+def test_render_ge_tex_accepts_legacy_nrhs_keyword():
+    if not _has_ge_template():
+        pytest.skip("matrixlayout GE template not available")
+
+    from matrixlayout.ge import render_ge_tex
+
+    matrices = [[None, [[1, 2, 3], [4, 5, 6]]]]
+    tex = render_ge_tex(matrices=matrices, Nrhs=1, preamble="")
     assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
 
 

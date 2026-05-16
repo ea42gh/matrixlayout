@@ -15,7 +15,7 @@ def test_large_ge_grid_tex_assembly_stays_within_runtime_guardrail():
     start = perf_counter()
     tex = render_ge_tex(
         matrices=matrices,
-        Nrhs=2,
+        n_rhs=2,
         decorations=[
             {"grid": (1, 1), "entries": [(0, 0)], "background": "yellow!25"},
             {"grid": (8, 1), "submatrix": ("0:9", "0:0"), "outline": True},

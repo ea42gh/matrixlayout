@@ -14,7 +14,7 @@ from matrixlayout.ge_labels import build_label_maps, grid_label_layouts, merge_l
 def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
     spec = GEGridSpec(
         matrices=[[None, [[9]]]],
-        Nrhs=0,
+        n_rhs=0,
         outer_hspace_mm=9,
     )
     (
@@ -40,7 +40,7 @@ def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
     ) = _merge_grid_spec_inputs(
         grid_spec=spec,
         matrices=[[None, [[1]]]],
-        Nrhs=0,
+        n_rhs=0,
         formatter=latexify,
         outer_hspace_mm=6,
         block_vspace_mm=1,
@@ -64,7 +64,7 @@ def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
 
 
 def test_ge_merge_scalar_default_lets_spec_override_renderer_default():
-    assert merge_scalar_default("Nrhs", None, 1, 0) == 1
+    assert merge_scalar_default("n_rhs", None, 1, 0) == 1
 
 
 def test_ge_merge_scalar_default_preserves_non_default_explicit_over_spec_default():
@@ -103,7 +103,7 @@ def test_ge_coerce_spec_helpers_reject_invalid_types():
 
 
 def test_render_ge_tex_spec_nrhs_and_format_nrhs_override_defaults():
-    spec = GEGridSpec(matrices=[[[1, 2, 3]]], Nrhs=1, format_nrhs=False)
+    spec = GEGridSpec(matrices=[[[1, 2, 3]]], n_rhs=1, format_nrhs=False)
 
     tex = render_ge_tex(spec=spec)
 
@@ -191,7 +191,7 @@ def test_ge_label_module_helpers_match_compatibility_aliases():
 def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
     spec = GEGridSpec(
         matrices=[[None, [[1]]]],
-        Nrhs=0,
+        n_rhs=0,
         outer_hspace_mm=6,
         label_rows=[{"grid": (0, 0), "rows": [["row"]], "side": "above"}],
         label_cols=[{"grid": (0, 0), "cols": [["col"]], "side": "left"}],
@@ -219,7 +219,7 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
     ) = _merge_grid_spec_inputs(
         grid_spec=spec,
         matrices=[[None, [[1]]]],
-        Nrhs=0,
+        n_rhs=0,
         formatter=latexify,
         outer_hspace_mm=6,
         block_vspace_mm=1,

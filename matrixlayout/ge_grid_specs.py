@@ -15,7 +15,7 @@ from .specs import SubMatrixSpan
 def grid_submatrix_spans(
     matrices: Sequence[Sequence[Any]],
     *,
-    Nrhs: int = 0,
+    n_rhs: int = 0,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
     block_align: Optional[str] = None,
@@ -96,7 +96,7 @@ def grid_submatrix_spans(
         extra_cols_left[bc] + block_widths[bc] + extra_cols_right[bc] for bc in range(n_block_cols)
     ]
 
-    _ = (Nrhs, outer_hspace_mm, cell_align)
+    _ = (n_rhs, outer_hspace_mm, cell_align)
 
     block_pad_left: List[List[int]] = [[0 for _ in range(n_block_cols)] for _ in range(n_block_rows)]
     block_pad_top: List[List[int]] = [[0 for _ in range(n_block_cols)] for _ in range(n_block_rows)]

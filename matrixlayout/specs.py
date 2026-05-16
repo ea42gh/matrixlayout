@@ -263,7 +263,7 @@ class GEGridSpec:
     """Serializable spec for a GE matrix grid + layout options."""
 
     matrices: Sequence[Sequence[Any]]
-    Nrhs: Any = 0
+    n_rhs: Any = 0
     formatter: Optional[Any] = None
     outer_hspace_mm: int = 6
     block_vspace_mm: int = 1
@@ -301,6 +301,10 @@ class GEGridSpec:
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "GEGridSpec":
+        if d is not None and "Nrhs" in d and "n_rhs" not in d:
+            old_n_rhs = d["Nrhs"]
+            d = {k: v for k, v in d.items() if k != "Nrhs"}
+            d["n_rhs"] = old_n_rhs
         allowed = set(GEGridSpec.__dataclass_fields__.keys())
         kwargs = _filtered_dataclass_kwargs(
             d,

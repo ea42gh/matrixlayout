@@ -49,7 +49,7 @@ def test_render_ge_tex_renders_delim_callouts_as_draw_commands():
         color="blue",
     )
 
-    tex = render_ge_tex(matrices=matrices, Nrhs=1, callouts=callouts)
+    tex = render_ge_tex(matrices=matrices, n_rhs=1, callouts=callouts)
 
     # Callouts are inserted into the tikzpicture.
     assert "\\begin{tikzpicture}" in tex
@@ -95,7 +95,7 @@ def test_render_ge_tex_threads_extension_and_fig_scale():
 
     tex = render_ge_tex(
         matrices=matrices,
-        Nrhs=0,
+        n_rhs=0,
         extension=r"\usepackage{newtxtext,newtxmath}",
         fig_scale=0.75,
     )

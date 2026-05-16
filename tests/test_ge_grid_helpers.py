@@ -87,7 +87,7 @@ def test_matrix_body_tex_and_pnicearray_tex():
     assert matrix_body_tex([[1, 2], [3, 4]], formatter=str) == "1 & 2 \\\\\n3 & 4 \\\\"
     assert pnicearray_tex(None, formatter=str) == r"\NotEmpty"
 
-    tex = pnicearray_tex([[1, 2, 3]], Nrhs=1, formatter=str, align="c")
+    tex = pnicearray_tex([[1, 2, 3]], n_rhs=1, formatter=str, align="c")
     assert r"\begin{pNiceArray}{cc|c}%" in tex
     assert "1 & 2 & 3" in tex
     assert r"\end{pNiceArray}" in tex

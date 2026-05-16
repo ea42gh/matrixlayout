@@ -84,7 +84,7 @@ placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.
 | Spec | Field | Type | Notes |
 | --- | --- | --- | --- |
 | GE | `matrices` | list | Grid of matrices (rows of blocks). |
-| GE | `Nrhs` | int | RHS column count for augmented matrices. |
+| GE | `n_rhs` | int | RHS column count for augmented matrices. |
 | GE | `block_align` | str | Align narrower blocks within a column (`left/right/center/auto`). |
 | GE | `block_valign` | str | Align shorter blocks within a row (`top/bottom/center/auto`). |
 | GE | `block_vspace_mm` | int | Vertical spacing between block rows (mm). |
@@ -112,7 +112,7 @@ GE grid spec (core fields):
 ```text
 {
   "matrices": list[list[matrix|None]],
-  "Nrhs": int | list[int],
+  "n_rhs": int | list[int],
   "outer_hspace_mm": int,
   "block_vspace_mm": int,
   "cell_align": str,
@@ -179,12 +179,12 @@ CalloutSpec:
 }
 ```
 
-Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
+Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`,
 `formatter=latexify`). See `matrixlayout.formatting` for decorator helpers.
 
 ## Defaults (GE)
 
-- `Nrhs=0`
+- `n_rhs=0`
 - `outer_hspace_mm=6`
 - `block_vspace_mm=1`
 - `cell_align="r"`
@@ -197,7 +197,7 @@ Defaults are applied when fields are omitted (e.g., `Nrhs=0`, `decorators=None`,
 ## GE specs
 
 - `matrices`: grid of matrices (list of rows).
-- `Nrhs`: number of RHS columns for augmented matrices.
+- `n_rhs`: number of RHS columns for augmented matrices.
 - `block_align`: align narrower blocks within a block column (`left`, `right`, `center`, `auto`).
 - `block_valign`: align shorter blocks within a block row (`top`, `bottom`, `center`, `auto`).
 - `block_vspace_mm`: vertical spacing between block rows (mm).
@@ -237,7 +237,7 @@ Minimal example:
 ```python
 spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
-    "Nrhs": 0,
+    "n_rhs": 0,
     "pivot_locs": [("(1-1)(1-1)", "draw=red")],
 }
 ```

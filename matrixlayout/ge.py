@@ -471,7 +471,7 @@ def svg(
 
 def render_ge_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
-    Nrhs: Any = None,
+    n_rhs: Any = None,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     block_vspace_mm: int = 1,
@@ -508,7 +508,7 @@ def render_ge_tex(
     matrices:
         A nested list representing the "matrix-of-matrices" layout, typically
         ``[[None, A0], [E1, A1], [E2, A2], ...]``.
-    Nrhs:
+    n_rhs:
         Number of RHS columns in the *A-block* matrices, or a list of RHS block
         widths (partition style). This is used to insert an
         augmented-matrix partition bar in the last block-column's preamble.
@@ -537,11 +537,16 @@ def render_ge_tex(
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
         tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
+    if "Nrhs" in kwargs:
+        if n_rhs is not None:
+            raise TypeError("Use either n_rhs or Nrhs, not both.")
+        n_rhs = kwargs.pop("Nrhs")
+
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
         (
             matrices,
-            Nrhs,
+            n_rhs,
             formatter,
             outer_hspace_mm,
             block_vspace_mm,
@@ -562,7 +567,7 @@ def render_ge_tex(
         ) = _merge_grid_spec_inputs(
             grid_spec=grid_spec,
             matrices=matrices,
-            Nrhs=Nrhs,
+            n_rhs=n_rhs,
             formatter=formatter,
             outer_hspace_mm=outer_hspace_mm,
             block_vspace_mm=block_vspace_mm,
@@ -590,8 +595,8 @@ def render_ge_tex(
             decorations=decorations,
         )
 
-    if Nrhs is None:
-        Nrhs = 0
+    if n_rhs is None:
+        n_rhs = 0
     if format_nrhs is None:
         format_nrhs = True
     if strict is None:
@@ -688,7 +693,7 @@ def render_ge_tex(
         cell_cache=cell_cache,
         block_heights=block_heights,
         block_widths=block_widths,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         block_vspace_mm=block_vspace_mm,
@@ -808,7 +813,7 @@ def resolve_ge_grid_name(
 def grid_bundle(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
-    Nrhs: int = 0,
+    n_rhs: int = 0,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     cell_align: str = "r",
@@ -831,12 +836,15 @@ def grid_bundle(
     regex-parsing the generated TeX.
     """
 
+    if "Nrhs" in kwargs:
+        n_rhs = kwargs.pop("Nrhs")
+
     if matrices is None and spec is None:
         raise ValueError("grid_bundle requires `matrices`")
 
     tex = render_ge_tex(
         matrices=matrices,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
@@ -852,7 +860,7 @@ def grid_bundle(
     use_spec = _coerce_grid_spec(spec)
     if use_spec is not None:
         matrices = use_spec.matrices
-        Nrhs = use_spec.Nrhs
+        n_rhs = use_spec.n_rhs
         outer_hspace_mm = int(use_spec.outer_hspace_mm)
         cell_align = str(use_spec.cell_align)
         block_align = use_spec.block_align if use_spec.block_align is not None else block_align
@@ -870,7 +878,7 @@ def grid_bundle(
         raise ValueError("grid_bundle requires `matrices`")
     spans = grid_submatrix_spans(
         matrices,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         outer_hspace_mm=outer_hspace_mm,
         cell_align=cell_align,
         block_align=block_align,
@@ -885,7 +893,7 @@ def grid_bundle(
 
 def render_ge_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
-    Nrhs: Any = None,
+    n_rhs: Any = None,
     formatter: LatexFormatter = latexify,
     outer_hspace_mm: int = 6,
     block_vspace_mm: int = 1,
@@ -924,7 +932,7 @@ def render_ge_svg(
 
     Parameters
     ----------
-    matrices, Nrhs, formatter, outer_hspace_mm, block_vspace_mm, cell_align:
+    matrices, n_rhs, formatter, outer_hspace_mm, block_vspace_mm, cell_align:
         See :func:`render_ge_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
@@ -936,12 +944,17 @@ def render_ge_svg(
     str
         SVG text.
     """
+    if "Nrhs" in kwargs:
+        if n_rhs is not None:
+            raise TypeError("Use either n_rhs or Nrhs, not both.")
+        n_rhs = kwargs.pop("Nrhs")
+
     if "label_targets" in kwargs:
         raise ValueError("label_targets is removed; use specs instead.")
 
     tex = render_ge_tex(
         matrices=matrices,
-        Nrhs=Nrhs,
+        n_rhs=n_rhs,
         formatter=formatter,
         outer_hspace_mm=outer_hspace_mm,
         block_vspace_mm=block_vspace_mm,
