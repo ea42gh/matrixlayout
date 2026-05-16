@@ -12,13 +12,10 @@ from .specs import GELayoutSpec
 def resolve_annotations(
     *,
     annotations: Optional[Sequence[Mapping[str, Any]]],
-    specs: Optional[Sequence[Mapping[str, Any]]],
 ) -> Optional[Sequence[Mapping[str, Any]]]:
     """Return the canonical label/callout annotation specs."""
 
-    if annotations is not None and specs is not None:
-        raise TypeError("Use either annotations or specs, not both.")
-    return annotations if annotations is not None else specs
+    return annotations
 
 
 def merge_layout_string_hooks(

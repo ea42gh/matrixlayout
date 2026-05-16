@@ -38,7 +38,7 @@ the QR `qr_grid_bundle`/`QRGridBundle` API.
 
 Specs vs decorations:
 use `annotations` for labels/callouts and `decorations` for entry styling/lines.
-The old `specs` keyword remains accepted as a compatibility alias.
+Use `annotations` for label/callout targets.
 
 ## QR
 

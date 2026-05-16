@@ -378,16 +378,9 @@ class QRGridSpec:
     create_extra_nodes: Optional[bool] = True
     create_medium_nodes: Optional[bool] = True
     annotations: Optional[Sequence[Mapping[str, Any]]] = None
-    specs: Optional[Sequence[Mapping[str, Any]]] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, allow_extra: Optional[bool] = None) -> "QRGridSpec":
-        if d is not None and "specs" in d and d.get("annotations") is None:
-            old_specs = d["specs"]
-            d = {k: v for k, v in d.items() if k != "specs"}
-            d["annotations"] = old_specs
-        elif d is not None and d.get("specs") is not None and d.get("annotations") is not None:
-            raise ValueError("Use either 'annotations' or 'specs', not both.")
         if d is not None:
             d = _coalesce_alias(d, canonical="document_preamble", alias="extension", spec_name="QRGridSpec")
             d = _coalesce_alias(d, canonical="body_preamble", alias="preamble", spec_name="QRGridSpec")
@@ -661,12 +654,11 @@ def validate_qr_spec(spec: Any, *, strict: bool = True) -> List[str]:
     if mapping is None or mats is None:
         return errors
     grid = _grid_size(mats)
-    annotations_field = "annotations" if mapping.get("annotations") is not None else "specs"
-    annotations = mapping.get("annotations") if annotations_field == "annotations" else mapping.get("specs")
+    annotations = mapping.get("annotations")
     if annotations is not None and (isinstance(annotations, (str, bytes)) or not isinstance(annotations, Sequence)):
-        errors.append(f"{annotations_field} must be a sequence of mappings")
+        errors.append("annotations must be a sequence of mappings")
     elif annotations is not None:
-        errors.extend(_validate_ge_decorations(annotations, grid=grid, strict=strict, field=annotations_field))
+        errors.extend(_validate_ge_decorations(annotations, grid=grid, strict=strict, field="annotations"))
     decorators = mapping.get("decorators")
     if decorators is not None and (isinstance(decorators, (str, bytes)) or not isinstance(decorators, Sequence)):
         errors.append("decorators must be a sequence of mappings")

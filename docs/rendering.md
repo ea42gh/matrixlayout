@@ -29,7 +29,7 @@ svg = render_ge_svg(matrices=[[None, [[1]]]])
 ```
 
 `render_ge_svg` forwards its inputs to `render_ge_tex` before rendering. If you pass both
-`spec`/`specs` and explicit kwargs, explicit kwargs take precedence.
+`spec`, `annotations`, and explicit kwargs are composed by the renderer; explicit kwargs take precedence.
 
 ## render_opts pass-through
 

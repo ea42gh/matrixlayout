@@ -260,9 +260,8 @@ def test_render_ge_svg_label_targets_overlay():
     with patch("matrixlayout.ge.render_ge_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
         mock_tex.return_value = "TEX"
         mock_svg.return_value = "SVG"
-        render_ge_svg(matrices=matrices, specs=targets)
+        render_ge_svg(matrices=matrices, annotations=targets)
         assert mock_tex.call_args.kwargs.get("annotations") == targets
-        assert mock_tex.call_args.kwargs.get("specs") is None
 
 
 def test_render_ge_svg_accepts_annotations_alias():
@@ -278,15 +277,6 @@ def test_render_ge_svg_accepts_annotations_alias():
         mock_svg.return_value = "SVG"
         render_ge_svg(matrices=matrices, annotations=annotations)
         assert mock_tex.call_args.kwargs.get("annotations") == annotations
-        assert mock_tex.call_args.kwargs.get("specs") is None
-
-
-def test_render_ge_tex_rejects_annotations_and_specs_together():
-    matrices = [[[1, 2], [3, 4]]]
-    annotations = [{"grid": (0, 0), "side": "above", "labels": ["head"]}]
-
-    with pytest.raises(TypeError, match="annotations or specs"):
-        render_ge_tex(matrices=matrices, annotations=annotations, specs=annotations)
 
 
 def test_render_ge_svg_label_targets_add_blank_rows():
@@ -305,7 +295,7 @@ def test_render_ge_svg_label_targets_preserve_label_rows():
         {"grid": (0, 0), "side": "above", "labels": ["head"]},
     ]
     existing_rows = [{"grid": (0, 0), "side": "above", "rows": [["X"]]}]
-    tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, annotations=targets)
     assert "\\text{X}" in tex
     assert "\\text{head}" in tex
 
@@ -315,6 +305,6 @@ def test_render_ge_svg_label_targets_do_not_add_label_cols():
     targets = [
         {"grid": (0, 0), "side": "left", "labels": ["a", "b"]},
     ]
-    tex = render_ge_tex(matrices=matrices, formatter=str, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=targets)
     assert "\\text{a}" in tex
     assert "\\text{b}" in tex

@@ -89,7 +89,7 @@ def test_normalize_label_rows_and_cols_shapes():
 
 def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
     label_rows, label_cols, decorations = merge_label_specs(
-        specs=[
+        annotations=[
             {"grid": (0, 0), "side": "above", "labels": [["spec1"], ["spec2"]]},
             {"grid": (0, 0), "side": "left", "labels": [["col1"], ["col2"]]},
             {"grid": (0, 0), "label": "callout"},
@@ -105,10 +105,10 @@ def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
     assert decorations[-1]["label"] == "callout"
 
 
-def test_merge_label_specs_handles_no_specs_or_unmatched_specs():
-    assert merge_label_specs(specs=[], label_rows=None, label_cols=None, decorations=None) == (None, None, None)
+def test_merge_label_specs_handles_no_annotations_or_unmatched_annotations():
+    assert merge_label_specs(annotations=[], label_rows=None, label_cols=None, decorations=None) == (None, None, None)
     assert merge_label_specs(
-        specs=["bad", {"grid": (0, 0), "label": "callout"}],
+        annotations=["bad", {"grid": (0, 0), "label": "callout"}],
         label_rows=None,
         label_cols=None,
         decorations=None,

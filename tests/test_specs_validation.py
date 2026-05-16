@@ -89,24 +89,24 @@ def test_validate_qr_spec_detects_non_rectangular_grid():
     assert any("rectangular" in msg for msg in errors)
 
 
-def test_validate_qr_spec_checks_specs_are_mappings():
-    spec = {"matrices": [[[[1]]]], "specs": ["not a mapping"]}
+def test_validate_qr_spec_checks_annotations_are_mappings():
+    spec = {"matrices": [[[[1]]]], "annotations": ["not a mapping"]}
     errors = validate_qr_spec(spec)
 
-    assert any("specs[0] must be a mapping" in msg for msg in errors)
+    assert any("annotations[0] must be a mapping" in msg for msg in errors)
 
 
-def test_validate_qr_spec_rejects_string_specs():
-    spec = {"matrices": [[[[1]]]], "specs": "not a sequence of mappings"}
+def test_validate_qr_spec_rejects_string_annotations():
+    spec = {"matrices": [[[[1]]]], "annotations": "not a sequence of mappings"}
     errors = validate_qr_spec(spec)
 
-    assert any("specs must be a sequence of mappings" in msg for msg in errors)
+    assert any("annotations must be a sequence of mappings" in msg for msg in errors)
 
 
-def test_validate_qr_spec_checks_nested_specs_and_decorators():
+def test_validate_qr_spec_checks_nested_annotations_and_decorators():
     spec = {
         "matrices": [[[[1]], [[2]]]],
-        "specs": [
+        "annotations": [
             {"grid": (0, 9), "label": "bad", "side": "diagonal"},
             {"entries": [(0, 0)], "background": "yellow!40"},
             {"grid": (0, 1), "label": "ok", "typo": True},
@@ -118,17 +118,17 @@ def test_validate_qr_spec_checks_nested_specs_and_decorators():
 
     errors = validate_qr_spec(spec)
 
-    assert any("specs[0].grid" in msg and "outside" in msg for msg in errors)
-    assert any("specs[0].side" in msg for msg in errors)
-    assert any("specs[1] requires grid" in msg for msg in errors)
-    assert any("specs[2] has unknown field" in msg for msg in errors)
+    assert any("annotations[0].grid" in msg and "outside" in msg for msg in errors)
+    assert any("annotations[0].side" in msg for msg in errors)
+    assert any("annotations[1] requires grid" in msg for msg in errors)
+    assert any("annotations[2] has unknown field" in msg for msg in errors)
     assert any("decorators[0].decorator must be callable" in msg for msg in errors)
 
 
 def test_validate_qr_spec_accepts_typed_grid_spec():
     spec = QRGridSpec(
         matrices=[[[[1, 0], [0, 1]]]],
-        specs=[{"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!40"}],
+        annotations=[{"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!40"}],
     )
 
     assert validate_qr_spec(spec) == []

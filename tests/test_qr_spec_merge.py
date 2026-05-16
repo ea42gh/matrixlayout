@@ -182,35 +182,17 @@ def test_render_qr_tex_accepts_annotations_alias():
     assert r"\text{x}" in tex
 
 
-def test_qr_grid_spec_migrates_specs_to_annotations():
+def test_qr_grid_spec_accepts_annotations():
     annotations = [{"grid": (0, 2), "side": "above", "labels": ["x"]}]
 
     spec = QRGridSpec.from_dict(
         {
             "matrices": [[None, None, [[1]], [[1]]], [None, [[1]], [[1]], [[1]]]],
-            "specs": annotations,
+            "annotations": annotations,
         }
     )
 
     assert spec.annotations == annotations
-    assert spec.specs is None
-
-
-def test_qr_grid_spec_rejects_annotations_and_specs():
-    annotations = [{"grid": (0, 2), "side": "above", "labels": ["x"]}]
-
-    try:
-        QRGridSpec.from_dict(
-            {
-                "matrices": [[None, None, [[1]], [[1]]], [None, [[1]], [[1]], [[1]]]],
-                "annotations": annotations,
-                "specs": annotations,
-            }
-        )
-    except ValueError as exc:
-        assert "annotations" in str(exc)
-    else:
-        raise AssertionError("expected QRGridSpec to reject annotations and specs together")
 
 
 def test_render_qr_tex_spec_strict_is_not_overridden_by_default_false():

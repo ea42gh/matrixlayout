@@ -75,7 +75,7 @@ annotations = [
 
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
 - `annotations` (label/callout targets) are merged into `label_rows`/`label_cols`.
-- `specs` is still accepted as a compatibility alias for `annotations`.
+- Use `annotations` for label/callout targets.
 - `variable_labels` are appended to `label_rows` with `side="below"`.
 - When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 

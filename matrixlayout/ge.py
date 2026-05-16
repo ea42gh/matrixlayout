@@ -394,7 +394,6 @@ def render_ge_tex(
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     annotations: Optional[Sequence[Mapping[str, Any]]] = None,
-    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = 0.8,
@@ -431,8 +430,6 @@ def render_ge_tex(
     annotations:
         Optional label/callout annotation specs. Label entries are merged into
         ``label_rows``/``label_cols``; callout labels are merged into decorations.
-    specs:
-        Backward-compatible alias for ``annotations``.
 
     Returns
     -------
@@ -503,11 +500,11 @@ def render_ge_tex(
             kwargs=kwargs,
         )
 
-    annotations = _resolve_annotations(annotations=annotations, specs=specs)
+    annotations = _resolve_annotations(annotations=annotations)
 
     if annotations:
         label_rows, label_cols, decorations = _merge_label_specs(
-            specs=annotations,
+            annotations=annotations,
             label_rows=label_rows,
             label_cols=label_cols,
             decorations=decorations,
@@ -837,7 +834,6 @@ def render_ge_svg(
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
     annotations: Optional[Sequence[Mapping[str, Any]]] = None,
-    specs: Optional[Sequence[Mapping[str, Any]]] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = None,
@@ -857,8 +853,6 @@ def render_ge_svg(
         Passed through to the renderer.
     annotations:
         Additional label/callout mapping specs.
-    specs:
-        Backward-compatible alias for ``annotations``.
 
     Returns
     -------
@@ -868,7 +862,7 @@ def render_ge_svg(
     if "label_targets" in kwargs:
         raise ValueError("label_targets is removed; use annotations instead.")
 
-    annotations = _resolve_annotations(annotations=annotations, specs=specs)
+    annotations = _resolve_annotations(annotations=annotations)
 
     tex = render_ge_tex(
         matrices=matrices,

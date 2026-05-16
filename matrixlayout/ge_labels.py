@@ -199,13 +199,13 @@ def _is_blank_label(items: Sequence[Any]) -> bool:
 
 def merge_label_specs(
     *,
-    specs: Sequence[Mapping[str, Any]],
+    annotations: Sequence[Mapping[str, Any]],
     label_rows: Optional[Sequence[Any]],
     label_cols: Optional[Sequence[Any]],
     decorations: Optional[Sequence[Any]],
 ) -> Tuple[Optional[List[Any]], Optional[List[Any]], Optional[List[Any]]]:
-    """Merge label specs derived from ``specs`` into explicit label rows/cols."""
-    if not specs:
+    """Merge annotation labels into explicit label rows/cols."""
+    if not annotations:
         return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
 
     def _collect_items(val: Any) -> List[Mapping[str, Any]]:
@@ -215,8 +215,8 @@ def merge_label_specs(
             return [val]
         return [item for item in val if isinstance(item, Mapping)]
 
-    label_specs = label_targets_from_specs(specs)
-    callout_specs = [item for item in _collect_items(specs) if "label" in item]
+    label_specs = label_targets_from_specs(annotations)
+    callout_specs = [item for item in _collect_items(annotations) if "label" in item]
     if callout_specs:
         decorations = list(decorations or [])
         decorations.extend(callout_specs)

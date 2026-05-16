@@ -53,7 +53,7 @@ svg = render_ge_svg(matrices=matrices, annotations=annotations)
 Notes:
 - If both `spec`/`annotations` and explicit kwargs are provided, explicit kwargs win.
 - Labels are attached to a block and placed into empty adjacent blocks when possible.
-- `specs` is still accepted as a compatibility alias for `annotations`.
+- Use `annotations` for label/callout targets.
 
 ## QR grid
 

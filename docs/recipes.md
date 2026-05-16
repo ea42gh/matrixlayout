@@ -20,10 +20,10 @@ svg = render_ge_svg(**spec)
 ## GE with explicit labels overriding specs
 
 ```python
-specs = [{"grid": (0, 1), "side": "above", "labels": ["spec"]}]
+annotations = [{"grid": (0, 1), "side": "above", "labels": ["spec"]}]
 svg = render_ge_svg(
     matrices=[[None, [[1, 2], [3, 4]]]],
-    specs=specs,
+    annotations=annotations,
     label_rows=[{"grid": (0, 1), "side": "above", "labels": [["explicit"]]}],
 )
 ```
@@ -39,7 +39,7 @@ spec = {
 }
 svg = render_qr_svg(**spec)
 
-# Optional: pass label/callout specs via `specs`.
+# Optional: pass label/callout targets via `annotations`.
 ```
 
 ## Eigen/SVD with decorators

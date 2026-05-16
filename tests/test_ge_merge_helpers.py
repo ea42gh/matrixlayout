@@ -127,10 +127,10 @@ def test_render_ge_tex_spec_strict_is_not_overridden_by_default_false():
 
 
 def test_merge_label_specs_preserves_explicit_rows():
-    specs = [{"grid": (0, 1), "label": "spec", "side": "above"}]
+    annotations = [{"grid": (0, 1), "label": "spec", "side": "above"}]
     label_rows = [{"grid": (0, 1), "rows": [["explicit"]], "side": "above"}]
     label_rows_out, label_cols_out, _decorations = _merge_label_specs(
-        specs=specs,
+        annotations=annotations,
         label_rows=label_rows,
         label_cols=None,
         decorations=None,
@@ -140,10 +140,10 @@ def test_merge_label_specs_preserves_explicit_rows():
     assert "spec" not in str(label_rows_out)
 
 
-def test_merge_label_specs_uses_specs_when_no_explicit():
-    specs = [{"grid": (0, 0), "rows": [["spec"]], "side": "above"}]
+def test_merge_label_specs_uses_annotations_when_no_explicit():
+    annotations = [{"grid": (0, 0), "rows": [["spec"]], "side": "above"}]
     label_rows_out, label_cols_out, _decorations = _merge_label_specs(
-        specs=specs,
+        annotations=annotations,
         label_rows=None,
         label_cols=None,
         decorations=None,
@@ -160,13 +160,13 @@ def test_ge_label_module_helpers_match_compatibility_aliases():
     assert cols == []
 
     direct_rows, direct_cols, direct_decorations = merge_label_specs(
-        specs=targets,
+        annotations=targets,
         label_rows=None,
         label_cols=None,
         decorations=None,
     )
     compat_rows, compat_cols, compat_decorations = _merge_label_specs(
-        specs=targets,
+        annotations=targets,
         label_rows=None,
         label_cols=None,
         decorations=None,
