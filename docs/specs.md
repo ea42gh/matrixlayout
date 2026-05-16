@@ -232,7 +232,9 @@ Quick reference:
 | `label` | Callout label |
 
 See `decorators.md` for full syntax and examples.
-- `preamble`, `extension`, `nice_options`: LaTeX preamble and nicematrix options.
+- `document_preamble`, `body_preamble`, `nice_options`: true LaTeX preamble
+  insertion, document-body setup before the math environment, and nicematrix
+  options. Legacy `extension`/`preamble` aliases are still accepted.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.
 - `callouts`: name/label callouts attached to submatrix delimiters.

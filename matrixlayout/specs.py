@@ -29,6 +29,30 @@ def _filtered_dataclass_kwargs(
     return {k: v for k, v in d.items() if k in allowed}
 
 
+def _coalesce_alias(
+    d: Dict[str, Any],
+    *,
+    canonical: str,
+    alias: str,
+    spec_name: str,
+) -> Dict[str, Any]:
+    """Return a copy with ``alias`` folded into ``canonical``.
+
+    The legacy alias remains accepted by ``from_dict`` for compatibility, but
+    both spellings may not carry conflicting values.
+    """
+
+    if alias not in d:
+        return d
+    out = dict(d)
+    alias_value = out.pop(alias)
+    if canonical in out and out[canonical] is not None and out[canonical] != alias_value:
+        raise ValueError(f"Conflicting {spec_name} fields: {canonical!r} and legacy alias {alias!r}")
+    if out.get(canonical) is None:
+        out[canonical] = alias_value
+    return out
+
+
 class GELabelRowsSpec(TypedDict, total=False):
     """Dictionary schema for GE row labels.
 
@@ -147,12 +171,15 @@ class GELayoutSpec:
     """
 
     nice_options: Optional[Any] = None
-    # ``extension`` is injected into the LaTeX preamble (before \begin{document}).
+    # ``document_preamble`` is injected into the LaTeX preamble (before \begin{document}).
     # Use this for true preamble directives like \usepackage or \geometry.
-    extension: Optional[str] = None
-    # ``preamble`` is injected into the LaTeX document body (after \begin{document}).
+    document_preamble: Optional[str] = None
+    # ``body_preamble`` is injected into the LaTeX document body (after \begin{document}).
     # It is intended for *content* inserted before the math environment (e.g.,
     # TikZ setup that is safe in the document body). Do not put \usepackage here.
+    body_preamble: Optional[str] = None
+    # Legacy aliases retained for compatibility with existing specs.
+    extension: Optional[str] = None
     preamble: Optional[str] = None
     codebefore: Optional[Sequence[Any]] = None
     submatrix_locs: Optional[Sequence[Union[SubMatrixLoc, Dict[str, Any], Tuple[Any, ...]]]] = None
@@ -176,6 +203,8 @@ class GELayoutSpec:
     def from_dict(d: Dict[str, Any]) -> "GELayoutSpec":
         if d is None:
             return GELayoutSpec()
+        d = _coalesce_alias(d, canonical="document_preamble", alias="extension", spec_name="GELayoutSpec")
+        d = _coalesce_alias(d, canonical="body_preamble", alias="preamble", spec_name="GELayoutSpec")
         allowed = set(GELayoutSpec.__dataclass_fields__.keys())
         extra = set(d.keys()) - allowed
         if extra:
@@ -271,6 +300,9 @@ class GEGridSpec:
     cell_align: str = "r"
     block_align: Optional[str] = None
     block_valign: Optional[str] = None
+    document_preamble: Optional[str] = None
+    body_preamble: Optional[str] = None
+    # Legacy aliases retained for compatibility with existing specs.
     extension: str = ""
     fig_scale: Optional[Any] = None
     preamble: Optional[str] = None
@@ -306,6 +338,9 @@ class GEGridSpec:
             old_n_rhs = d["Nrhs"]
             d = {k: v for k, v in d.items() if k != "Nrhs"}
             d["n_rhs"] = old_n_rhs
+        if d is not None:
+            d = _coalesce_alias(d, canonical="document_preamble", alias="extension", spec_name="GEGridSpec")
+            d = _coalesce_alias(d, canonical="body_preamble", alias="preamble", spec_name="GEGridSpec")
         allowed = set(GEGridSpec.__dataclass_fields__.keys())
         kwargs = _filtered_dataclass_kwargs(
             d,
@@ -331,6 +366,9 @@ class QRGridSpec:
     formatter: Optional[Any] = None
     array_names: Any = True
     fig_scale: Optional[Any] = None
+    document_preamble: Optional[str] = None
+    body_preamble: Optional[str] = None
+    # Legacy aliases retained for compatibility with existing specs.
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n"
     extension: str = ""
     nice_options: Optional[str] = "vlines-in-sub-matrix = I"
@@ -354,6 +392,9 @@ class QRGridSpec:
             d["annotations"] = old_specs
         elif d is not None and d.get("specs") is not None and d.get("annotations") is not None:
             raise ValueError("Use either 'annotations' or 'specs', not both.")
+        if d is not None:
+            d = _coalesce_alias(d, canonical="document_preamble", alias="extension", spec_name="QRGridSpec")
+            d = _coalesce_alias(d, canonical="body_preamble", alias="preamble", spec_name="QRGridSpec")
         allowed = set(QRGridSpec.__dataclass_fields__.keys())
         kwargs = _filtered_dataclass_kwargs(
             d,

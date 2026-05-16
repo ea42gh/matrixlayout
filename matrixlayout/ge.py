@@ -103,10 +103,12 @@ def _merge_layout_string_hooks(
 ) -> Tuple[str, str]:
     if spec is None:
         return extension, preamble
-    if getattr(spec, "extension", None):
-        extension = (spec.extension or "") + ("\n" if (spec.extension and extension) else "") + (extension or "")
-    if getattr(spec, "preamble", None):
-        preamble = (spec.preamble or "") + ("\n" if (spec.preamble and preamble) else "") + (preamble or "")
+    document_preamble = getattr(spec, "document_preamble", None) or getattr(spec, "extension", None)
+    body_preamble = getattr(spec, "body_preamble", None) or getattr(spec, "preamble", None)
+    if document_preamble:
+        extension = (document_preamble or "") + ("\n" if (document_preamble and extension) else "") + (extension or "")
+    if body_preamble:
+        preamble = (body_preamble or "") + ("\n" if (body_preamble and preamble) else "") + (preamble or "")
     return extension, preamble
 
 
@@ -276,6 +278,8 @@ def tex(
     mat_format: str,
     preamble: str = "",
     extension: str = "",
+    document_preamble: Optional[str] = None,
+    body_preamble: Optional[str] = None,
     nice_options: Optional[str] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     codebefore: Optional[Sequence[str]] = None,
@@ -297,6 +301,15 @@ def tex(
     callout_name_map: Optional[Mapping[Tuple[int, int], str]] = None,
 ) -> str:
     r"""Populate the GE template and return TeX."""
+    if document_preamble is not None:
+        if extension and extension != document_preamble:
+            raise ValueError("Use either document_preamble or extension, not conflicting values.")
+        extension = document_preamble
+    if body_preamble is not None:
+        if preamble and preamble != body_preamble:
+            raise ValueError("Use either body_preamble or preamble, not conflicting values.")
+        preamble = body_preamble
+
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
@@ -491,6 +504,7 @@ def render_ge_tex(
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
     extension: str = "",
+    document_preamble: Optional[str] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     format_nrhs: Optional[bool] = None,
     decorators: Optional[Sequence[Any]] = None,
@@ -556,6 +570,16 @@ def render_ge_tex(
         if n_rhs is not None:
             raise TypeError("Use either n_rhs or Nrhs, not both.")
         n_rhs = kwargs.pop("Nrhs")
+    if document_preamble is not None:
+        if extension and extension != document_preamble:
+            raise ValueError("Use either document_preamble or extension, not conflicting values.")
+        extension = document_preamble
+    if "body_preamble" in kwargs:
+        body_preamble = kwargs.pop("body_preamble")
+        preamble = kwargs.get("preamble")
+        if preamble and preamble != body_preamble:
+            raise ValueError("Use either body_preamble or preamble, not conflicting values.")
+        kwargs["preamble"] = body_preamble
 
     grid_spec = _coerce_grid_spec(spec)
     if grid_spec is not None:
@@ -733,6 +757,7 @@ def render_ge_tex(
         mat_rep=parts.mat_rep,
         mat_format=parts.mat_format,
         extension=extension,
+        document_preamble=document_preamble,
         fig_scale=fig_scale,
         submatrix_locs=parts.submatrix_locs,
         callouts=kwargs.pop("callouts", None),
@@ -918,9 +943,11 @@ def render_ge_svg(
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
     extension: str = "",
+    document_preamble: Optional[str] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     format_nrhs: Optional[bool] = None,
     preamble: Optional[str] = None,
+    body_preamble: Optional[str] = None,
     nice_options: Optional[str] = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
@@ -984,9 +1011,11 @@ def render_ge_svg(
         block_align=block_align,
         block_valign=block_valign,
         extension=extension,
+        document_preamble=document_preamble,
         fig_scale=fig_scale,
         format_nrhs=format_nrhs,
         preamble=preamble,
+        body_preamble=body_preamble,
         nice_options=nice_options,
         decorators=decorators,
         decorations=decorations,

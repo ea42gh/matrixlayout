@@ -466,6 +466,8 @@ def render_qr_tex(
     fig_scale: Optional[Any] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
     extension: str = "",
+    body_preamble: Optional[str] = None,
+    document_preamble: Optional[str] = None,
     nice_options: Optional[str] = "vlines-in-sub-matrix = I",
     label_color: str = "blue",
     label_text_color: str = "red",
@@ -487,19 +489,31 @@ def render_qr_tex(
         decorators = [{"grid": (0, 2), "entries": [(0, 0)], "decorator": box}]
         tex = render_qr_tex(matrices=matrices, decorators=decorators)
     """
+    if document_preamble is not None:
+        if extension and extension != document_preamble:
+            raise ValueError("Use either document_preamble or extension, not conflicting values.")
+        extension = document_preamble
+    if body_preamble is not None:
+        default_body_preamble = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n"
+        if preamble != default_body_preamble and preamble != body_preamble:
+            raise ValueError("Use either body_preamble or preamble, not conflicting values.")
+        preamble = body_preamble
+
     spec_obj = _coerce_qr_spec(spec)
     if spec_obj is not None:
         matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
         formatter = _merge_scalar("formatter", formatter, spec_obj.formatter)
         array_names = _merge_scalar_default("array_names", array_names, spec_obj.array_names, True)
         fig_scale = _merge_scalar("fig_scale", fig_scale, spec_obj.fig_scale)
+        spec_body_preamble = spec_obj.body_preamble if spec_obj.body_preamble is not None else spec_obj.preamble
+        spec_document_preamble = spec_obj.document_preamble if spec_obj.document_preamble is not None else spec_obj.extension
         preamble = _merge_scalar_default(
-            "preamble",
+            "body_preamble",
             preamble,
-            spec_obj.preamble,
+            spec_body_preamble,
             r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
         )
-        extension = _merge_scalar_default("extension", extension, spec_obj.extension, "")
+        extension = _merge_scalar_default("document_preamble", extension, spec_document_preamble, "")
         nice_options = _merge_scalar_default(
             "nice_options",
             nice_options,
@@ -568,6 +582,8 @@ def qr_grid_bundle(
     fig_scale: Optional[Any] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
     extension: str = "",
+    body_preamble: Optional[str] = None,
+    document_preamble: Optional[str] = None,
     nice_options: Optional[str] = "vlines-in-sub-matrix = I",
     label_color: str = "blue",
     label_text_color: str = "red",
@@ -591,6 +607,8 @@ def qr_grid_bundle(
         fig_scale=fig_scale,
         preamble=preamble,
         extension=extension,
+        body_preamble=body_preamble,
+        document_preamble=document_preamble,
         nice_options=nice_options,
         label_color=label_color,
         label_text_color=label_text_color,
@@ -631,6 +649,8 @@ def render_qr_svg(
     fig_scale: Optional[Any] = None,
     preamble: str = r" \NiceMatrixOptions{cell-space-limits = 2pt}" + "\n",
     extension: str = "",
+    body_preamble: Optional[str] = None,
+    document_preamble: Optional[str] = None,
     nice_options: Optional[str] = "vlines-in-sub-matrix = I",
     label_color: str = "blue",
     label_text_color: str = "red",
@@ -659,6 +679,8 @@ def render_qr_svg(
         fig_scale=fig_scale,
         preamble=preamble,
         extension=extension,
+        body_preamble=body_preamble,
+        document_preamble=document_preamble,
         nice_options=nice_options,
         label_color=label_color,
         label_text_color=label_text_color,

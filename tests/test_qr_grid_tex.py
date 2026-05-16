@@ -21,6 +21,20 @@ def test_render_qr_tex_filters_callouts_for_minimal_grid():
     assert "v_1" in tex
 
 
+def test_render_qr_tex_accepts_canonical_tex_hooks():
+    from matrixlayout.qr import render_qr_tex
+
+    tex = render_qr_tex(
+        matrices=[[[1]]],
+        body_preamble="%body",
+        document_preamble="%doc",
+    )
+    assert "%doc" in tex
+    assert "%body" in tex
+    assert tex.index("%doc") < tex.index(r"\begin{document}")
+    assert tex.index("%body") > tex.index(r"\begin{document}")
+
+
 def test_qr_callout_rules_apply_to_qt_and_r():
     from matrixlayout.qr import _qr_default_name_specs, _qr_name_specs_to_callouts
 
