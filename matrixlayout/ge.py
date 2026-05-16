@@ -799,8 +799,8 @@ def decorations_help() -> str:
         "Callout labels\n"
         "- label: LaTeX label string.\n"
         "- side: 'left'|'right' (default auto).\n"
-        "- angle: float degrees (alias: angle_deg).\n"
-        "- length: float mm (alias: length_mm).\n"
+        "- angle_deg: float degrees.\n"
+        "- length_mm: float mm.\n"
         "- anchor: 'top'|'bottom'|'center'.\n"
         "- color: label/arrow color.\n"
     )

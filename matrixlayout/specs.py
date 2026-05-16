@@ -83,8 +83,7 @@ class GEDecorationSpec(TypedDict, total=False):
     vlines: Any
     label: str
     side: str
-    angle: float
-    length: float
+    angle_deg: float
     length_mm: float
 
 
@@ -474,9 +473,7 @@ _GE_SPEC_ALLOWED_KEYS = {
     "label",
     "side",
     "anchor",
-    "angle",
     "angle_deg",
-    "length",
     "length_mm",
     "line_width_pt",
     "tip",

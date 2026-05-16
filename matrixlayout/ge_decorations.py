@@ -84,9 +84,7 @@ def parse_ge_decorations(
             for src, dst in [
                 ("side", "side"),
                 ("anchor", "anchor"),
-                ("angle", "angle_deg"),
                 ("angle_deg", "angle_deg"),
-                ("length", "length_mm"),
                 ("length_mm", "length_mm"),
                 ("color", "color"),
                 ("line_width_pt", "line_width_pt"),

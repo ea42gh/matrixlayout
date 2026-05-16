@@ -9,7 +9,7 @@ Quick reference:
 - `side`: `left`, `right`, `above`, `below`, `top`, `bottom`.
 - `hlines`/`vlines`: draw block separators.
 - `box`: draw a box around entries or blocks.
-- `angle`/`length_mm`: callout arrow direction/length.
+- `angle_deg`/`length_mm`: callout arrow direction/length.
 
 Example:
 
@@ -18,7 +18,7 @@ decorations = [
     {"grid": (0, 0), "entries": [(0, 0)], "box": True},
 ]
 annotations = [
-    {"grid": (0, 0), "side": "right", "label": r"\\mathbf{A}", "angle": -35, "length_mm": 8},
+    {"grid": (0, 0), "side": "right", "label": r"\\mathbf{A}", "angle_deg": -35, "length_mm": 8},
 ]
 ```
 
@@ -66,8 +66,8 @@ Callouts (arrow labels pointing at a block):
 
 ```python
 annotations = [
-    {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length_mm": 8},
-    {"grid": (0, 0), "label": r"\\mathbf{B}", "side": "below", "angle": 35, "length_mm": 8},
+    {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
+    {"grid": (0, 0), "label": r"\\mathbf{B}", "side": "below", "angle_deg": 35, "length_mm": 8},
 ]
 ```
 

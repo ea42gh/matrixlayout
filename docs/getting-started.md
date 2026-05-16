@@ -35,7 +35,7 @@ Quick decorations (one-line specs):
 decorations = [
     {"grid": (0, 1), "entries": [(0, 0)], "box": True},
     {"grid": (0, 1), "hlines": 1},
-    {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length": 8},
+    {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
 ]
 svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
@@ -45,7 +45,7 @@ Labels and callouts (annotations):
 ```python
 annotations = [
     {"grid": (0, 1), "side": "above", "labels": ["x_1", "x_2"]},
-    {"grid": (0, 1), "side": "right", "label": r"\\mathbf{A}", "angle": -35, "length_mm": 8},
+    {"grid": (0, 1), "side": "right", "label": r"\\mathbf{A}", "angle_deg": -35, "length_mm": 8},
 ]
 svg = render_ge_svg(matrices=matrices, annotations=annotations)
 ```

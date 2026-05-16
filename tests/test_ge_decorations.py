@@ -81,8 +81,8 @@ def test_parse_callout_copies_supported_fields():
             {
                 "label": "rank 2",
                 "side": "right",
-                "angle": -35,
-                "length": 8,
+                "angle_deg": -35,
+                "length_mm": 8,
                 "color": "blue",
                 "tip": "Stealth",
                 "label_shift_x_mm": 1,
@@ -116,6 +116,12 @@ def test_parse_line_specs_coerces_submatrix_bounds_and_all():
     assert len(sub_locs) == 2
     assert "h=2;v=None" in sub_locs[0][2]
     assert "h=[1];v=1" in sub_locs[1][2]
+
+
+def test_parse_callout_ignores_removed_angle_length_aliases():
+    _, _, callouts, _ = parse([{"label": "rank 2", "side": "right", "angle": -35, "length": 8}])
+
+    assert callouts == [{"grid": (0, 0), "label": "rank 2", "side": "right"}]
 
 
 def test_parse_outline_generates_fit_code_for_selected_submatrix():

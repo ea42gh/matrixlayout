@@ -113,7 +113,7 @@ def test_render_ge_tex_decorations_lines_and_label():
     decorations = [
         {"grid": (0, 0), "hlines": 1},
         {"grid": (0, 0), "vlines": 1},
-        {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length": 8},
+        {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
     ]
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str)
     assert "hlines=1" in tex
