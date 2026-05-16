@@ -26,6 +26,16 @@ from .render import merge_render_opts, render_svg
 from .specs import QRGridBundle, QRGridSpec
 
 
+def _resolve_annotations(
+    *,
+    annotations: Optional[Sequence[Mapping[str, Any]]],
+    specs: Optional[Sequence[Mapping[str, Any]]],
+) -> Optional[Sequence[Mapping[str, Any]]]:
+    if annotations is not None and specs is not None:
+        raise TypeError("Use either annotations or specs, not both.")
+    return annotations if annotations is not None else specs
+
+
 def _as_grid(matrices: Any) -> List[List[Any]]:
     if matrices is None:
         return []
@@ -449,6 +459,7 @@ def render_qr_tex(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
     array_names: Any = True,
@@ -504,8 +515,11 @@ def render_qr_tex(
         create_medium_nodes = _merge_scalar_default("create_medium_nodes", create_medium_nodes, spec_obj.create_medium_nodes, True)
         decorators = _merge_scalar("decorators", decorators, spec_obj.decorators)
         strict = _merge_scalar_default("strict", strict, spec_obj.strict, False)
-        if spec_obj.specs is not None:
-            specs = _merge_scalar("specs", specs, spec_obj.specs)
+        spec_annotations = spec_obj.annotations if spec_obj.annotations is not None else spec_obj.specs
+        if spec_annotations is not None:
+            annotations = _merge_scalar("annotations", annotations, spec_annotations)
+
+    annotations = _resolve_annotations(annotations=annotations, specs=specs)
 
     if matrices is None:
         raise ValueError("render_qr_tex requires `matrices`")
@@ -539,7 +553,7 @@ def render_qr_tex(
         create_extra_nodes=create_extra_nodes,
         create_medium_nodes=create_medium_nodes,
         strict=bool(strict),
-        specs=specs,
+        annotations=annotations,
     )
 
 
@@ -547,6 +561,7 @@ def qr_grid_bundle(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
     array_names: Any = True,
@@ -569,6 +584,7 @@ def qr_grid_bundle(
     tex = render_qr_tex(
         matrices=matrices,
         spec=spec,
+        annotations=annotations,
         specs=specs,
         formatter=formatter,
         array_names=array_names,
@@ -608,6 +624,7 @@ def render_qr_svg(
     matrices: Optional[Sequence[Sequence[Any]]] = None,
     *,
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
+    annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
     array_names: Any = True,
@@ -652,6 +669,7 @@ def render_qr_svg(
         create_medium_nodes=create_medium_nodes,
         decorators=decorators,
         strict=strict,
+        annotations=annotations,
         specs=specs,
     )
     opts = merge_render_opts(

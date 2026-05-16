@@ -40,19 +40,20 @@ decorations = [
 svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
-Labels and callouts (specs):
+Labels and callouts (annotations):
 
 ```python
-specs = [
+annotations = [
     {"grid": (0, 1), "side": "above", "labels": ["x_1", "x_2"]},
     {"grid": (0, 1), "side": "right", "label": r"\\mathbf{A}", "angle": -35, "length_mm": 8},
 ]
-svg = render_ge_svg(matrices=matrices, specs=specs)
+svg = render_ge_svg(matrices=matrices, annotations=annotations)
 ```
 
 Notes:
-- If both `spec`/`specs` and explicit kwargs are provided, explicit kwargs win.
+- If both `spec`/`annotations` and explicit kwargs are provided, explicit kwargs win.
 - Labels are attached to a block and placed into empty adjacent blocks when possible.
+- `specs` is still accepted as a compatibility alias for `annotations`.
 
 ## QR grid
 
@@ -63,14 +64,14 @@ from matrixlayout.qr import render_qr_svg
 matrices = [[None, None, sym.Matrix([[1, 2], [3, 4]]), sym.eye(2)]]
 svg = render_qr_svg(matrices=matrices)
 
-You can also pass `specs` to attach labels/callouts without manual label rows/cols.
+You can also pass `annotations` to attach labels/callouts without manual label rows/cols.
 ```
 
-QR labels with specs:
+QR labels with annotations:
 
 ```python
-specs = [{"grid": (0, 2), "side": "above", "labels": ["x_1", "x_2"]}]
-svg = render_qr_svg(matrices=matrices, specs=specs)
+annotations = [{"grid": (0, 2), "side": "above", "labels": ["x_1", "x_2"]}]
+svg = render_qr_svg(matrices=matrices, annotations=annotations)
 ```
 
 ## Eigen/SVD tables
@@ -114,8 +115,8 @@ Debug workflow:
 ```python
 from matrixlayout.ge import render_ge_tex, render_ge_svg
 
-tex = render_ge_tex(matrices=matrices, specs=specs)
-svg = render_ge_svg(matrices=matrices, specs=specs, output_dir="./_out", output_stem="debug")
+tex = render_ge_tex(matrices=matrices, annotations=annotations)
+svg = render_ge_svg(matrices=matrices, annotations=annotations, output_dir="./_out", output_stem="debug")
 ```
 
 ### Smoke render helper
@@ -132,4 +133,4 @@ Set `MATRIXLAYOUT_SMOKE_OUT` to control the output directory.
 
 - If SVG rendering fails, switch to `*_tex` to inspect the emitted LaTeX.
 - Try an alternate `toolchain_name` if a toolchain is unavailable.
-- If labels are misplaced, verify `specs` are attached to the correct grid cell.
+- If labels are misplaced, verify `annotations` are attached to the correct grid cell.

@@ -261,7 +261,32 @@ def test_render_ge_svg_label_targets_overlay():
         mock_tex.return_value = "TEX"
         mock_svg.return_value = "SVG"
         render_ge_svg(matrices=matrices, specs=targets)
-        assert mock_tex.call_args.kwargs.get("specs") == targets
+        assert mock_tex.call_args.kwargs.get("annotations") == targets
+        assert mock_tex.call_args.kwargs.get("specs") is None
+
+
+def test_render_ge_svg_accepts_annotations_alias():
+    matrices = [
+        [None, [[1, 2], [3, 4]]],
+        [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
+    ]
+    annotations = [
+        {"grid": (0, 1), "side": "left", "labels": ["$w_1^T$", "$w_2^T$"]},
+    ]
+    with patch("matrixlayout.ge.render_ge_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
+        mock_tex.return_value = "TEX"
+        mock_svg.return_value = "SVG"
+        render_ge_svg(matrices=matrices, annotations=annotations)
+        assert mock_tex.call_args.kwargs.get("annotations") == annotations
+        assert mock_tex.call_args.kwargs.get("specs") is None
+
+
+def test_render_ge_tex_rejects_annotations_and_specs_together():
+    matrices = [[[1, 2], [3, 4]]]
+    annotations = [{"grid": (0, 0), "side": "above", "labels": ["head"]}]
+
+    with pytest.raises(TypeError, match="annotations or specs"):
+        render_ge_tex(matrices=matrices, annotations=annotations, specs=annotations)
 
 
 def test_render_ge_svg_label_targets_add_blank_rows():
@@ -269,7 +294,7 @@ def test_render_ge_svg_label_targets_add_blank_rows():
     targets = [
         {"grid": (0, 0), "side": "above", "labels": ["head", "tail"]},
     ]
-    tex = render_ge_tex(matrices=matrices, formatter=str, specs=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=targets)
     assert "\\text{head}" in tex
     assert "\\text{tail}" in tex
 

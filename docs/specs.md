@@ -14,8 +14,10 @@ Quick reference:
 Example:
 
 ```python
-specs = [
+decorations = [
     {"grid": (0, 0), "entries": [(0, 0)], "box": True},
+]
+annotations = [
     {"grid": (0, 0), "side": "right", "label": r"\\mathbf{A}", "angle": -35, "length_mm": 8},
 ]
 ```
@@ -54,7 +56,7 @@ svg = render_ge_svg(spec=spec)
 Row/column labels (labels are placed in blank rows/cols when available):
 
 ```python
-specs = [
+annotations = [
     {"grid": (0, 0), "side": "above", "labels": ["x_1", "x_2", "x_3"]},
     {"grid": (0, 0), "side": "left", "labels": ["r_1", "r_2"]},
 ]
@@ -63,7 +65,7 @@ specs = [
 Callouts (arrow labels pointing at a block):
 
 ```python
-specs = [
+annotations = [
     {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle": -35, "length_mm": 8},
     {"grid": (0, 0), "label": r"\\mathbf{B}", "side": "below", "angle": 35, "length_mm": 8},
 ]
@@ -72,7 +74,8 @@ specs = [
 ## Precedence and merging
 
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
-- `specs` (label/callout targets) are merged into `label_rows`/`label_cols`.
+- `annotations` (label/callout targets) are merged into `label_rows`/`label_cols`.
+- `specs` is still accepted as a compatibility alias for `annotations`.
 - `variable_labels` are appended to `label_rows` with `side="below"`.
 - When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 
@@ -275,11 +278,11 @@ spec = {
 - Wrong `grid` index: `grid` is `(block_row, block_col)`, not entry coordinates.
 - Mixing `label` and `labels`: use `labels` for row/col lists, `label` for callouts.
 - Forgetting `side`: labels/callouts require a `side` (`left/right/above/below`).
-- Misusing `decorations` when `specs` are intended for labels/callouts.
+- Misusing `decorations` when `annotations` are intended for labels/callouts.
 
 ## Specs vs decorations
 
-Use `specs` for labels/callouts and layout-adjacent annotations. Use
+Use `annotations` for labels/callouts and layout-adjacent annotations. Use
 `decorations` for entry styling, highlights, and lines. Both can coexist.
 
 ## QR specs
@@ -300,7 +303,7 @@ spec = {
 QR spec with labels:
 
 ```python
-specs = [
+annotations = [
     {"grid": (0, 2), "side": "above", "labels": ["x_1", "x_2"]},
     {"grid": (0, 3), "side": "above", "labels": ["w_1", "w_2"]},
 ]

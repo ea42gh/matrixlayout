@@ -83,6 +83,18 @@ _normalize_label_rows = _ge_labels.normalize_label_rows
 grid_label_layouts = _ge_labels.grid_label_layouts
 
 
+def _resolve_annotations(
+    *,
+    annotations: Optional[Sequence[Mapping[str, Any]]],
+    specs: Optional[Sequence[Mapping[str, Any]]],
+) -> Optional[Sequence[Mapping[str, Any]]]:
+    """Return the canonical label/callout annotation specs."""
+
+    if annotations is not None and specs is not None:
+        raise TypeError("Use either annotations or specs, not both.")
+    return annotations if annotations is not None else specs
+
+
 def _merge_layout_string_hooks(
     *,
     spec: Optional[GELayoutSpec],
@@ -486,6 +498,7 @@ def render_ge_tex(
     strict: Optional[bool] = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
+    annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
@@ -520,9 +533,11 @@ def render_ge_tex(
         Horizontal spacing between adjacent matrix blocks.
     decorations:
         One-line dicts for backgrounds, separators, callouts, and entry styles.
-    specs:
-        Optional decoration/label specs. Label entries are merged into
+    annotations:
+        Optional label/callout annotation specs. Label entries are merged into
         ``label_rows``/``label_cols``; callout labels are merged into decorations.
+    specs:
+        Backward-compatible alias for ``annotations``.
 
     Returns
     -------
@@ -587,9 +602,11 @@ def render_ge_tex(
             kwargs=kwargs,
         )
 
-    if specs:
+    annotations = _resolve_annotations(annotations=annotations, specs=specs)
+
+    if annotations:
         label_rows, label_cols, decorations = _merge_label_specs(
-            specs=specs,
+            specs=annotations,
             label_rows=label_rows,
             label_cols=label_cols,
             decorations=decorations,
@@ -918,6 +935,7 @@ def render_ge_svg(
     render_opts: Optional[Mapping[str, Any]] = None,
     *,
     spec: Optional[Union[GEGridSpec, Dict[str, Any]]] = None,
+    annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     specs: Optional[Sequence[Mapping[str, Any]]] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
@@ -936,8 +954,10 @@ def render_ge_svg(
         See :func:`render_ge_tex`.
     toolchain_name, crop, padding:
         Passed through to the renderer.
+    annotations:
+        Additional label/callout mapping specs.
     specs:
-        Additional mapping specs that can include ``labels`` entries.
+        Backward-compatible alias for ``annotations``.
 
     Returns
     -------
@@ -950,7 +970,9 @@ def render_ge_svg(
         n_rhs = kwargs.pop("Nrhs")
 
     if "label_targets" in kwargs:
-        raise ValueError("label_targets is removed; use specs instead.")
+        raise ValueError("label_targets is removed; use annotations instead.")
+
+    annotations = _resolve_annotations(annotations=annotations, specs=specs)
 
     tex = render_ge_tex(
         matrices=matrices,
@@ -970,7 +992,7 @@ def render_ge_svg(
         decorations=decorations,
         strict=strict,
         spec=spec,
-        specs=specs,
+        annotations=annotations,
         label_rows=label_rows,
         label_cols=label_cols,
         label_gap_mm=label_gap_mm,
