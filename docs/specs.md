@@ -45,7 +45,7 @@ from matrixlayout.specs import GEGridSpec
 spec = GEGridSpec.from_dict(
     {
         "matrices": [[[1, 2], [3, 4]]],
-        "label_rows": [{"grid": (0, 0), "side": "above", "rows": [["x_1", "x_2"]]}],
+        "label_rows": [{"grid": (0, 0), "side": "above", "labels": [["x_1", "x_2"]]}],
     }
 )
 svg = render_ge_svg(spec=spec)
@@ -139,10 +139,12 @@ LabelSpec (row/column labels):
 {
   "grid": (block_row, block_col),
   "side": "above" | "below" | "left" | "right",
-  "rows": list[list[str]]  # for row labels
-  "cols": list[list[str]]  # for column labels
+  "labels": list[list[str]]
 }
 ```
+
+`rows` and `cols` are still accepted as compatibility aliases in label specs,
+but new specs should use `labels`.
 
 DecorationSpec (one-line shorthand):
 

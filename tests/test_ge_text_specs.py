@@ -168,8 +168,8 @@ def test_ge_grid_label_layouts_basic():
             {"grid": (1, 1), "side": "left", "labels": [["a"], ["b"]]},
         ],
     )
-    assert rows == [{"grid": (0, 0), "side": "above", "rows": [["head", "tail"]]}]
-    assert cols == [{"grid": (1, 1), "side": "left", "cols": [["a"], ["b"]]}]
+    assert rows == [{"grid": (0, 0), "side": "above", "labels": [["head", "tail"]]}]
+    assert cols == [{"grid": (1, 1), "side": "left", "labels": [["a"], ["b"]]}]
 
 
 def test_render_ge_tex_specs_axis_consistency():

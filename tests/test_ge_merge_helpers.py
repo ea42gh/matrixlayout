@@ -156,7 +156,7 @@ def test_merge_label_specs_uses_specs_when_no_explicit():
 def test_ge_label_module_helpers_match_compatibility_aliases():
     targets = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
     rows, cols = grid_label_layouts(targets)
-    assert rows == [{"grid": (0, 0), "side": "above", "rows": [["x", "y"]]}]
+    assert rows == [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}]
     assert cols == []
 
     direct_rows, direct_cols, direct_decorations = merge_label_specs(

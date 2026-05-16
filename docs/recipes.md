@@ -24,7 +24,7 @@ specs = [{"grid": (0, 1), "side": "above", "labels": ["spec"]}]
 svg = render_ge_svg(
     matrices=[[None, [[1, 2], [3, 4]]]],
     specs=specs,
-    label_rows=[{"grid": (0, 1), "side": "above", "rows": [["explicit"]]}],
+    label_rows=[{"grid": (0, 1), "side": "above", "labels": [["explicit"]]}],
 )
 ```
 

@@ -33,8 +33,9 @@ class GELabelRowsSpec(TypedDict, total=False):
     """Dictionary schema for GE row labels.
 
     ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"above"``
-    or ``"below"``. ``rows`` contains one or more label rows; each inner value
-    is rendered as a label cell.
+    or ``"below"``. ``labels`` contains one or more label rows; each inner
+    value is rendered as a label cell. ``rows`` is accepted as a compatibility
+    alias for older specs.
     """
 
     grid: GridCoord
@@ -48,8 +49,9 @@ class GELabelColsSpec(TypedDict, total=False):
     """Dictionary schema for GE column labels.
 
     ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"left"``
-    or ``"right"``. ``cols`` contains one or more label columns; each inner
-    value is rendered as a label cell.
+    or ``"right"``. ``labels`` contains one or more label columns; each inner
+    value is rendered as a label cell. ``cols`` is accepted as a compatibility
+    alias for older specs.
     """
 
     grid: GridCoord

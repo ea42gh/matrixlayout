@@ -34,12 +34,12 @@ def test_grid_label_layouts_filters_invalid_and_normalizes_side_aliases():
     )
 
     assert rows == [
-        {"grid": (0, 0), "side": "above", "rows": [["x", "y"]]},
-        {"grid": (0, 1), "side": "below", "rows": [["b1", "b2"]]},
+        {"grid": (0, 0), "side": "above", "labels": [["x", "y"]]},
+        {"grid": (0, 1), "side": "below", "labels": [["b1", "b2"]]},
     ]
     assert cols == [
-        {"grid": (1, 0), "side": "left", "cols": [["row"]]},
-        {"grid": (1, 1), "side": "right", "cols": [["r1"], ["r2"]]},
+        {"grid": (1, 0), "side": "left", "labels": [["row"]]},
+        {"grid": (1, 1), "side": "right", "labels": [["r1"], ["r2"]]},
     ]
 
 
@@ -99,8 +99,8 @@ def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
         decorations=[{"grid": (0, 0), "background": "yellow"}],
     )
 
-    assert label_rows == [{"grid": (0, 0), "side": "above", "rows": [["spec1"], ["spec2"]]}]
-    assert label_cols == [{"grid": (0, 0), "side": "left", "cols": [["col1"], ["col2"]]}]
+    assert label_rows == [{"grid": (0, 0), "side": "above", "labels": [["spec1"], ["spec2"]]}]
+    assert label_cols == [{"grid": (0, 0), "side": "left", "labels": [["col1"], ["col2"]]}]
     assert decorations is not None
     assert decorations[-1]["label"] == "callout"
 
@@ -117,7 +117,7 @@ def test_merge_label_specs_handles_no_specs_or_unmatched_specs():
 
 def test_append_variable_labels_and_build_label_maps_defaults_and_non_strict_ignores():
     variable = [{"grid": (0, 0), "labels": [["x", "y"]]}, "bad"]
-    assert append_variable_labels(None, variable) == [{"grid": (0, 0), "labels": [["x", "y"]], "side": "below", "rows": [["x", "y"]]}]
+    assert append_variable_labels(None, variable) == [{"grid": (0, 0), "labels": [["x", "y"]], "side": "below"}]
 
     rows_map, cols_map, overlay = build_label_maps(
         n_block_rows=1,
@@ -149,6 +149,18 @@ def test_build_label_maps_collects_overlay_col_labels_without_embedding():
     assert rows_map == {}
     assert cols_map == {(0, 0, "right"): [["normal"]]}
     assert overlay == [{"grid": (0, 0), "side": "left", "cols": [["overlay"]], "overlay": True}]
+
+
+def test_build_label_maps_prefers_canonical_labels_payload():
+    rows_map, cols_map, _overlay = build_label_maps(
+        n_block_rows=1,
+        n_block_cols=1,
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["new"]], "rows": [["old"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["new"]], "cols": [["old"]]}],
+    )
+
+    assert rows_map[(0, 0, "above")] == [["new"]]
+    assert cols_map[(0, 0, "left")] == [["new"]]
 
 
 def test_build_label_maps_strict_rejects_label_cols_variants():

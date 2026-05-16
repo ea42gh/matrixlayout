@@ -94,7 +94,7 @@ def render_ge_tex_specs(
         side = str(spec_item.get("side", "above")).strip().lower()
         if side not in ("above", "below"):
             continue
-        count = _count_label_blocks(spec_item.get("rows", spec_item.get("labels")))
+        count = _count_label_blocks(spec_item.get("labels", spec_item.get("rows")))
         if count:
             label_rows_count[(gM, gN, side)] = label_rows_count.get((gM, gN, side), 0) + count
 
