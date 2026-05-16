@@ -31,7 +31,6 @@ from .ge_spec_merge import (
     coerce_grid_spec as _coerce_grid_spec,
     coerce_layout_spec as _coerce_layout_spec,
     merge_grid_spec_inputs as _merge_grid_spec_inputs,
-    merge_scalar as _merge_scalar,
 )
 from .ge_grid import (
     as_2d_list as _as_2d_list,
@@ -42,6 +41,11 @@ from .ge_grid_specs import (
     grid_line_specs,
     grid_submatrix_spans,
 )
+from .ge_layout_merge import (
+    merge_layout_fields as _merge_layout_fields,
+    merge_layout_string_hooks as _merge_layout_string_hooks,
+    resolve_annotations as _resolve_annotations,
+)
 from .ge_render_grid import build_ge_grid_render_parts
 from .ge_template import (
     append_nicematrix_option as _append_nicematrix_option,
@@ -51,7 +55,6 @@ from .ge_template import (
     coerce_txt_with_locs as _coerce_txt_with_locs,
     guess_shape_from_mat_rep as _guess_shape_from_mat_rep,
     merge_callouts as _merge_callouts,
-    merge_list as _merge_list,
     normalize_mat_format as _normalize_mat_format,
     normalize_mat_rep as _normalize_mat_rep,
     normalize_pivot_locs as _normalize_pivot_locs,
@@ -81,128 +84,6 @@ _merge_label_specs = _ge_labels.merge_label_specs
 _normalize_label_cols = _ge_labels.normalize_label_cols
 _normalize_label_rows = _ge_labels.normalize_label_rows
 grid_label_layouts = _ge_labels.grid_label_layouts
-
-
-def _resolve_annotations(
-    *,
-    annotations: Optional[Sequence[Mapping[str, Any]]],
-    specs: Optional[Sequence[Mapping[str, Any]]],
-) -> Optional[Sequence[Mapping[str, Any]]]:
-    """Return the canonical label/callout annotation specs."""
-
-    if annotations is not None and specs is not None:
-        raise TypeError("Use either annotations or specs, not both.")
-    return annotations if annotations is not None else specs
-
-
-def _merge_layout_string_hooks(
-    *,
-    spec: Optional[GELayoutSpec],
-    extension: str,
-    preamble: str,
-) -> Tuple[str, str]:
-    if spec is None:
-        return extension, preamble
-    document_preamble = getattr(spec, "document_preamble", None) or getattr(spec, "extension", None)
-    body_preamble = getattr(spec, "body_preamble", None) or getattr(spec, "preamble", None)
-    if document_preamble:
-        extension = (document_preamble or "") + ("\n" if (document_preamble and extension) else "") + (extension or "")
-    if body_preamble:
-        preamble = (body_preamble or "") + ("\n" if (body_preamble and preamble) else "") + (preamble or "")
-    return extension, preamble
-
-
-def _merge_layout_fields(
-    *,
-    spec: Optional[GELayoutSpec],
-    nice_options: Optional[str],
-    landscape: Optional[bool],
-    create_cell_nodes: Optional[bool],
-    create_extra_nodes: Optional[bool],
-    create_medium_nodes: Optional[bool],
-    outer_delims: Optional[bool],
-    outer_delims_name: Optional[str],
-    outer_delims_span: Optional[Tuple[int, int]],
-    codebefore: Optional[Sequence[str]],
-    submatrix_locs: Optional[Sequence[Any]],
-    submatrix_names: Optional[Sequence[str]],
-    pivot_locs: Optional[Sequence[Any]],
-    txt_with_locs: Optional[Sequence[Any]],
-    rowechelon_paths: Optional[Sequence[Any]],
-    callouts: Optional[Sequence[Any]],
-    matrix_labels: Optional[Sequence[Any]],
-) -> Tuple[
-    Optional[str],
-    Optional[bool],
-    Optional[bool],
-    Optional[bool],
-    Optional[bool],
-    Optional[bool],
-    Optional[str],
-    Optional[Tuple[int, int]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-    Optional[Sequence[Any]],
-]:
-    if spec is None:
-        return (
-            nice_options,
-            landscape,
-            create_cell_nodes,
-            create_extra_nodes,
-            create_medium_nodes,
-            outer_delims,
-            outer_delims_name,
-            outer_delims_span,
-            codebefore,
-            submatrix_locs,
-            submatrix_names,
-            pivot_locs,
-            txt_with_locs,
-            rowechelon_paths,
-            callouts,
-        )
-
-    nice_options = _merge_scalar("nice_options", nice_options, spec.nice_options)
-    landscape = _merge_scalar("landscape", landscape, spec.landscape)
-    create_cell_nodes = _merge_scalar("create_cell_nodes", create_cell_nodes, spec.create_cell_nodes)
-    create_extra_nodes = _merge_scalar("create_extra_nodes", create_extra_nodes, spec.create_extra_nodes)
-    create_medium_nodes = _merge_scalar("create_medium_nodes", create_medium_nodes, spec.create_medium_nodes)
-    outer_delims = _merge_scalar("outer_delims", outer_delims, spec.outer_delims)
-    outer_delims_name = _merge_scalar("outer_delims_name", outer_delims_name, spec.outer_delims_name)
-    outer_delims_span = _merge_scalar("outer_delims_span", outer_delims_span, spec.outer_delims_span)
-
-    codebefore = _merge_list(codebefore, spec.codebefore)
-    submatrix_locs = _merge_list(submatrix_locs, spec.submatrix_locs)
-    submatrix_names = _merge_list(submatrix_names, spec.submatrix_names)
-    pivot_locs = _merge_list(pivot_locs, spec.pivot_locs)
-    txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
-    rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
-    callouts = _merge_callouts(callouts, spec.callouts)
-    callouts = _merge_callouts(callouts, spec.matrix_labels)
-    callouts = _merge_callouts(callouts, matrix_labels)
-
-    return (
-        nice_options,
-        landscape,
-        create_cell_nodes,
-        create_extra_nodes,
-        create_medium_nodes,
-        outer_delims,
-        outer_delims_name,
-        outer_delims_span,
-        codebefore,
-        submatrix_locs,
-        submatrix_names,
-        pivot_locs,
-        txt_with_locs,
-        rowechelon_paths,
-        callouts,
-    )
 
 
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
