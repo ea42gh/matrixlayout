@@ -2,7 +2,7 @@
 
 This module builds the QR grid layout (matrix-of-matrices) and emits TeX
 through the GE template. The algorithmic inputs (A, W, etc.) are handled
-upstream in la_figures; this module focuses on layout + formatting only.
+upstream in LAFigureSpecs; this module focuses on layout + formatting only.
 """
 
 from __future__ import annotations

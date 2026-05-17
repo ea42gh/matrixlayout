@@ -6,7 +6,7 @@
 
 `matrixlayout` is a small, composable Python library for **matrix-based layout and presentation**. It builds **LaTeX/TikZ** that describes matrix and grid visuals (blocks, partitions, spacing, braces, arrows, highlights) and renders them to **SVG** via a single backend boundary.
 
-This project is **layout-only** by design: it does not implement linear algebra algorithms or symbolic manipulation; packages such as `la_figures` compute linear algebra examples and pass layout descriptions to `matrixlayout`.
+This project is **layout-only** by design: it does not implement linear algebra algorithms or symbolic manipulation; packages such as `LAFigureSpecs` compute linear algebra examples and pass layout descriptions to `matrixlayout`.
 
 ## Scope
 
@@ -25,7 +25,7 @@ This project is **layout-only** by design: it does not implement linear algebra 
 - Install or manage rendering toolchains
 - Implement rendering backends itself
 
-Algorithmic work lives in a separate package (`la_figures`) that produces **layout descriptions** consumed by `matrixlayout`.
+Algorithmic work lives in a separate package (`LAFigureSpecs`) that produces **layout descriptions** consumed by `matrixlayout`.
 
 ## Decorators & selectors
 

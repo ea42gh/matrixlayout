@@ -3,7 +3,7 @@
 Matrixlayout is a layout layer for matrix-based figures. It emits LaTeX/TikZ
 for structured grids and tables (GE, QR, eigen/SVD) and delegates rendering to
 `jupyter_tikz`. It does not implement linear algebra algorithms; those live in
-`la_figures`.
+`LAFigureSpecs`.
 
 ## Design Principle
 

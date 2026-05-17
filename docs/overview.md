@@ -12,7 +12,7 @@ Terms used here are summarized in `glossary.md`.
 - A spec supplies layout options and annotations (pivots, callouts, paths).
 - Decorators apply TeX transforms to formatted entries.
 
-Specs are plain dictionaries; convenience helpers in `la_figures` construct them
+Specs are plain dictionaries; convenience helpers in `LAFigureSpecs` construct them
 from algorithmic traces.
 
 ### Precedence

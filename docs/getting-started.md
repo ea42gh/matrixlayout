@@ -3,7 +3,7 @@
 Minimal examples for common layouts and rendering. Each function accepts
 Python lists or `sympy.Matrix` values.
 
-Prerequisite: install `matrixlayout` (and `la_figures` for eigen/SVD specs).
+Prerequisite: install `matrixlayout` (and `LAFigureSpecs` for eigen/SVD specs).
 
 ## GE grid
 
@@ -78,7 +78,7 @@ svg = render_qr_svg(matrices=matrices, annotations=annotations)
 
 ```python
 import sympy as sym
-from la_figures import eig_tbl_spec
+from LAFigureSpecs import eig_tbl_spec
 from matrixlayout import render_eig_svg
 
 spec = eig_tbl_spec(sym.Matrix([[2, 0], [0, 3]]))
@@ -89,7 +89,7 @@ svg = render_eig_svg(spec, case="S")
 
 ```python
 import sympy as sym
-from la_figures import linear_system_tex, backsubstitution_tex, standard_solution_tex
+from LAFigureSpecs import linear_system_tex, backsubstitution_tex, standard_solution_tex
 from matrixlayout.backsubst import backsubst_svg
 
 A = sym.Matrix([[1, 0, sym.pi], [0, 1, 1]])
