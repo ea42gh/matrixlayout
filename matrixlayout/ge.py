@@ -157,10 +157,8 @@ def tex(
     *,
     mat_rep: str,
     mat_format: str,
-    preamble: str = "",
-    extension: str = "",
-    document_preamble: Optional[str] = None,
-    body_preamble: Optional[str] = None,
+    document_preamble: str = "",
+    body_preamble: str = "",
     nice_options: Optional[str] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     codebefore: Optional[Sequence[str]] = None,
@@ -182,21 +180,16 @@ def tex(
     callout_name_map: Optional[Mapping[Tuple[int, int], str]] = None,
 ) -> str:
     r"""Populate the GE template and return TeX."""
-    if document_preamble is not None:
-        if extension and extension != document_preamble:
-            raise ValueError("Use either document_preamble or extension, not conflicting values.")
-        extension = document_preamble
-    if body_preamble is not None:
-        if preamble and preamble != body_preamble:
-            raise ValueError("Use either body_preamble or preamble, not conflicting values.")
-        preamble = body_preamble
-
     mat_format_norm = _normalize_mat_format(mat_format)
     mat_rep_norm = _normalize_mat_rep(mat_rep)
 
     spec = _coerce_layout_spec(layout)
-    extension, preamble = _merge_layout_string_hooks(spec=spec, extension=extension, preamble=preamble)
-    _validate_body_preamble(preamble or "")
+    document_preamble, body_preamble = _merge_layout_string_hooks(
+        spec=spec,
+        document_preamble=document_preamble,
+        body_preamble=body_preamble,
+    )
+    _validate_body_preamble(body_preamble or "")
 
     (
         nice_options,
@@ -283,8 +276,8 @@ def tex(
     )
 
     ctx = {
-        "extension": extension or "",
-        "preamble": preamble or "",
+        "document_preamble": document_preamble or "",
+        "body_preamble": body_preamble or "",
         "fig_scale_open": fig_scale_open,
         "fig_scale_close": fig_scale_close,
         "landscape": bool(landscape),
@@ -308,8 +301,8 @@ def svg(
     *,
     mat_rep: str,
     mat_format: str,
-    preamble: str = "",
-    extension: str = "",
+    document_preamble: str = "",
+    body_preamble: str = "",
     nice_options: Optional[str] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     codebefore: Optional[Sequence[str]] = None,
@@ -341,8 +334,8 @@ def svg(
     tex_doc = tex(
         mat_rep=mat_rep,
         mat_format=mat_format,
-        preamble=preamble,
-        extension=extension,
+        document_preamble=document_preamble,
+        body_preamble=body_preamble,
         nice_options=nice_options,
         layout=layout,
         codebefore=codebefore,
@@ -384,8 +377,8 @@ def render_ge_tex(
     cell_align: str = "r",
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
-    extension: str = "",
     document_preamble: Optional[str] = None,
+    body_preamble: Optional[str] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     format_nrhs: Optional[bool] = None,
     decorators: Optional[Sequence[Any]] = None,
@@ -444,18 +437,9 @@ def render_ge_tex(
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
         tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
-    if document_preamble is not None:
-        if extension and extension != document_preamble:
-            raise ValueError("Use either document_preamble or extension, not conflicting values.")
-        extension = document_preamble
-    if "body_preamble" in kwargs:
-        body_preamble = kwargs.pop("body_preamble")
-        preamble = kwargs.get("preamble")
-        if preamble and preamble != body_preamble:
-            raise ValueError("Use either body_preamble or preamble, not conflicting values.")
-        kwargs["preamble"] = body_preamble
-
     grid_spec = _coerce_grid_spec(spec)
+    if body_preamble is not None:
+        kwargs["body_preamble"] = body_preamble
     if grid_spec is not None:
         (
             matrices,
@@ -466,7 +450,7 @@ def render_ge_tex(
             cell_align,
             block_align,
             block_valign,
-            extension,
+            document_preamble,
             fig_scale,
             format_nrhs,
             decorators,
@@ -487,7 +471,7 @@ def render_ge_tex(
             cell_align=cell_align,
             block_align=block_align,
             block_valign=block_valign,
-            extension=extension,
+            document_preamble=document_preamble,
             fig_scale=fig_scale,
             format_nrhs=format_nrhs,
             decorators=decorators,
@@ -574,11 +558,11 @@ def render_ge_tex(
                 kwargs["create_medium_nodes"] = True
 
     legacy_format = bool(kwargs.pop("legacy_format", False))
+    if document_preamble is None:
+        document_preamble = ""
     if legacy_format:
-        if extension is None:
-            extension = ""
-        if "\\newcolumntype{I}" not in extension:
-            extension = extension + "\n\\newcolumntype{I}{|}\n"
+        if "\\newcolumntype{I}" not in document_preamble:
+            document_preamble = document_preamble + "\n\\newcolumntype{I}{|}\n"
 
     use_legacy_names_for_decorators = bool(kwargs.get("legacy_submatrix_names", False))
     decorator_map = build_ge_decorator_map(
@@ -630,7 +614,6 @@ def render_ge_tex(
     return tex(
         mat_rep=parts.mat_rep,
         mat_format=parts.mat_format,
-        extension=extension,
         document_preamble=document_preamble,
         fig_scale=fig_scale,
         submatrix_locs=parts.submatrix_locs,
@@ -735,7 +718,7 @@ def grid_bundle(
     cell_align: str = "r",
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
-    extension: str = "",
+    document_preamble: Optional[str] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     layout: Optional[Union[Dict[str, Any], GELayoutSpec]] = None,
     decorations: Optional[Sequence[Any]] = None,
@@ -763,7 +746,7 @@ def grid_bundle(
         cell_align=cell_align,
         block_align=block_align,
         block_valign=block_valign,
-        extension=extension,
+        document_preamble=document_preamble,
         fig_scale=fig_scale,
         layout=layout,
         decorations=decorations,
@@ -813,11 +796,9 @@ def render_ge_svg(
     cell_align: str = "r",
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
-    extension: str = "",
     document_preamble: Optional[str] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     format_nrhs: Optional[bool] = None,
-    preamble: Optional[str] = None,
     body_preamble: Optional[str] = None,
     nice_options: Optional[str] = None,
     toolchain_name: Optional[str] = None,
@@ -873,11 +854,9 @@ def render_ge_svg(
         cell_align=cell_align,
         block_align=block_align,
         block_valign=block_valign,
-        extension=extension,
         document_preamble=document_preamble,
         fig_scale=fig_scale,
         format_nrhs=format_nrhs,
-        preamble=preamble,
         body_preamble=body_preamble,
         nice_options=nice_options,
         decorators=decorators,

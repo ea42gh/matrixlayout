@@ -13,7 +13,7 @@ def test_render_qr_tex_decorators_apply():
     tex = render_qr_tex(
         matrices=matrices,
         formatter=str,
-        preamble="",
+        body_preamble="",
         decorators=[{"grid": (0, 2), "entries": [(0, 0)], "decorator": dec}],
     )
 
@@ -35,7 +35,7 @@ def test_render_qr_tex_decorators_resolve_matrix_name():
     tex = render_qr_tex(
         matrices=matrices,
         formatter=str,
-        preamble="",
+        body_preamble="",
         decorators=[{"matrix_name": "QR0x2", "entries": [(0, 0)], "decorator": dec}],
     )
 
@@ -58,7 +58,7 @@ def test_render_qr_tex_decorators_strict_raises_on_empty():
         render_qr_tex(
             matrices=matrices,
             formatter=str,
-            preamble="",
+            body_preamble="",
             decorators=[{"grid": (0, 2), "entries": [(9, 9)], "decorator": dec}],
             strict=True,
         )

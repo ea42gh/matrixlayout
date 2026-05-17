@@ -7,7 +7,7 @@ def test_render_qr_tex_smoke():
         [[[1, 0], [0, 1]], [[1, 0], [0, 1]], [[1, 2], [3, 4]], None],
     ]
 
-    tex = render_qr_tex(matrices=matrices, preamble="")
+    tex = render_qr_tex(matrices=matrices, body_preamble="")
     assert "\\begin{NiceArray}" in tex
 
 
@@ -15,7 +15,7 @@ def test_render_qr_tex_filters_callouts_for_minimal_grid():
     from matrixlayout.qr import render_qr_tex
 
     matrices = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]]
-    tex = render_qr_tex(matrices=matrices, preamble="")
+    tex = render_qr_tex(matrices=matrices, body_preamble="")
     assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
     assert "v_1" in tex
@@ -33,6 +33,23 @@ def test_render_qr_tex_accepts_canonical_tex_hooks():
     assert "%body" in tex
     assert tex.index("%doc") < tex.index(r"\begin{document}")
     assert tex.index("%body") > tex.index(r"\begin{document}")
+
+
+def test_render_qr_tex_accepts_spec_dict_with_tex_hooks():
+    from matrixlayout.qr import render_qr_tex
+
+    tex = render_qr_tex(
+        spec={
+            "matrices": [[[1]]],
+            "body_preamble": "%qr-body",
+            "document_preamble": "%qr-doc",
+        },
+    )
+
+    assert "%qr-doc" in tex
+    assert "%qr-body" in tex
+    assert tex.index("%qr-doc") < tex.index(r"\begin{document}")
+    assert tex.index("%qr-body") > tex.index(r"\begin{document}")
 
 
 def test_qr_callout_rules_apply_to_qt_and_r():

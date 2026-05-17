@@ -23,7 +23,7 @@ def test_render_ge_tex_smoke_builds_tex():
         [[[1, 0], [0, 1]], [[1, 0, 0], [0, 1, 0]]],
     ]
 
-    tex = render_ge_tex(matrices=matrices, n_rhs=1, preamble="")
+    tex = render_ge_tex(matrices=matrices, n_rhs=1, body_preamble="")
     assert "\\begin{NiceArray}" in tex
     assert "\\SubMatrix" in tex
     # RHS partition should appear in the pNiceArray column spec.
@@ -37,7 +37,7 @@ def test_render_ge_tex_accepts_legacy_nrhs_keyword():
     from matrixlayout.ge import render_ge_tex
 
     matrices = [[None, [[1, 2, 3], [4, 5, 6]]]]
-    tex = render_ge_tex(matrices=matrices, n_rhs=1, preamble="")
+    tex = render_ge_tex(matrices=matrices, n_rhs=1, body_preamble="")
     assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
 
 
@@ -48,7 +48,7 @@ def test_render_ge_tex_callouts_enable_extra_nodes():
     from matrixlayout.ge import render_ge_tex
 
     matrices = [[None, [[1]]], [[[1]], [[2]]]]
-    tex = render_ge_tex(matrices=matrices, callouts=True, preamble="")
+    tex = render_ge_tex(matrices=matrices, callouts=True, body_preamble="")
     line = next(line for line in tex.splitlines() if "NiceArray" in line and "begin" in line)
     assert "create-extra-nodes" in line
 
@@ -64,7 +64,7 @@ def test_render_ge_tex_rowechelon_paths_live_in_existing_tikzpicture():
         matrices=[[[1, 2], [3, 4]]],
         rowechelon_paths=[path],
         create_medium_nodes=True,
-        preamble="",
+        body_preamble="",
     )
 
     assert path in tex

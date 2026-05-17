@@ -53,12 +53,12 @@
   \endgroup
 }
 
-{{ extension }}
+{{ document_preamble }}
 
 \begin{document}\begin{minipage}{\textwidth}%
 {%% if landscape %%}\begin{landscape}%{%% endif %%}%
 {%% if fig_scale_open %%}{{ fig_scale_open }}%{%% endif %%}%
-{{ preamble }}%
+{{ body_preamble }}%
 $% begin math
 \begin{NiceArray}{%% if nice_options %%}[{{- nice_options -}}]{%% endif %%}{ {{- mat_format -}} }% begin NiceArray
 \CodeBefore{%% if create_cell_nodes %%}[create-cell-nodes]{%% endif %%}

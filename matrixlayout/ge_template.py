@@ -24,9 +24,9 @@ def validate_body_preamble(preamble: str) -> None:
     for pattern in BODY_PREAMBLE_FORBIDDEN:
         if re.search(pattern, preamble):
             raise ValueError(
-                "The `preamble` parameter is injected into the document body. "
+                "The `body_preamble` parameter is injected into the document body. "
                 "Do not include LaTeX preamble directives (e.g. \\usepackage, \\geometry). "
-                "Use `extension=` for preamble insertions."
+                "Use `document_preamble=` for true LaTeX preamble insertions."
             )
 
 

@@ -21,18 +21,26 @@ def resolve_annotations(
 def merge_layout_string_hooks(
     *,
     spec: Optional[GELayoutSpec],
-    extension: str,
-    preamble: str,
+    document_preamble: str,
+    body_preamble: str,
 ) -> Tuple[str, str]:
     if spec is None:
-        return extension, preamble
-    document_preamble = getattr(spec, "document_preamble", None) or getattr(spec, "extension", None)
-    body_preamble = getattr(spec, "body_preamble", None) or getattr(spec, "preamble", None)
-    if document_preamble:
-        extension = (document_preamble or "") + ("\n" if (document_preamble and extension) else "") + (extension or "")
-    if body_preamble:
-        preamble = (body_preamble or "") + ("\n" if (body_preamble and preamble) else "") + (preamble or "")
-    return extension, preamble
+        return document_preamble, body_preamble
+    spec_document_preamble = spec.document_preamble
+    spec_body_preamble = spec.body_preamble
+    if spec_document_preamble:
+        document_preamble = (
+            (spec_document_preamble or "")
+            + ("\n" if (spec_document_preamble and document_preamble) else "")
+            + (document_preamble or "")
+        )
+    if spec_body_preamble:
+        body_preamble = (
+            (spec_body_preamble or "")
+            + ("\n" if (spec_body_preamble and body_preamble) else "")
+            + (body_preamble or "")
+        )
+    return document_preamble, body_preamble
 
 
 def merge_layout_fields(

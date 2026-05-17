@@ -181,15 +181,15 @@ def test_tex_outer_delims_requires_inferable_shape():
 
 
 def test_ge_layout_string_hook_helper_merges_spec_first():
-    extension, preamble = _merge_layout_string_hooks(
-        spec=GELayoutSpec(extension="spec-ext", preamble="spec-body"),
-        extension="explicit-ext",
-        preamble="explicit-body",
+    document_preamble, body_preamble = _merge_layout_string_hooks(
+        spec=GELayoutSpec(document_preamble="spec-doc", body_preamble="spec-body"),
+        document_preamble="explicit-doc",
+        body_preamble="explicit-body",
     )
 
-    assert extension == "spec-ext\nexplicit-ext"
-    assert preamble == "spec-body\nexplicit-body"
-    assert _merge_layout_string_hooks(spec=None, extension="e", preamble="p") == ("e", "p")
+    assert document_preamble == "spec-doc\nexplicit-doc"
+    assert body_preamble == "spec-body\nexplicit-body"
+    assert _merge_layout_string_hooks(spec=None, document_preamble="d", body_preamble="b") == ("d", "b")
 
 
 def test_ge_layout_field_helper_merges_layout_values_and_callouts():

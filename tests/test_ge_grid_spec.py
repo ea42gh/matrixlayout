@@ -29,10 +29,25 @@ def test_render_ge_tex_accepts_spec_dict_with_layout():
         "n_rhs": 0,
         "outer_hspace_mm": 9,
         "legacy_submatrix_names": True,
-        "layout": {"preamble": "%spec-preamble"},
+        "layout": {"body_preamble": "%spec-preamble"},
     }
     tex = matrixlayout.render_ge_tex(spec=spec)
     assert "%spec-preamble" in tex
+
+
+def test_render_ge_tex_accepts_spec_dict_with_tex_hooks():
+    spec = {
+        "matrices": [[[1]]],
+        "body_preamble": "%grid-body",
+        "document_preamble": "%grid-doc",
+    }
+
+    tex = matrixlayout.render_ge_tex(spec=spec)
+
+    assert "%grid-doc" in tex
+    assert "%grid-body" in tex
+    assert tex.index("%grid-doc") < tex.index(r"\begin{document}")
+    assert tex.index("%grid-body") > tex.index(r"\begin{document}")
 
 
 def test_ge_grid_spec_accepts_legacy_nrhs_key():

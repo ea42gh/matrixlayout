@@ -234,7 +234,7 @@ Quick reference:
 See `decorators.md` for full syntax and examples.
 - `document_preamble`, `body_preamble`, `nice_options`: true LaTeX preamble
   insertion, document-body setup before the math environment, and nicematrix
-  options. Legacy `extension`/`preamble` aliases are still accepted.
+  options.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.
 - `callouts`: name/label callouts attached to submatrix delimiters.

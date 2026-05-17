@@ -106,14 +106,10 @@ def test_ge_gridspec_from_dict_allows_extra_when_strict_false():
     assert out.matrices == [[1]]
 
 
-def test_spec_from_dict_accepts_canonical_tex_hooks_and_legacy_aliases():
+def test_spec_from_dict_accepts_canonical_tex_hooks():
     layout = GELayoutSpec.from_dict({"document_preamble": "%doc", "body_preamble": "%body"})
     assert layout.document_preamble == "%doc"
     assert layout.body_preamble == "%body"
-
-    legacy_layout = GELayoutSpec.from_dict({"extension": "%doc", "preamble": "%body"})
-    assert legacy_layout.document_preamble == "%doc"
-    assert legacy_layout.body_preamble == "%body"
 
     ge_spec = GEGridSpec.from_dict(
         {"matrices": [[1]], "document_preamble": "%doc", "body_preamble": "%body"},
@@ -128,13 +124,13 @@ def test_spec_from_dict_accepts_canonical_tex_hooks_and_legacy_aliases():
     assert qr_spec.body_preamble == "%body"
 
 
-def test_spec_from_dict_rejects_conflicting_tex_hook_aliases():
+def test_spec_from_dict_rejects_removed_tex_hook_aliases():
     with pytest.raises(ValueError):
-        GELayoutSpec.from_dict({"document_preamble": "%doc", "extension": "%old"})
+        GELayoutSpec.from_dict({"extension": "%old"})
     with pytest.raises(ValueError):
-        GEGridSpec.from_dict({"matrices": [[1]], "body_preamble": "%body", "preamble": "%old"})
+        GEGridSpec.from_dict({"matrices": [[1]], "preamble": "%old"})
     with pytest.raises(ValueError):
-        QRGridSpec.from_dict({"matrices": [[1]], "document_preamble": "%doc", "extension": "%old"})
+        QRGridSpec.from_dict({"matrices": [[1]], "extension": "%old"})
 
 
 def test_ge_gridspec_from_dict_rejects_extra_when_strict_true():

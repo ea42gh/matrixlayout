@@ -91,7 +91,7 @@ def merge_grid_spec_inputs(
     cell_align: str,
     block_align: Optional[str],
     block_valign: Optional[str],
-    extension: str,
+    document_preamble: Optional[str],
     fig_scale: Optional[Union[float, int, str]],
     format_nrhs: Optional[bool],
     decorators: Optional[Sequence[Any]],
@@ -138,8 +138,13 @@ def merge_grid_spec_inputs(
     cell_align = str(merge_scalar_default("cell_align", cell_align, grid_spec.cell_align, "r"))
     block_align = merge_scalar_prefer_explicit("block_align", block_align, grid_spec.block_align)
     block_valign = merge_scalar_prefer_explicit("block_valign", block_valign, grid_spec.block_valign)
-    document_preamble = grid_spec.document_preamble if grid_spec.document_preamble is not None else grid_spec.extension
-    extension = str(merge_scalar_default("document_preamble", extension, document_preamble, ""))
+    merged_document_preamble = merge_scalar_default(
+        "document_preamble",
+        document_preamble,
+        grid_spec.document_preamble,
+        "",
+    )
+    document_preamble = "" if merged_document_preamble is None else str(merged_document_preamble)
     fig_scale = merge_scalar_prefer_explicit("fig_scale", fig_scale, grid_spec.fig_scale)
     format_nrhs = bool(merge_scalar_default("format_nrhs", format_nrhs, grid_spec.format_nrhs, True))
     kwargs["legacy_submatrix_names"] = bool(
@@ -152,9 +157,12 @@ def merge_grid_spec_inputs(
     kwargs["legacy_format"] = bool(
         merge_scalar_prefer_explicit("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format)
     )
-    body_preamble = grid_spec.body_preamble if grid_spec.body_preamble is not None else grid_spec.preamble
-    if body_preamble is not None:
-        kwargs["preamble"] = merge_scalar_prefer_explicit("body_preamble", kwargs.get("preamble"), body_preamble)
+    if grid_spec.body_preamble is not None:
+        kwargs["body_preamble"] = merge_scalar_prefer_explicit(
+            "body_preamble",
+            kwargs.get("body_preamble"),
+            grid_spec.body_preamble,
+        )
     if grid_spec.nice_options is not None:
         kwargs["nice_options"] = merge_scalar_prefer_explicit(
             "nice_options",
@@ -222,7 +230,7 @@ def merge_grid_spec_inputs(
         cell_align,
         block_align,
         block_valign,
-        extension,
+        document_preamble,
         fig_scale,
         format_nrhs,
         decorators,

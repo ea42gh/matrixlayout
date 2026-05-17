@@ -96,7 +96,7 @@ def test_render_ge_tex_threads_extension_and_fig_scale():
     tex = render_ge_tex(
         matrices=matrices,
         n_rhs=0,
-        extension=r"\usepackage{newtxtext,newtxmath}",
+        document_preamble=r"\usepackage{newtxtext,newtxmath}",
         fig_scale=0.75,
     )
 
