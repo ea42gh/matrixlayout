@@ -1,4 +1,5 @@
 site_name: matrixlayout
+site_url: https://ea42gh.github.io/matrixlayout/
 docs_dir: docs
 site_dir: site
 theme:
