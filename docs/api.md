@@ -54,10 +54,20 @@ Common options: `annotations` (labels/callouts), `output_dir`/`output_stem` (per
 - `matrixlayout.eigproblem.render_eig_tex`: emit TeX for eigen/SVD tables.
 - `matrixlayout.eigproblem.render_eig_svg`: render eigen/SVD tables to SVG.
 
+The eigen/SVD template uses `body_preamble` for body-local TeX setup such as
+`\NiceMatrixOptions`.
+`render_eig_svg` keeps `tmp_dir` as a compatibility alias for `output_dir`.
+Prefer `output_dir` for new code.
+
 ## Backsubstitution
 
 - `matrixlayout.backsubst.backsubst_tex(**opts)`: emit TeX for system/cascade/solution blocks.
 - `matrixlayout.backsubst.backsubst_svg(**opts)`: render the back-substitution document to SVG.
+
+The back-substitution template uses `body_preamble` for body-local TeX setup.
+The back-substitution template requires `systeme.sty` from the TeX toolchain.
+`backsubst_svg` keeps `tmp_dir` as a compatibility alias for `output_dir`.
+Prefer `output_dir` for new code.
 
 ## Formatting and selectors
 

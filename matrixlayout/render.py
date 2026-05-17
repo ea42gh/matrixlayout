@@ -142,6 +142,38 @@ def merge_render_opts(
     return opts
 
 
+def _resolve_render_svg_kwargs(
+    render_opts: Optional[Mapping[str, Any]] = None,
+    *,
+    toolchain_name: Optional[str] = None,
+    crop: Optional[str] = None,
+    padding: Any = None,
+    frame: Any = None,
+    exact_bbox: Optional[bool] = None,
+    output_stem: Optional[str] = None,
+    output_dir: Optional[_PathLike] = None,
+    tmp_dir: Optional[_PathLike] = None,
+) -> dict[str, Any]:
+    """Resolve wrapper-specific SVG keyword arguments.
+
+    Explicit non-``None`` keyword arguments override ``render_opts``. If
+    ``output_dir`` is not provided, ``tmp_dir`` is used as the fallback.
+    """
+
+    if output_dir is None:
+        output_dir = tmp_dir
+    return merge_render_opts(
+        render_opts,
+        toolchain_name=toolchain_name,
+        crop=crop,
+        padding=padding,
+        frame=frame,
+        output_dir=output_dir,
+        output_stem=output_stem,
+        exact_bbox=exact_bbox,
+    )
+
+
 def render_svg_with_artifacts(
     tex_source: str,
     *,

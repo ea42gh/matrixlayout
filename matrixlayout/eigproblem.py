@@ -23,7 +23,7 @@ from .eigproblem_decorations import apply_vector_decorators as _apply_vector_dec
 from .eigproblem_decorations import collect_vector_decorator_specs as _collect_vector_decorator_specs
 from .formatting import latexify, norm_str
 from .jinja_env import render_template
-from .render import merge_render_opts, render_svg
+from .render import _resolve_render_svg_kwargs, render_svg
 
 
 LatexFormatter = Callable[[Any], str]
@@ -294,7 +294,7 @@ def render_eig_tex(
     mmLambda: int = 8,
     mmS: int = 4,
     fig_scale: Optional[Union[int, float]] = None,
-    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
+    body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
@@ -319,7 +319,7 @@ def render_eig_tex(
     fig_scale:
         If provided, wraps the content in ``\\scalebox{<fig_scale>}{% ... }``.
         This matches the template convention.
-    preamble:
+    body_preamble:
         TeX inserted after the scale wrapper and before the tabular. Use for
         ``\\NiceMatrixOptions`` etc.
     sz:
@@ -474,7 +474,7 @@ def render_eig_tex(
         fig_scale_cmd = r"\scalebox{" + str(fig_scale) + r"}{%"
 
     context = {
-        "preamble": preamble,
+        "body_preamble": body_preamble,
         "fig_scale": fig_scale_cmd,
         "matrix_names": matrix_names,
         "table_format": _mk_table_format(len(lambdas_distinct)),
@@ -501,7 +501,7 @@ def render_eig_svg(
     mmLambda: int = 8,
     mmS: int = 4,
     fig_scale: Optional[Union[int, float]] = None,
-    preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
+    body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
@@ -515,7 +515,11 @@ def render_eig_svg(
     output_dir: Optional[Any] = None,
     render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
-    """Render the eigen/QR/SVD table to SVG via the strict rendering boundary."""
+    """Render the eigen/QR/SVD table to SVG via the strict rendering boundary.
+
+    ``tmp_dir`` is retained as a compatibility alias for ``output_dir``.
+    Prefer ``output_dir`` for new code.
+    """
     tex = render_eig_tex(
         eig,
         case=case,
@@ -524,20 +528,19 @@ def render_eig_svg(
         mmLambda=mmLambda,
         mmS=mmS,
         fig_scale=fig_scale,
-        preamble=preamble,
+        body_preamble=body_preamble,
         sz=sz,
         decorators=decorators,
         strict=strict,
     )
-    if output_dir is None:
-        output_dir = tmp_dir
-    opts = merge_render_opts(
+    opts = _resolve_render_svg_kwargs(
         render_opts,
         toolchain_name=toolchain_name,
         crop=crop,
         padding=padding,
         frame=frame,
         output_dir=output_dir,
+        tmp_dir=tmp_dir,
         output_stem=output_stem,
         exact_bbox=exact_bbox,
     )

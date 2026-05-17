@@ -22,7 +22,7 @@ from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
 from .qr_spec_merge import qr_known_zero_entries as _qr_known_zero_entries_impl
 from .qr_spec_merge import qr_label_layouts as _qr_label_layouts_impl
 from .qr_spec_merge import qr_name_specs_to_callouts as _qr_name_specs_to_callouts_impl
-from .render import merge_render_opts, render_svg
+from .render import _resolve_render_svg_kwargs, render_svg
 from .specs import QRGridBundle, QRGridSpec
 
 
@@ -662,7 +662,7 @@ def render_qr_svg(
         strict=strict,
         annotations=annotations,
     )
-    opts = merge_render_opts(
+    opts = _resolve_render_svg_kwargs(
         render_opts,
         toolchain_name=toolchain_name,
         crop=crop,

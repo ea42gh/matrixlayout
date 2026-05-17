@@ -16,11 +16,11 @@ def test_render_ge_tex_decorators_apply():
     assert r"\color{red}{\mathbf{2}}" in tex
 
 
-def test_render_ge_tex_decorators_resolve_matrix_name():
+def test_render_ge_tex_decorators_use_grid():
     matrices = [[None, [[1, 2], [3, 4]]]]
     decorators = [
         {
-            "matrix_name": "A0",
+            "grid": (0, 1),
             "entries": [(0, 0)],
             "decorator": make_decorator(boxed=True),
         }

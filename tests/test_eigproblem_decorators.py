@@ -15,7 +15,7 @@ def test_render_eig_tex_decorates_lambda_matrix():
         case="S",
         formatter=str,
         decorators=[{"matrix": "lambda", "entries": [(0, 0)], "decorator": dec}],
-        preamble="",
+        body_preamble="",
     )
 
     assert r"\boxed{2}" in tex
@@ -38,7 +38,7 @@ def test_render_eig_tex_decorates_eigenbasis_vector_entry():
         case="S",
         formatter=str,
         decorators=[{"target": "eigenbasis", "entries": [(0, 0, 1)], "decorator": dec}],
-        preamble="",
+        body_preamble="",
     )
 
     assert r"\boxed{5}" in tex
@@ -61,7 +61,7 @@ def test_render_eig_tex_decorates_evecs_row_alias():
         case="S",
         formatter=str,
         decorators=[{"target": "evecs_row", "entries": [(0, 0, 1)], "decorator": dec}],
-        preamble="",
+        body_preamble="",
     )
 
     assert r"\boxed{7}" in tex

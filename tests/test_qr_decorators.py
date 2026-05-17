@@ -20,7 +20,7 @@ def test_render_qr_tex_decorators_apply():
     assert r"\boxed{1}" in tex
 
 
-def test_render_qr_tex_decorators_resolve_matrix_name():
+def test_render_qr_tex_decorators_use_grid():
     from matrixlayout.qr import render_qr_tex
 
     matrices = [
@@ -36,7 +36,7 @@ def test_render_qr_tex_decorators_resolve_matrix_name():
         matrices=matrices,
         formatter=str,
         body_preamble="",
-        decorators=[{"matrix_name": "QR0x2", "entries": [(0, 0)], "decorator": dec}],
+        decorators=[{"grid": (0, 2), "entries": [(0, 0)], "decorator": dec}],
     )
 
     assert r"\boxed{1}" in tex

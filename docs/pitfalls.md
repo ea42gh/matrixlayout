@@ -7,6 +7,7 @@ A short list of issues that commonly appear when first using matrixlayout.
 - Toolchain binaries may be missing from `PATH`.
 - If `*_svg` fails, call `*_tex` and inspect the emitted LaTeX.
 - Try a different `toolchain_name` to isolate toolchain-specific issues.
+- Back-substitution rendering requires `systeme.sty`; install the TeX package set that provides it if the template fails with a missing-file error.
 
 ## Crop and padding
 

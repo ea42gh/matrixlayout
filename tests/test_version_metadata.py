@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from importlib import resources
 
 import matrixlayout
 
@@ -55,3 +56,19 @@ def test_coverage_gate_tracks_current_quality_level():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
     assert "fail_under = 90" in text
+
+
+def test_package_data_includes_runtime_templates():
+    package_root = Path(matrixlayout.__file__).resolve().parent
+    template_dir = package_root / "templates"
+
+    assert template_dir.is_dir()
+    assert (template_dir / "ge.tex.j2").is_file()
+    assert (template_dir / "backsubst.tex.j2").is_file()
+    assert (template_dir / "eigproblem.tex.j2").is_file()
+    assert (template_dir / ".keep").is_file()
+
+    # Also verify the package loader can enumerate the same files when installed.
+    files = resources.files("matrixlayout").joinpath("templates")
+    template_names = {p.name for p in files.iterdir() if p.is_file()}
+    assert {"ge.tex.j2", "backsubst.tex.j2", "eigproblem.tex.j2"}.issubset(template_names)

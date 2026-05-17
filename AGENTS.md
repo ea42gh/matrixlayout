@@ -19,6 +19,10 @@ Before changing the API shape, clean both repositories without changing behavior
 4. Add characterization tests for any behavior that is awkward but still relied on.
 5. Update docs that describe existing behavior incorrectly.
 
+Note:
+- This repo does not currently have a Julia package root (`Project.toml`), so
+  do not add a `CompatHelper.yml` workflow here unless that changes.
+
 ## API Cleanup Plan
 
 Execute one item at a time, with tests and docs in the same change:

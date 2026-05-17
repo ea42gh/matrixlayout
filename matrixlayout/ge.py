@@ -64,7 +64,7 @@ from .ge_template import (
 )
 from .ge_text_specs import render_ge_tex_specs as render_ge_tex_specs
 from .jinja_env import render_template
-from .render import merge_render_opts, render_svg as _render_svg
+from .render import _resolve_render_svg_kwargs, render_svg as _render_svg
 from .specs import (
     GEGridBundle,
     GEGridSpec,
@@ -355,7 +355,7 @@ def svg(
         outer_delims_name=outer_delims_name,
         outer_delims_span=outer_delims_span,
     )
-    opts = merge_render_opts(
+    opts = _resolve_render_svg_kwargs(
         render_opts,
         toolchain_name=toolchain_name,
         crop=crop,
@@ -567,18 +567,11 @@ def render_ge_tex(
     use_legacy_names_for_decorators = bool(kwargs.get("legacy_submatrix_names", False))
     decorator_map = build_ge_decorator_map(
         decorators=decorators,
-        matrices=grid,
         cell_cache=cell_cache,
         n_block_rows=n_block_rows,
         n_block_cols=n_block_cols,
         formatter=formatter,
         strict=bool(strict),
-        legacy_submatrix_names=use_legacy_names_for_decorators,
-        resolve_grid_name=lambda name, matrices, legacy: resolve_ge_grid_name(
-            name,
-            matrices=matrices,
-            legacy_submatrix_names=legacy,
-        ),
     )
 
     # Ensure node coordinates exist when text nodes are requested.
@@ -870,7 +863,7 @@ def render_ge_svg(
         variable_labels=variable_labels,
         **kwargs,
     )
-    opts = merge_render_opts(
+    opts = _resolve_render_svg_kwargs(
         render_opts,
         toolchain_name=toolchain_name,
         crop=crop,

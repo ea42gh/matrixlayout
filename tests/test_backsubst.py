@@ -29,7 +29,7 @@ def _pick_toolchain_name_or_skip() -> str:
 
 def test_backsubst_tex_sections_toggle():
     tex = backsubst_tex(
-        preamble="%P",
+        body_preamble="%P",
         system_txt="SYS",
         cascade_txt=["C1", "C2"],
         solution_txt="SOL",
