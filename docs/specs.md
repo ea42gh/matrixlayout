@@ -143,8 +143,8 @@ LabelSpec (row/column labels):
 }
 ```
 
-`rows` and `cols` are still accepted as compatibility aliases in label specs,
-but new specs should use `labels`.
+Label specs use `labels` for row and column label payloads. `rows` and `cols`
+are reserved for decoration selectors.
 
 DecorationSpec (one-line shorthand):
 

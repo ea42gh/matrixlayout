@@ -45,11 +45,11 @@ def test_render_ge_tex_prefers_explicit_label_rows_over_spec():
     matrices = _sample_grid()
     spec = {
         "matrices": matrices,
-        "label_rows": [{"grid": (0, 1), "rows": [["spec"]], "side": "above"}],
+        "label_rows": [{"grid": (0, 1), "labels": [["spec"]], "side": "above"}],
     }
     tex = matrixlayout.render_ge_tex(
         matrices=matrices,
-        label_rows=[{"grid": (0, 1), "rows": [["explicit"]], "side": "above"}],
+        label_rows=[{"grid": (0, 1), "labels": [["explicit"]], "side": "above"}],
         spec=spec,
     )
     assert "explicit" in tex

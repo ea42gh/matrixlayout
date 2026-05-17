@@ -73,8 +73,8 @@ def test_grid_submatrix_spans_label_offsets_and_legacy_names():
 
     spans = grid_submatrix_spans(
         matrices,
-        label_rows=[{"grid": (0, 1), "side": "above", "rows": [["x", "y"]]}],
-        label_cols=[{"grid": (0, 1), "side": "left", "cols": [["r1"], ["r2"]]}],
+        label_rows=[{"grid": (0, 1), "side": "above", "labels": [["x", "y"]]}],
+        label_cols=[{"grid": (0, 1), "side": "left", "labels": [["r1"], ["r2"]]}],
         legacy_submatrix_names=True,
     )
 

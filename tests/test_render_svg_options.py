@@ -245,7 +245,7 @@ def test_render_ge_svg_exposes_ge_layout_options(monkeypatch):
         matrices=[[[1, 2]]],
         n_rhs=1,
         format_nrhs=False,
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x", "b"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x", "b"]]}],
         decorators=[{"grid": (0, 0), "entries": [(0, 0)], "decorator": lambda tex: rf"\boxed{{{tex}}}"}],
     )
 

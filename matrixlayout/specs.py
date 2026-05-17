@@ -58,13 +58,11 @@ class GELabelRowsSpec(TypedDict, total=False):
 
     ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"above"``
     or ``"below"``. ``labels`` contains one or more label rows; each inner
-    value is rendered as a label cell. ``rows`` is accepted as a compatibility
-    alias for older specs.
+    value is rendered as a label cell.
     """
 
     grid: GridCoord
     side: str
-    rows: Sequence[Sequence[Any]]
     labels: Sequence[Sequence[Any]]
     overlay: bool
 
@@ -74,13 +72,11 @@ class GELabelColsSpec(TypedDict, total=False):
 
     ``grid`` is the zero-based outer grid coordinate. ``side`` is ``"left"``
     or ``"right"``. ``labels`` contains one or more label columns; each inner
-    value is rendered as a label cell. ``cols`` is accepted as a compatibility
-    alias for older specs.
+    value is rendered as a label cell.
     """
 
     grid: GridCoord
     side: str
-    cols: Sequence[Sequence[Any]]
     labels: Sequence[Sequence[Any]]
     overlay: bool
 
@@ -459,14 +455,13 @@ def _validate_label_specs(
     *,
     field: str,
     allowed_sides: Sequence[str],
-    value_key: str,
     grid: Optional[Tuple[int, int]],
     strict: bool,
 ) -> List[str]:
     errors: List[str] = []
     if specs is None:
         return errors
-    allowed_keys = {"grid", "side", value_key, "labels", "overlay"}
+    allowed_keys = {"grid", "side", "labels", "overlay"}
     for idx, item in enumerate(specs):
         if not isinstance(item, Mapping):
             errors.append(f"{field}[{idx}] must be a mapping")
@@ -480,8 +475,8 @@ def _validate_label_specs(
         side = str(item.get("side", allowed_sides[0])).strip().lower()
         if side not in allowed_sides:
             errors.append(f"{field}[{idx}].side must be one of {tuple(allowed_sides)}")
-        if value_key not in item and "labels" not in item:
-            errors.append(f"{field}[{idx}] must include '{value_key}' or 'labels'")
+        if "labels" not in item:
+            errors.append(f"{field}[{idx}] must include 'labels'")
     return errors
 
 
@@ -623,7 +618,6 @@ def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
             mapping.get("label_rows"),
             field="label_rows",
             allowed_sides=("above", "below"),
-            value_key="rows",
             grid=grid,
             strict=strict,
         )
@@ -633,7 +627,6 @@ def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
             mapping.get("label_cols"),
             field="label_cols",
             allowed_sides=("left", "right"),
-            value_key="cols",
             grid=grid,
             strict=strict,
         )

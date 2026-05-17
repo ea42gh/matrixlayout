@@ -43,12 +43,14 @@ def test_grid_label_layouts_filters_invalid_and_normalizes_side_aliases():
     ]
 
 
-def test_label_targets_from_specs_uses_rows_cols_fallbacks_and_filters_invalid():
+def test_label_targets_from_specs_uses_labels_and_filters_invalid():
     targets = label_targets_from_specs(
         [
-            {"grid": (0, 0), "side": "above", "rows": [["r"]], "extra": 1},
-            {"grid": (0, 1), "side": "left", "cols": [["c"]]},
+            {"grid": (0, 0), "side": "above", "labels": [["r"]], "extra": 1},
+            {"grid": (0, 1), "side": "left", "labels": [["c"]]},
             {"grid": (1, 0), "side": "bottom", "labels": [["b"]]},
+            {"grid": (1, 1), "side": "above", "rows": [["skip"]]},
+            {"grid": (1, 2), "side": "left", "cols": [["skip"]]},
             {"grid": (1,), "labels": ["skip"]},
             {"grid": (2, 0)},
         ]
@@ -94,8 +96,8 @@ def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
             {"grid": (0, 0), "side": "left", "labels": [["col1"], ["col2"]]},
             {"grid": (0, 0), "label": "callout"},
         ],
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [[{"text": r"\NotEmpty"}]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "cols": [[{"text": r"\NotEmpty"}]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [[{"text": r"\NotEmpty"}]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [[{"text": r"\NotEmpty"}]]}],
         decorations=[{"grid": (0, 0), "background": "yellow"}],
     )
 
@@ -122,8 +124,8 @@ def test_append_variable_labels_and_build_label_maps_defaults_and_non_strict_ign
     rows_map, cols_map, overlay = build_label_maps(
         n_block_rows=1,
         n_block_cols=1,
-        label_rows=[{"rows": ["top"]}, {"grid": (2, 0), "rows": ["skip"]}, {"grid": (0, 0), "side": "bad", "rows": ["skip"]}, "bad"],
-        label_cols=[{"cols": [["left"]]}, {"grid": (2, 0), "cols": [["skip"]]}, {"grid": (0, 0), "side": "bad", "cols": [["skip"]]}, "bad"],
+        label_rows=[{"labels": ["top"]}, {"grid": (2, 0), "labels": ["skip"]}, {"grid": (0, 0), "side": "bad", "labels": ["skip"]}, "bad"],
+        label_cols=[{"labels": [["left"]]}, {"grid": (2, 0), "labels": [["skip"]]}, {"grid": (0, 0), "side": "bad", "labels": [["skip"]]}, "bad"],
         variable_labels=variable,
         strict=False,
     )
@@ -140,23 +142,23 @@ def test_build_label_maps_collects_overlay_col_labels_without_embedding():
         n_block_cols=1,
         label_rows=None,
         label_cols=[
-            {"grid": (0, 0), "side": "left", "cols": [["overlay"]], "overlay": True},
-            {"grid": (0, 0), "side": "right", "cols": [["normal"]]},
+            {"grid": (0, 0), "side": "left", "labels": [["overlay"]], "overlay": True},
+            {"grid": (0, 0), "side": "right", "labels": [["normal"]]},
         ],
         allow_overlay=True,
     )
 
     assert rows_map == {}
     assert cols_map == {(0, 0, "right"): [["normal"]]}
-    assert overlay == [{"grid": (0, 0), "side": "left", "cols": [["overlay"]], "overlay": True}]
+    assert overlay == [{"grid": (0, 0), "side": "left", "labels": [["overlay"]], "overlay": True}]
 
 
 def test_build_label_maps_prefers_canonical_labels_payload():
     rows_map, cols_map, _overlay = build_label_maps(
         n_block_rows=1,
         n_block_cols=1,
-        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["new"]], "rows": [["old"]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["new"]], "cols": [["old"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["new"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["new"]]}],
     )
 
     assert rows_map[(0, 0, "above")] == [["new"]]
@@ -166,9 +168,9 @@ def test_build_label_maps_prefers_canonical_labels_payload():
 def test_build_label_maps_strict_rejects_label_cols_variants():
     for label_cols, message in [
         ([["x"]], "dict"),
-        ([{"grid": (2, 0), "cols": [["x"]]}], "out of range"),
-        ([{"grid": (0, 0), "side": "above", "cols": [["x"]]}], "side"),
-        ([{"grid": "bad", "cols": [["x"]]}], "grid"),
+        ([{"grid": (2, 0), "labels": [["x"]]}], "out of range"),
+        ([{"grid": (0, 0), "side": "above", "labels": [["x"]]}], "side"),
+        ([{"grid": "bad", "labels": [["x"]]}], "grid"),
     ]:
         try:
             build_label_maps(

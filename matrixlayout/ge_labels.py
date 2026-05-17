@@ -106,16 +106,11 @@ def label_targets_from_specs(
             side = "below"
         label_values = item.get("labels")
         if label_values is None:
-            if side in ("left", "right"):
-                label_values = item.get("cols")
-            else:
-                label_values = item.get("rows")
-        if label_values is None:
             continue
         target: Dict[str, Any] = {
             key: value
             for key, value in item.items()
-            if key not in ("rows", "cols", "labels")
+            if key != "labels"
         }
         target["grid"] = (int(grid[0]), int(grid[1]))
         target["side"] = side
@@ -233,7 +228,7 @@ def merge_label_specs(
             if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
                 continue
             side = _norm_side(spec_item.get("side"))
-            rows = _normalize_label_rows_for_merge(spec_item.get("labels", spec_item.get("rows")))
+            rows = _normalize_label_rows_for_merge(spec_item.get("labels"))
             if not rows:
                 continue
             matched = False
@@ -244,10 +239,9 @@ def merge_label_specs(
                     continue
                 if _norm_side(existing.get("side")) != side:
                     continue
-                ex_rows = _normalize_label_rows_for_merge(existing.get("labels", existing.get("rows")))
+                ex_rows = _normalize_label_rows_for_merge(existing.get("labels"))
                 if not ex_rows:
                     existing["labels"] = rows
-                    existing.pop("rows", None)
                     matched = True
                     break
                 blank_idxs = [idx for idx, row in enumerate(ex_rows) if _is_blank_label(row)]
@@ -259,12 +253,10 @@ def merge_label_specs(
                     if len(rows) > len(blank_idxs):
                         ex_rows.extend(rows[len(blank_idxs):])
                     existing["labels"] = ex_rows
-                    existing.pop("rows", None)
                     matched = True
                     break
                 ex_rows.extend(rows)
                 existing["labels"] = ex_rows
-                existing.pop("rows", None)
                 matched = True
                 break
             if not matched:
@@ -278,7 +270,7 @@ def merge_label_specs(
             if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
                 continue
             side = _norm_side(spec_item.get("side"))
-            cols = _normalize_label_cols_for_merge(spec_item.get("labels", spec_item.get("cols")))
+            cols = _normalize_label_cols_for_merge(spec_item.get("labels"))
             if not cols:
                 continue
             matched = False
@@ -289,10 +281,9 @@ def merge_label_specs(
                     continue
                 if _norm_side(existing.get("side")) != side:
                     continue
-                ex_cols = _normalize_label_cols_for_merge(existing.get("labels", existing.get("cols")))
+                ex_cols = _normalize_label_cols_for_merge(existing.get("labels"))
                 if not ex_cols:
                     existing["labels"] = cols
-                    existing.pop("cols", None)
                     matched = True
                     break
                 blank_idxs = [idx for idx, col in enumerate(ex_cols) if _is_blank_label(col)]
@@ -304,12 +295,10 @@ def merge_label_specs(
                     if len(cols) > len(blank_idxs):
                         ex_cols.extend(cols[len(blank_idxs):])
                     existing["labels"] = ex_cols
-                    existing.pop("cols", None)
                     matched = True
                     break
                 ex_cols.extend(cols)
                 existing["labels"] = ex_cols
-                existing.pop("cols", None)
                 matched = True
                 break
             if not matched:
@@ -366,9 +355,6 @@ def append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels:
         spec_item = dict(item)
         if "side" not in spec_item:
             spec_item["side"] = "below"
-        if "labels" not in spec_item and "rows" in spec_item:
-            spec_item["labels"] = spec_item["rows"]
-        spec_item.pop("rows", None)
         out.append(spec_item)
     return out
 
@@ -470,7 +456,7 @@ def build_label_maps(
         )
         if side is None:
             continue
-        rows = normalize_label_rows(spec_item.get("labels", spec_item.get("rows")))
+        rows = normalize_label_rows(spec_item.get("labels"))
         if not rows:
             continue
         gM, gN = grid_pos
@@ -502,7 +488,7 @@ def build_label_maps(
         if allow_overlay and spec_item.get("overlay"):
             overlay_label_specs.append(dict(spec_item))
             continue
-        cols = normalize_label_cols(spec_item.get("labels", spec_item.get("cols")))
+        cols = normalize_label_cols(spec_item.get("labels"))
         if not cols:
             continue
         gM, gN = grid_pos

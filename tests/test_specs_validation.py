@@ -16,14 +16,29 @@ def test_validate_ge_spec_detects_shape_mismatch():
 def test_validate_ge_spec_checks_nested_label_specs():
     spec = {
         "matrices": [[[[1, 2], [3, 4]]]],
-        "label_rows": [{"grid": (0, 0), "side": "left", "rows": [["x"]]}],
-        "label_cols": [{"grid": (2, 0), "cols": [["r1"]]}],
+        "label_rows": [{"grid": (0, 0), "side": "left", "labels": [["x"]]}],
+        "label_cols": [{"grid": (2, 0), "labels": [["r1"]]}],
     }
 
     errors = validate_ge_spec(spec)
 
     assert any("label_rows[0].side" in msg for msg in errors)
     assert any("label_cols[0].grid" in msg and "outside" in msg for msg in errors)
+
+
+def test_validate_ge_spec_rejects_label_rows_cols_payload_aliases():
+    spec = {
+        "matrices": [[[[1, 2], [3, 4]]]],
+        "label_rows": [{"grid": (0, 0), "side": "above", "rows": [["x"]]}],
+        "label_cols": [{"grid": (0, 0), "side": "left", "cols": [["r1"]]}],
+    }
+
+    errors = validate_ge_spec(spec)
+
+    assert any("label_rows[0] has unknown field" in msg and "rows" in msg for msg in errors)
+    assert any("label_rows[0] must include 'labels'" in msg for msg in errors)
+    assert any("label_cols[0] has unknown field" in msg and "cols" in msg for msg in errors)
+    assert any("label_cols[0] must include 'labels'" in msg for msg in errors)
 
 
 def test_validate_ge_spec_checks_nested_decorations():
@@ -47,7 +62,7 @@ def test_validate_ge_spec_checks_nested_decorations():
 def test_validate_ge_spec_accepts_typed_grid_spec():
     spec = GEGridSpec(
         matrices=[[[[1, 2], [3, 4]]]],
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x", "y"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}],
         decorations=[{"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!40"}],
     )
 

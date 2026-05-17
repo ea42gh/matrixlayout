@@ -114,8 +114,8 @@ def test_render_ge_tex_left_column_labels_align_with_distinct_rows():
 
     tex = render_ge_tex(
         matrices=[[[1, 0], [0, 1], [0, 0]]],
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x1", "x2"]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["p1"], ["p2"], [""]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x1", "x2"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["p1"], ["p2"], [""]]}],
         create_medium_nodes=True,
     )
 

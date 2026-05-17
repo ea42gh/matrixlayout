@@ -128,7 +128,7 @@ def test_render_ge_tex_spec_strict_is_not_overridden_by_default_false():
 
 def test_merge_label_specs_preserves_explicit_rows():
     annotations = [{"grid": (0, 1), "label": "spec", "side": "above"}]
-    label_rows = [{"grid": (0, 1), "rows": [["explicit"]], "side": "above"}]
+    label_rows = [{"grid": (0, 1), "labels": [["explicit"]], "side": "above"}]
     label_rows_out, label_cols_out, _decorations = _merge_label_specs(
         annotations=annotations,
         label_rows=label_rows,
@@ -141,7 +141,7 @@ def test_merge_label_specs_preserves_explicit_rows():
 
 
 def test_merge_label_specs_uses_annotations_when_no_explicit():
-    annotations = [{"grid": (0, 0), "rows": [["spec"]], "side": "above"}]
+    annotations = [{"grid": (0, 0), "labels": [["spec"]], "side": "above"}]
     label_rows_out, label_cols_out, _decorations = _merge_label_specs(
         annotations=annotations,
         label_rows=None,
@@ -153,7 +153,7 @@ def test_merge_label_specs_uses_annotations_when_no_explicit():
     assert label_cols_out is None
 
 
-def test_ge_label_module_helpers_match_compatibility_aliases():
+def test_ge_label_module_helpers_match_public_aliases():
     targets = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
     rows, cols = grid_label_layouts(targets)
     assert rows == [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}]
@@ -193,8 +193,8 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
         matrices=[[None, [[1]]]],
         n_rhs=0,
         outer_hspace_mm=6,
-        label_rows=[{"grid": (0, 0), "rows": [["row"]], "side": "above"}],
-        label_cols=[{"grid": (0, 0), "cols": [["col"]], "side": "left"}],
+        label_rows=[{"grid": (0, 0), "labels": [["row"]], "side": "above"}],
+        label_cols=[{"grid": (0, 0), "labels": [["col"]], "side": "left"}],
     )
     (
         _matrices,
@@ -246,10 +246,10 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
 
 def test_build_label_maps_tracks_overlay_and_variable_labels():
     label_cols = [
-        {"grid": (0, 1), "cols": [["left"]], "side": "left"},
-        {"grid": (0, 1), "cols": [["overlay"]], "side": "right", "overlay": True},
+        {"grid": (0, 1), "labels": [["left"]], "side": "left"},
+        {"grid": (0, 1), "labels": [["overlay"]], "side": "right", "overlay": True},
     ]
-    variable_labels = [{"grid": (0, 1), "rows": [["var"]], "side": "below"}]
+    variable_labels = [{"grid": (0, 1), "labels": [["var"]], "side": "below"}]
     label_rows_map, label_cols_map, overlay = _build_label_maps(
         n_block_rows=1,
         n_block_cols=2,
@@ -269,7 +269,7 @@ def test_build_label_maps_strict_rejects_bad_grid():
         _build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
-            label_rows=[{"grid": (2, 0), "rows": [["x"]], "side": "above"}],
+            label_rows=[{"grid": (2, 0), "labels": [["x"]], "side": "above"}],
             label_cols=None,
             variable_labels=None,
             allow_overlay=False,
@@ -286,7 +286,7 @@ def test_build_label_maps_strict_rejects_bad_side():
         _build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
-            label_rows=[{"grid": (0, 0), "rows": [["x"]], "side": "top"}],
+            label_rows=[{"grid": (0, 0), "labels": [["x"]], "side": "top"}],
             label_cols=None,
             variable_labels=None,
             allow_overlay=False,
@@ -317,8 +317,8 @@ def test_build_label_maps_strict_rejects_nondict():
 
 def test_build_label_maps_overlay_excludes_label_cols():
     label_cols = [
-        {"grid": (0, 0), "cols": [["x"]], "side": "left"},
-        {"grid": (0, 0), "cols": [["y"]], "side": "right", "overlay": True},
+        {"grid": (0, 0), "labels": [["x"]], "side": "left"},
+        {"grid": (0, 0), "labels": [["y"]], "side": "right", "overlay": True},
     ]
     label_rows_map, label_cols_map, overlay = _build_label_maps(
         n_block_rows=1,

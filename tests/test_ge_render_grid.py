@@ -54,8 +54,8 @@ def test_ge_render_parts_basic_grid_nrhs_names_and_spans():
 def test_ge_render_parts_labels_and_label_gap():
     parts = _parts(
         [[[1, 0, 2], [0, 1, -1]]],
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x_1", "$x_2$", "b"]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["r1"], ["r2"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x_1", "$x_2$", "b"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["r1"], ["r2"]]}],
     )
 
     assert parts.mat_format == "rrrr"

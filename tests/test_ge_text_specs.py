@@ -86,8 +86,8 @@ def test_render_ge_tex_specs_ignores_bad_label_row_metadata():
         [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}],
         label_rows=[
             object(),
-            {"grid": (0,), "side": "above", "rows": [["bad"]]},
-            {"grid": (0, 0), "side": "left", "rows": [["bad"]]},
+            {"grid": (0,), "side": "above", "labels": [["bad"]]},
+            {"grid": (0, 0), "side": "left", "labels": [["bad"]]},
         ],
     )
 
@@ -103,7 +103,7 @@ def test_render_ge_tex_label_rows_mixed_text_latex():
         matrices=matrices,
         formatter=str,
         label_rows=[
-            {"grid": (0, 0), "side": "below", "rows": [["row $i$", "$x_1$"]]},
+            {"grid": (0, 0), "side": "below", "labels": [["row $i$", "$x_1$"]]},
         ],
     )
     assert "\\text{row }i" in tex
@@ -114,8 +114,8 @@ def test_render_ge_tex_label_rows_escape_plain_text_specials():
     tex = render_ge_tex(
         matrices=[[[1, 0, 2], [0, 1, -1]]],
         formatter=str,
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x_1", "x^2", "a&b"]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["r_1"], ["r^2"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x_1", "x^2", "a&b"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["r_1"], ["r^2"]]}],
     )
 
     assert r"\text{x\_1}" in tex
@@ -140,8 +140,8 @@ def test_render_ge_tex_label_cols_singletons_attach_to_matrix_rows():
     tex = render_ge_tex(
         matrices=[[[1, 0, 2], [0, 1, -1]]],
         formatter=str,
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": [["x1", "x2", "b"]]}],
-        label_cols=[{"grid": (0, 0), "side": "left", "cols": [["r1"], ["r2"]]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": [["x1", "x2", "b"]]}],
+        label_cols=[{"grid": (0, 0), "side": "left", "labels": [["r1"], ["r2"]]}],
     )
 
     assert r"\text{r1}\hspace{0.8mm} & 1 & 0 & 2" in tex
@@ -154,7 +154,7 @@ def test_render_ge_tex_specs_accounts_for_label_rows():
     specs = render_ge_tex_specs(
         matrices,
         [{"grid": (0, 0), "side": "left", "labels": ["a", "b"]}],
-        label_rows=[{"grid": (0, 0), "side": "above", "rows": ["x", "y"]}],
+        label_rows=[{"grid": (0, 0), "side": "above", "labels": ["x", "y"]}],
     )
     coords = [s[0] for s in specs]
     assert "(2-1.center)" in coords
@@ -294,7 +294,7 @@ def test_render_ge_svg_label_targets_preserve_label_rows():
     targets = [
         {"grid": (0, 0), "side": "above", "labels": ["head"]},
     ]
-    existing_rows = [{"grid": (0, 0), "side": "above", "rows": [["X"]]}]
+    existing_rows = [{"grid": (0, 0), "side": "above", "labels": [["X"]]}]
     tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, annotations=targets)
     assert "\\text{X}" in tex
     assert "\\text{head}" in tex

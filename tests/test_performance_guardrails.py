@@ -20,8 +20,8 @@ def test_large_ge_grid_tex_assembly_stays_within_runtime_guardrail():
             {"grid": (1, 1), "entries": [(0, 0)], "background": "yellow!25"},
             {"grid": (8, 1), "submatrix": ("0:9", "0:0"), "outline": True},
         ],
-        label_rows=[{"grid": (0, 1), "side": "above", "rows": [[f"x{j}" for j in range(10)]]}],
-        label_cols=[{"grid": (8, 0), "side": "left", "cols": [[f"r{i}"] for i in range(10)]}],
+        label_rows=[{"grid": (0, 1), "side": "above", "labels": [[f"x{j}" for j in range(10)]]}],
+        label_cols=[{"grid": (8, 0), "side": "left", "labels": [[f"r{i}"] for i in range(10)]}],
     )
     elapsed = perf_counter() - start
 
