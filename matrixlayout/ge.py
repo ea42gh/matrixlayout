@@ -564,7 +564,6 @@ def render_ge_tex(
         if "\\newcolumntype{I}" not in document_preamble:
             document_preamble = document_preamble + "\n\\newcolumntype{I}{|}\n"
 
-    use_legacy_names_for_decorators = bool(kwargs.get("legacy_submatrix_names", False))
     decorator_map = build_ge_decorator_map(
         decorators=decorators,
         cell_cache=cell_cache,
