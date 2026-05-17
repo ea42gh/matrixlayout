@@ -86,8 +86,8 @@ def test_render_ge_tex_strict_callouts_reject_unknown_submatrix_name():
         )
 
 
-def test_render_ge_tex_threads_extension_and_fig_scale():
-    """render_ge_tex/tex should expose extension+fig_scale end-to-end."""
+def test_render_ge_tex_threads_document_preamble_and_fig_scale():
+    """render_ge_tex/tex should expose document_preamble+fig_scale end-to-end."""
 
     from matrixlayout.ge import render_ge_tex
 
@@ -100,7 +100,7 @@ def test_render_ge_tex_threads_extension_and_fig_scale():
         fig_scale=0.75,
     )
 
-    # extension must appear in the pre-document area.
+    # document_preamble must appear in the pre-document area.
     assert r"\usepackage{newtxtext,newtxmath}" in tex
 
     # fig_scale should wrap the figure.

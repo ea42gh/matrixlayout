@@ -56,9 +56,6 @@ class DelimCalloutDict(TypedDict, total=False):
     label_shift_y_mm: float
     label_shift_x_mm: float
     grid: Tuple[int, int]
-    grid_pos: Tuple[int, int]
-    block_row: int
-    block_col: int
 
 
 @dataclass(frozen=True)
