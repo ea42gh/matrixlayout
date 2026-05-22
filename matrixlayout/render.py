@@ -246,14 +246,9 @@ def render_svg(
     keep_on_success = os.environ.get("MATRIXLAYOUT_KEEP_ARTIFACTS") == "1"
 
     if output_dir is not None:
-        # Treat output_dir as a root and always isolate artifacts per call to
-        # avoid stale files from previous renders.
-        out_root = Path(output_dir)
-        out_root.mkdir(parents=True, exist_ok=True)
-        tmp = Path(tempfile.mkdtemp(prefix="matrixlayout_render_", dir=out_root))
         artifacts = render_svg_with_artifacts(
             tex_source,
-            output_dir=tmp,
+            output_dir=output_dir,
             toolchain_name=toolchain_name,
             output_stem=output_stem,
             crop=crop,

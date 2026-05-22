@@ -47,8 +47,7 @@ def test_matrixlayout_render_svg_uses_with_artifacts_and_forwards_options(monkey
     assert tex_source == "TEX"
     assert kwargs["crop"] == "tight"
     assert kwargs["padding"] == {"left": 2, "bottom": 1}
-    assert Path(kwargs["output_dir"]).parent == tmp_path
-    assert Path(kwargs["output_dir"]).name.startswith("matrixlayout_render_")
+    assert Path(kwargs["output_dir"]) == tmp_path
 
 
 def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp_path):
@@ -79,8 +78,7 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
     assert kwargs["toolchain_name"] == "xelatex_dvisvgm"
     assert kwargs["crop"] == "page"
     assert kwargs["padding"] == (1, 2, 3, 4)
-    assert Path(kwargs["output_dir"]).parent == tmp_path
-    assert Path(kwargs["output_dir"]).name.startswith("matrixlayout_render_")
+    assert Path(kwargs["output_dir"]) == tmp_path
 
 
 def test_matrixlayout_render_svg_rejects_unknown_toolchain_early(monkeypatch, tmp_path):
