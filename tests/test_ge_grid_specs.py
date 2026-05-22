@@ -58,8 +58,8 @@ def test_grid_highlight_specs_dict_tuple_empty_missing_and_invalid_forms():
     )
 
     assert specs == [
-        r"\tikz \node [fill=red, inner sep=2.0pt, fit=(1-2-medium) (1-2-medium)] {};",
-        r"\tikz \node [fill=blue, inner sep=1.0pt, fit=(1-3-medium) (2-3-medium)] {};",
+        r"\tikz \node [fill=red, inner sep=2.0pt, fit=(1-2) (1-2)] {};",
+        r"\tikz \node [fill=blue, inner sep=1.0pt, fit=(1-3) (2-3)] {};",
     ]
 
     with pytest.raises(ValueError, match="grid=\\(row,col\\)"):

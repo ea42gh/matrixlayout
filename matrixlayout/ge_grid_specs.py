@@ -296,6 +296,6 @@ def grid_highlight_specs(
         fill = str(item.get("color", color))
         pad = float(item.get("padding_pt", padding_pt))
         out.append(
-            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
+            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit=({row_start}-{col_start}) ({row_end}-{col_end})] {{}};"
         )
     return out
