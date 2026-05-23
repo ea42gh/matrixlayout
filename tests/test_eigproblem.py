@@ -67,6 +67,7 @@ def test_render_eig_tex_case_SVD_includes_sigma_and_U():
     assert r"\sigma" in tex
     assert re.search(r"\\color\{[^}]+\}\{\s*\\Sigma\s*=\s*\}", tex) is not None
     assert re.search(r"\\color\{[^}]+\}\{\s*U\s*=\s*\}", tex) is not None
+    assert r"\begin{minipage}" not in tex
 
 
 def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():
@@ -206,6 +207,42 @@ def test_mk_vector_blocks_covers_factored_latexify_and_strict_decorators():
             target_name="eigenbasis",
             strict=True,
         )
+
+
+def test_svd_matrix_rows_stay_entrywise_while_vector_rows_factor():
+    tex = matrixlayout.render_eig_tex(
+        {
+            "lambda": [5017, 1],
+            "ma": [1, 1],
+            "sigma": [1, 0],
+            "evecs": [
+                [[
+                    sym.sqrt(2) * (-69 + sym.sqrt(5017)) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017))),
+                    8 * sym.sqrt(2) / sym.sqrt(5017 - 69 * sym.sqrt(5017)),
+                ]],
+                [[0, 1]],
+            ],
+            "qvecs": [
+                [[
+                    sym.sqrt(2) * (-69 + sym.sqrt(5017)) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017))),
+                    8 * sym.sqrt(2) / sym.sqrt(5017 - 69 * sym.sqrt(5017)),
+                ]],
+                [[0, 1]],
+            ],
+            "uvecs": [
+                [[1, 0]],
+                [[0, 1]],
+            ],
+            "sz": (2, 2),
+        },
+        case="SVD",
+        formatter=matrixlayout.formatting.latexify,
+        fig_scale=None,
+    )
+
+    assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}-69 + \sqrt{5017}" in tex
+    assert r"\frac{\sqrt{2} \left(-69 + \sqrt{5017}\right)}{2 \sqrt{5017 - 69 \sqrt{5017}}}" in tex
+    assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}\frac{\sqrt{2} \left(-69 + \sqrt{5017}\right)}" not in tex
 
 
 def test_render_eig_tex_missing_keys_and_q_case_without_qvecs():
