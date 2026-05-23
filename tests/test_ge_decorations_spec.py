@@ -56,6 +56,25 @@ def test_render_ge_tex_multi_block_backgrounds_stay_on_target_grid():
     assert "fit=(1-|1) (2-|2)" not in tex
 
 
+def test_render_ge_tex_single_cell_background_at_block_edge_stays_inside_block():
+    matrices = [
+        [[[1, 2, 3], [4, 5, 6]], [[7, 8], [9, 10]]],
+    ]
+    decorations = [
+        {"grid": (0, 0), "entries": [(1, 2)], "background": "gray!20"},
+    ]
+
+    tex = render_ge_tex(
+        matrices=matrices,
+        decorations=decorations,
+        formatter=str,
+        create_medium_nodes=True,
+    )
+
+    assert "fit=(2-3-medium)" in tex
+    assert "fit=(2-|3) (3-|4)" not in tex
+
+
 def test_render_ge_tex_decorations_accept_callable_decorator_specs():
     matrices = [[[1, 2], [0, -2], [0, 0]]]
     decorations = [
