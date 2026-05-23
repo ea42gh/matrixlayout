@@ -1,15 +1,20 @@
 import re
 
 import pytest
+import sympy as sym
 
 import matrixlayout
 from matrixlayout.eigproblem import (
+    _display_vector_factor,
+    _format_vector_for_display,
     _coerce_matrix_size,
     _is_zero_like,
     _mk_diag_matrix,
+    _mk_vector_blocks,
     _mk_sigma_matrix,
     _mk_values,
     _mk_vecs_matrix,
+    _positive_rational_gcd,
 )
 
 
@@ -136,3 +141,82 @@ def test_eig_vecs_matrix_returns_none_for_unusable_vector_sets():
     assert _mk_vecs_matrix([], formatter=str, sz=2) is None
     assert _mk_vecs_matrix([[[1, 2, 3]]], formatter=str, sz=2) is None
     assert _mk_vecs_matrix([[[1, 0]]], formatter=str, sz=2) is None
+
+
+def test_positive_rational_gcd_and_display_vector_factor_helpers():
+    assert _positive_rational_gcd([0, sym.Rational(2, 3), sym.Rational(4, 9)]) == sym.Rational(2, 9)
+    assert _positive_rational_gcd([sym.sqrt(2)]) == 1
+    assert _display_vector_factor([0, 0]) == (1, None)
+
+    factor, reduced = _display_vector_factor(
+        [
+            sym.sqrt(2) * (-69 + sym.sqrt(5017)) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017))),
+            8 * sym.sqrt(2) / sym.sqrt(5017 - 69 * sym.sqrt(5017)),
+        ]
+    )
+    assert factor == sym.sqrt(2) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017)))
+    assert reduced == [-69 + sym.sqrt(5017), 16]
+
+
+def test_format_vector_for_display_covers_factored_and_plain_paths():
+    seen = []
+
+    def _decorate(i, value, cell):
+        seen.append((i, value, cell))
+        return f"[{cell}]"
+
+    plain = _format_vector_for_display([1, 2], formatter=str, nl=r" \\ ", factor_common=False)
+    assert plain == r"$\begin{pNiceArray}{r}1 \\ 2 \end{pNiceArray}$"
+
+    factored = _format_vector_for_display(
+        [
+            sym.sqrt(2) * (-69 + sym.sqrt(5017)) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017))),
+            8 * sym.sqrt(2) / sym.sqrt(5017 - 69 * sym.sqrt(5017)),
+        ],
+        formatter=matrixlayout.formatting.latexify,
+        nl=r" \\[1mm] ",
+        factor_common=True,
+        decorators_apply=_decorate,
+    )
+    assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\," in factored
+    assert r"\begin{pNiceArray}{r}[-69 + \sqrt{5017}] \\[1mm] [16] \end{pNiceArray}" in factored
+    assert seen[0][0] == 0
+    assert seen[1][0] == 1
+
+
+def test_mk_vector_blocks_covers_factored_latexify_and_strict_decorators():
+    vec_groups = [
+        [
+            [
+                sym.sqrt(2) * (-69 + sym.sqrt(5017)) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017))),
+                8 * sym.sqrt(2) / sym.sqrt(5017 - 69 * sym.sqrt(5017)),
+            ]
+        ]
+    ]
+
+    block = _mk_vector_blocks(vec_groups, formatter=matrixlayout.formatting.latexify, add_height_mm=1)
+    assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\," in block
+    assert r"-69 + \sqrt{5017}" in block
+
+    with pytest.raises(ValueError, match="decorator selector did not match any entries"):
+        _mk_vector_blocks(
+            [[[1, 0]]],
+            formatter=str,
+            decorators=[{"target": "eigenbasis", "entries": [(9, 9, 9)], "decorator": lambda tex: tex}],
+            target_name="eigenbasis",
+            strict=True,
+        )
+
+
+def test_render_eig_tex_missing_keys_and_q_case_without_qvecs():
+    with pytest.raises(KeyError, match="missing required keys"):
+        matrixlayout.render_eig_tex({"lambda": [1], "ma": [1]}, case="S", formatter=str)
+
+    tex = matrixlayout.render_eig_tex(
+        {"lambda": [1], "ma": [1], "evecs": [[[1]]]},
+        case="Q",
+        formatter=str,
+        fig_scale=None,
+    )
+    assert "orthonormal basis for $E_\\lambda$" not in tex
+    assert re.search(r"\\color\{[^}]+\}\{\s*Q\s*=\s*\}", tex) is None
