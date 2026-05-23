@@ -49,6 +49,7 @@ def _sample_eig():
 def test_render_eig_tex_case_S():
     tex = matrixlayout.render_eig_tex(_sample_eig(), case="S", formatter=str, fig_scale=None)
     assert r"\begin{tabular}" in tex
+    assert r"\usepackage[margin=0cm,paperwidth=90in,paperheight=90in," in tex
     assert r"$\color" in tex
     assert r"\sigma" not in tex  # sigma row is SVD-only
     assert r"{\parbox{2cm}{\textcolor" in tex  # eigenbasis label
