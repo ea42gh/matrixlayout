@@ -254,6 +254,9 @@ def grid_highlight_specs(
     def _rule_coord(row: int, col: int) -> str:
         return f"({row}-|{col})"
 
+    def _medium_coord(row: int, col: int) -> str:
+        return f"({row}-{col}-medium)"
+
     def _coerce_block(obj: Any) -> Dict[str, Any]:
         if isinstance(obj, dict):
             return dict(obj)
@@ -298,7 +301,9 @@ def grid_highlight_specs(
         col_end = span.col_start + col_end_idx
         fill = str(item.get("color", color))
         pad = float(item.get("padding_pt", padding_pt))
-        out.append(
-            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit={_rule_coord(row_start, col_start)} {_rule_coord(row_end + 1, col_end + 1)}] {{}};"
-        )
+        if row_start == row_end and col_start == col_end:
+            fit = _medium_coord(row_start, col_start)
+        else:
+            fit = f"{_rule_coord(row_start, col_start)} {_rule_coord(row_end + 1, col_end + 1)}"
+        out.append(rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit={fit}] {{}};")
     return out

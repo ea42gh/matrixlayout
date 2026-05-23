@@ -58,7 +58,7 @@ def test_grid_highlight_specs_dict_tuple_empty_missing_and_invalid_forms():
     )
 
     assert specs == [
-        r"\tikz \node [fill=red, inner sep=2.0pt, fit=(1-|2) (2-|3)] {};",
+        r"\tikz \node [fill=red, inner sep=2.0pt, fit=(1-2-medium)] {};",
         r"\tikz \node [fill=blue, inner sep=1.0pt, fit=(1-|3) (3-|4)] {};",
     ]
 
