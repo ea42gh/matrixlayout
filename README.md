@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ea42gh/matrixlayout/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ea42gh/matrixlayout/actions/workflows/ci.yml)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ea42gh/matrixlayout/HEAD?labpath=matrixlayout_demo.ipynb)
-[![Docs](https://img.shields.io/badge/docs-live-blue.svg)](https://ea42gh.github.io/matrixlayout/)
+[![Docs](https://img.shields.io/badge/docs-index-blue.svg)](https://github.com/ea42gh/matrixlayout/blob/main/docs/index.md)
 
 `matrixlayout` is a small, composable Python library for **matrix-based layout and presentation**. It builds **LaTeX/TikZ** that describes matrix and grid visuals (blocks, partitions, spacing, braces, arrows, highlights) and renders them to **SVG** via a single backend boundary.
 
