@@ -208,6 +208,10 @@ def render_svg_with_artifacts(
 
     outdir = Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)
+    stem_path = outdir / output_stem
+    for stale in outdir.glob(f"{output_stem}.*"):
+        if stale.is_file():
+            stale.unlink()
 
     return jupyter_tikz.render_svg_with_artifacts(
         tex_source,

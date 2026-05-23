@@ -81,6 +81,31 @@ def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp
     assert Path(kwargs["output_dir"]) == tmp_path
 
 
+def test_matrixlayout_render_svg_clears_stale_stem_artifacts(monkeypatch, tmp_path):
+    fake = types.SimpleNamespace()
+
+    def fake_render_svg_with_artifacts(tex_source, **kwargs):
+        return _FakeArtifacts("<svg/>")
+
+    fake.__version__ = "0.5.8"
+    fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    stale_tex = tmp_path / "output.tex"
+    stale_aux = tmp_path / "output.aux"
+    keep_other = tmp_path / "other.aux"
+    stale_tex.write_text("stale")
+    stale_aux.write_text("stale")
+    keep_other.write_text("keep")
+
+    out = ml_render.render_svg("TEX", output_dir=tmp_path)
+
+    assert out == "<svg/>"
+    assert not stale_tex.exists()
+    assert not stale_aux.exists()
+    assert keep_other.exists()
+
+
 def test_matrixlayout_render_svg_rejects_unknown_toolchain_early(monkeypatch, tmp_path):
     fake = types.SimpleNamespace(TOOLCHAINS={"pdftex_pdftocairo": object()}, __version__="0.5.8")
 
