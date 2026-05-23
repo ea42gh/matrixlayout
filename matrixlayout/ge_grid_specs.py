@@ -303,6 +303,8 @@ def grid_highlight_specs(
         pad = float(item.get("padding_pt", padding_pt))
         if row_start == row_end and col_start == col_end:
             fit = _medium_coord(row_start, col_start)
+        elif col_start == col_end:
+            fit = f"{_medium_coord(row_start, col_start)} {_medium_coord(row_end, col_end)}"
         else:
             fit = f"{_rule_coord(row_start, col_start)} {_rule_coord(row_end + 1, col_end + 1)}"
         out.append(rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit={fit}] {{}};")
