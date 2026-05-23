@@ -93,6 +93,32 @@ def test_backsubst_tex_includes_cascade_lines_in_order():
     assert tex.index("C1") < tex.index("C2") < tex.index("C3")
 
 
+def test_backsubst_tex_can_box_each_section_independently():
+    tex = backsubst_tex(
+        system_txt="SYS",
+        cascade_txt=["C1", "C2"],
+        solution_txt="SOL",
+        panel_boxes={"system": True, "cascade": True, "solution": False},
+    )
+
+    assert tex.count(r"\fbox{") == 2
+    assert "SYS" in tex
+    assert "C1" in tex and "C2" in tex
+    assert "SOL" in tex
+
+
+def test_backsubst_tex_uses_section_padding_values():
+    tex = backsubst_tex(
+        system_txt="SYS",
+        show_cascade=False,
+        show_solution=False,
+        panel_boxes=True,
+        panel_padding_pt={"system": 7},
+    )
+
+    assert r"\setlength{\fboxsep}{7.0pt}" in tex
+
+
 def test_backsubst_tex_scalebox_when_fig_scale_set():
     tex = backsubst_tex(system_txt="SYS", show_cascade=False, show_solution=False, fig_scale=0.8)
     assert "\\scalebox" in tex

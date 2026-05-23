@@ -26,9 +26,9 @@ from .shortcascade import mk_shortcascade_lines
 @dataclass(frozen=True)
 class BacksubstContext:
     body_preamble: str = ""
-    system_txt: str = ""
-    cascade_txt: tuple[str, ...] = ()
-    solution_txt: str = ""
+    system_render: str = ""
+    cascade_render: str = ""
+    solution_render: str = ""
 
     show_system: bool = True
     show_cascade: bool = True
@@ -38,14 +38,49 @@ class BacksubstContext:
     def as_dict(self) -> Mapping[str, Any]:
         return {
             "body_preamble": self.body_preamble,
-            "system_txt": self.system_txt,
-            "cascade_txt": list(self.cascade_txt),
-            "solution_txt": self.solution_txt,
+            "system_render": self.system_render,
+            "cascade_render": self.cascade_render,
+            "solution_render": self.solution_render,
             "show_system": self.show_system,
             "show_cascade": self.show_cascade,
             "show_solution": self.show_solution,
             "fig_scale": self.fig_scale,
         }
+
+
+def _resolve_panel_flag(panel_boxes: Any, name: str) -> bool:
+    if panel_boxes is None:
+        return False
+    if isinstance(panel_boxes, bool):
+        return panel_boxes
+    if isinstance(panel_boxes, Mapping):
+        return bool(panel_boxes.get(name, False))
+    if isinstance(panel_boxes, (list, tuple, set)):
+        return name in panel_boxes
+    raise TypeError("panel_boxes must be None, a bool, a mapping, or a sequence of panel names")
+
+
+def _resolve_panel_padding(panel_padding_pt: Any, name: str) -> float:
+    if panel_padding_pt is None:
+        return 3.0
+    if isinstance(panel_padding_pt, Mapping):
+        val = panel_padding_pt.get(name, panel_padding_pt.get("default", 3.0))
+        return float(val)
+    return float(panel_padding_pt)
+
+
+def _wrap_panel_block(tex: str, *, boxed: bool, padding_pt: float) -> str:
+    if not tex:
+        return tex
+    if not boxed:
+        return tex
+    return (
+        "{\\setlength{\\fboxsep}{"
+        + str(padding_pt)
+        + "pt}\\noindent\\fbox{\\begin{minipage}{\\dimexpr\\linewidth-2\\fboxsep-2\\fboxrule\\relax}\n"
+        + tex
+        + "\n\\end{minipage}}}"
+    )
 
 
 def backsubst_tex(
@@ -61,6 +96,8 @@ def backsubst_tex(
     fig_scale: Optional[Union[str, float, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
+    panel_boxes: Any = None,
+    panel_padding_pt: Any = None,
 ) -> str:
     """Render the back-substitution TeX document.
 
@@ -75,11 +112,31 @@ def backsubst_tex(
     cascade_lines = _apply_line_decorators(_as_lines(cascade_txt), decorators, "cascade", strict=strict)
     solution_lines = _apply_line_decorators([solution_txt] if solution_txt else [], decorators, "solution", strict=strict)
 
+    system_render = system_lines[0] if system_lines else system_txt
+    cascade_render = "\n".join(cascade_lines)
+    solution_render = solution_lines[0] if solution_lines else solution_txt
+
+    system_render = _wrap_panel_block(
+        system_render,
+        boxed=_resolve_panel_flag(panel_boxes, "system"),
+        padding_pt=_resolve_panel_padding(panel_padding_pt, "system"),
+    )
+    cascade_render = _wrap_panel_block(
+        cascade_render,
+        boxed=_resolve_panel_flag(panel_boxes, "cascade"),
+        padding_pt=_resolve_panel_padding(panel_padding_pt, "cascade"),
+    )
+    solution_render = _wrap_panel_block(
+        solution_render,
+        boxed=_resolve_panel_flag(panel_boxes, "solution"),
+        padding_pt=_resolve_panel_padding(panel_padding_pt, "solution"),
+    )
+
     ctx = BacksubstContext(
         body_preamble=body_preamble,
-        system_txt=system_lines[0] if system_lines else system_txt,
-        cascade_txt=tuple(cascade_lines),
-        solution_txt=solution_lines[0] if solution_lines else solution_txt,
+        system_render=system_render,
+        cascade_render=cascade_render,
+        solution_render=solution_render,
         show_system=bool(show_system),
         show_cascade=bool(show_cascade),
         show_solution=bool(show_solution),
@@ -102,6 +159,8 @@ def backsubst_svg(
     fig_scale: Optional[Union[str, float, int]] = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
+    panel_boxes: Any = None,
+    panel_padding_pt: Any = None,
     toolchain_name: Optional[str] = None,
     crop: Optional[str] = None,
     padding: Any = None,
@@ -130,6 +189,8 @@ def backsubst_svg(
         fig_scale=fig_scale,
         decorators=decorators,
         strict=strict,
+        panel_boxes=panel_boxes,
+        panel_padding_pt=panel_padding_pt,
     )
     opts = _resolve_render_svg_kwargs(
         render_opts,

@@ -22,23 +22,21 @@
 {{body_preamble}}%
 %====================================================================
 {%% if show_system %%}%
-{{system_txt}}
+{{system_render}}
 {%% endif %%}%
 %====================================================================
 {%% if show_cascade %%}%
 {%% if show_system %%}%
 \vspace{1cm}
 {%% endif %%}%
-{%% for line in cascade_txt -%%}
-{{line}}
-{%% endfor -%%}%
+{{cascade_render}}
 {%% endif %%}%
 %====================================================================
 {%% if show_solution %%}%
 {%% if show_system or show_cascade %%}%
 \vspace{1cm}
 {%% endif %%}%
-{{solution_txt}}
+{{solution_render}}
 {%% endif %%}%
 %====================================================================
 \end{minipage}%

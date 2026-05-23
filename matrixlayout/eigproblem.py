@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
+import sympy as sym
+
 from .eigproblem_decorations import apply_matrix_decorators as _apply_matrix_decorators
 from .eigproblem_decorations import apply_vector_decorators as _apply_vector_decorators
 from .eigproblem_decorations import collect_vector_decorator_specs as _collect_vector_decorator_specs
@@ -27,6 +29,94 @@ from .render import _resolve_render_svg_kwargs, render_svg
 
 
 LatexFormatter = Callable[[Any], str]
+
+
+def _positive_rational_gcd(values: Sequence[Any]) -> Any:
+    rats: List[sym.Rational] = []
+    for v in values:
+        try:
+            rv = sym.Rational(v)
+        except Exception:
+            return sym.Integer(1)
+        if rv == 0:
+            continue
+        rats.append(abs(rv))
+    if not rats:
+        return sym.Integer(1)
+    nums = [int(r.p) for r in rats]
+    dens = [int(r.q) for r in rats]
+    gnum = nums[0]
+    for n in nums[1:]:
+        gnum = int(sym.igcd(gnum, n))
+    lden = dens[0]
+    for d in dens[1:]:
+        lden = int(sym.ilcm(lden, d))
+    return sym.Rational(gnum, lden)
+
+
+def _display_vector_factor(vec: Sequence[Any]) -> tuple[Any, Optional[List[Any]]]:
+    """Extract a common multiplicative factor for display, if helpful."""
+
+    exprs = [sym.factor_terms(sym.together(sym.sympify(v))) for v in vec]
+    nonzero = [e for e in exprs if e != 0]
+    if not nonzero:
+        return sym.Integer(1), None
+
+    coeffs: List[Any] = []
+    factor_counts: dict[Any, int] = {}
+    first = True
+    for e in nonzero:
+        coeff, rest = e.as_coeff_Mul()
+        coeffs.append(coeff)
+        counts: dict[Any, int] = {}
+        for f in sym.Mul.make_args(rest):
+            counts[f] = counts.get(f, 0) + 1
+        if first:
+            factor_counts = counts
+            first = False
+        else:
+            factor_counts = {f: min(factor_counts.get(f, 0), counts.get(f, 0)) for f in list(factor_counts)}
+            factor_counts = {f: c for f, c in factor_counts.items() if c > 0}
+
+    coeff_factor = _positive_rational_gcd(coeffs)
+    factor = sym.sympify(coeff_factor)
+    for f, count in factor_counts.items():
+        factor *= f**count
+    factor = sym.factor_terms(sym.cancel(sym.together(factor)))
+
+    if sym.simplify(factor - 1) == 0:
+        return sym.Integer(1), None
+
+    reduced = [sym.factor_terms(sym.cancel(sym.together(sym.simplify(e / factor)))) for e in exprs]
+    return factor, reduced
+
+
+def _format_vector_for_display(
+    vec: Sequence[Any],
+    *,
+    formatter: LatexFormatter,
+    nl: str,
+    factor_common: bool,
+    decorators_apply: Optional[Callable[[int, Any, str], str]] = None,
+) -> str:
+    factor = sym.Integer(1)
+    entries_source: Sequence[Any] = list(vec)
+    if factor_common:
+        factor, reduced = _display_vector_factor(vec)
+        if reduced is not None:
+            entries_source = reduced
+
+    entries: List[str] = []
+    for i_idx, v in enumerate(entries_source):
+        cell = formatter(v)
+        if decorators_apply is not None:
+            cell = decorators_apply(i_idx, v, cell)
+        entries.append(cell)
+
+    body = r"\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}"
+    if sym.simplify(factor - 1) == 0:
+        return "$" + body + "$"
+    return "$" + formatter(factor) + r"\," + body + "$"
 
 
 def _is_zero_like(x: Any) -> bool:
@@ -104,26 +194,34 @@ def _mk_vector_blocks(
 ) -> str:
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     dec_specs = _collect_vector_decorator_specs(vec_groups, decorators, target_name)
+    factor_common = getattr(formatter, "__name__", "") == "latexify"
     groups_out: List[str] = []
     applied_counts = [0 for _ in dec_specs]
     for g_idx, vecs in enumerate(vec_groups):
         vec_tex: List[str] = []
         for v_idx, vec in enumerate(vecs):
-            entries: List[str] = []
-            for i_idx, v in enumerate(vec):
-                cell = formatter(v)
-                if dec_specs:
-                    cell = _apply_vector_decorators(
-                        cell,
-                        value=v,
-                        group_index=g_idx,
-                        vector_index=v_idx,
-                        entry_index=i_idx,
-                        dec_specs=dec_specs,
-                        applied_counts=applied_counts,
-                    )
-                entries.append(cell)
-            vec_tex.append(r"$\begin{pNiceArray}{r}" + nl.join(entries) + r" \end{pNiceArray}$")
+            def _decorate(i_idx: int, v: Any, cell: str) -> str:
+                if not dec_specs:
+                    return cell
+                return _apply_vector_decorators(
+                    cell,
+                    value=v,
+                    group_index=g_idx,
+                    vector_index=v_idx,
+                    entry_index=i_idx,
+                    dec_specs=dec_specs,
+                    applied_counts=applied_counts,
+                )
+
+            vec_tex.append(
+                _format_vector_for_display(
+                    list(vec),
+                    formatter=formatter,
+                    nl=nl,
+                    factor_common=factor_common,
+                    decorators_apply=_decorate if dec_specs else None,
+                )
+            )
         groups_out.append(", ".join(vec_tex))
     if strict and dec_specs:
         for count in applied_counts:
