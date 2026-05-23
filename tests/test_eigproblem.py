@@ -6,6 +6,7 @@ import sympy as sym
 import matrixlayout
 from matrixlayout.eigproblem import (
     _display_vector_factor,
+    _display_matrix_factor,
     _format_vector_for_display,
     _coerce_matrix_size,
     _is_zero_like,
@@ -158,6 +159,15 @@ def test_positive_rational_gcd_and_display_vector_factor_helpers():
     assert factor == sym.sqrt(2) / (2 * sym.sqrt(5017 - 69 * sym.sqrt(5017)))
     assert reduced == [-69 + sym.sqrt(5017), 16]
 
+    matrix_factor, matrix_reduced = _display_matrix_factor(
+        [
+            [sym.Rational(1, 2), sym.Rational(3, 4)],
+            [0, sym.Rational(5, 6)],
+        ]
+    )
+    assert matrix_factor == 12
+    assert matrix_reduced == [[6, 9], [0, 10]]
+
 
 def test_format_vector_for_display_covers_factored_and_plain_paths():
     seen = []
@@ -243,6 +253,37 @@ def test_svd_matrix_rows_stay_entrywise_while_vector_rows_factor():
     assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}-69 + \sqrt{5017}" in tex
     assert r"\frac{\sqrt{2} \left(-69 + \sqrt{5017}\right)}{2 \sqrt{5017 - 69 \sqrt{5017}}}" in tex
     assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}\frac{\sqrt{2} \left(-69 + \sqrt{5017}\right)}" not in tex
+
+
+def test_matrix_factor_out_can_target_selected_svd_blocks():
+    tex = matrixlayout.render_eig_tex(
+        {
+            "lambda": [1, 2],
+            "ma": [1, 1],
+            "sigma": [sym.Rational(1, 2), sym.Rational(1, 3)],
+            "evecs": [
+                [[sym.Rational(1, 2), 0]],
+                [[0, sym.Rational(1, 3)]],
+            ],
+            "qvecs": [
+                [[sym.Rational(1, 2), 0]],
+                [[0, sym.Rational(1, 3)]],
+            ],
+            "uvecs": [
+                [[sym.Rational(1, 4), 0]],
+                [[0, sym.Rational(1, 5)]],
+            ],
+            "sz": (2, 2),
+        },
+        case="SVD",
+        formatter=str,
+        fig_scale=None,
+        matrix_factor_out={"sigma_matrix": True, "u": True},
+    )
+
+    assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}6\,3 & 0 \\ 0 & 2" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}20\,5 & 0 \\ 0 & 4" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}1/2 & 0 \\ 0 & 1/3" in tex
 
 
 def test_render_eig_tex_missing_keys_and_q_case_without_qvecs():
