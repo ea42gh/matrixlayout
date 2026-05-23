@@ -136,6 +136,12 @@ def _display_matrix_factor(mat: Sequence[Sequence[Any]]) -> tuple[Any, Optional[
     return sym.Integer(factor), reduced
 
 
+def _format_matrix_factor_prefix(factor: Any, formatter: LatexFormatter) -> str:
+    if sym.simplify(sym.sympify(factor) - 1) == 0:
+        return ""
+    return formatter(sym.Rational(1, 1) / sym.sympify(factor)) + r"\,"
+
+
 def _format_vector_for_display(
     vec: Sequence[Any],
     *,
@@ -300,7 +306,8 @@ def _mk_diag_matrix(
     # Legacy itikz implementation spans *distinct* eigen/singular-value columns
     # (len(multiplicities)) rather than the interleaved "value+gap" column count.
     n_value_cols = max(1, len(multiplicities)) if span_cols is None else int(span_cols)
-    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * n) + "}"
+    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$"
+    matrix_begin = r"\begin{pNiceArray}{" + space.join(["c"] * n) + "}"
     post = r"\end{pNiceArray}$}"
 
     # Build an n x n string matrix
@@ -329,11 +336,8 @@ def _mk_diag_matrix(
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
-    if sym.simplify(factor - 1) == 0:
-        prefix = ""
-    else:
-        prefix = formatter(factor) + r"\,"
-    return pre + prefix + nl.join(rows) + r" \\ " + post
+    prefix = _format_matrix_factor_prefix(factor, formatter)
+    return pre + prefix + matrix_begin + nl.join(rows) + r" \\ " + post
 
 
 def _mk_sigma_matrix(
@@ -362,7 +366,8 @@ def _mk_sigma_matrix(
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
     n_value_cols = max(1, len(multiplicities)) if span_cols is None else int(span_cols)
-    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["c"] * ncols) + "}"
+    pre = rf"\multicolumn{{{n_value_cols}}}{{c}}{{" + "\n" + r"$"
+    matrix_begin = r"\begin{pNiceArray}{" + space.join(["c"] * ncols) + "}"
     post = r"\end{pNiceArray}$}"
 
     factor = sym.Integer(1)
@@ -389,11 +394,8 @@ def _mk_sigma_matrix(
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
-    if sym.simplify(factor - 1) == 0:
-        prefix = ""
-    else:
-        prefix = formatter(factor) + r"\,"
-    return pre + prefix + nl.join(rows) + r" \\ " + post
+    prefix = _format_matrix_factor_prefix(factor, formatter)
+    return pre + prefix + matrix_begin + nl.join(rows) + r" \\ " + post
 
 
 def _mk_vecs_matrix(
@@ -452,16 +454,14 @@ def _mk_vecs_matrix(
         mat_tex = _apply_matrix_decorators(mat_tex, mat_raw, decorators, matrix_ids, formatter, strict)
 
     space = r"@{\hspace{" + str(mm) + r"mm}}"
-    pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
+    pre = rf"\multicolumn{{{int(span_cols)}}}{{c}}{{" + "\n" + r"$"
+    matrix_begin = r"\begin{pNiceArray}{" + space.join(["r"] * sz) + "}"
     post = r"\end{pNiceArray}$}"
 
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     rows = [" & ".join(row) for row in mat_tex]
-    if sym.simplify(factor - 1) == 0:
-        prefix = ""
-    else:
-        prefix = formatter(factor) + r"\,"
-    return pre + prefix + nl.join(rows) + r" \\ " + post
+    prefix = _format_matrix_factor_prefix(factor, formatter)
+    return pre + prefix + matrix_begin + nl.join(rows) + r" \\ " + post
 
 
 def render_eig_tex(

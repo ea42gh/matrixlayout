@@ -7,6 +7,7 @@ import matrixlayout
 from matrixlayout.eigproblem import (
     _display_vector_factor,
     _display_matrix_factor,
+    _format_matrix_factor_prefix,
     _format_vector_for_display,
     _coerce_matrix_size,
     _is_zero_like,
@@ -168,6 +169,7 @@ def test_positive_rational_gcd_and_display_vector_factor_helpers():
     )
     assert matrix_factor == 12
     assert matrix_reduced == [[6, 9], [0, 10]]
+    assert _format_matrix_factor_prefix(matrix_factor, str) == r"1/12\,"
 
 
 def test_format_vector_for_display_covers_factored_and_plain_paths():
@@ -282,9 +284,38 @@ def test_matrix_factor_out_can_target_selected_svd_blocks():
         matrix_factor_out={"sigma_matrix": True, "u": True},
     )
 
-    assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}6\,3 & 0 \\ 0 & 2" in tex
-    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}20\,5 & 0 \\ 0 & 4" in tex
+    assert r"1/6\,\begin{pNiceArray}{c@{\hspace{8mm}}c}3 & 0 \\ 0 & 2" in tex
+    assert r"1/20\,\begin{pNiceArray}{r@{\hspace{4mm}}r}5 & 0 \\ 0 & 4" in tex
     assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}1/2 & 0 \\ 0 & 1/3" in tex
+    assert r"\begin{pNiceArray}{c@{\hspace{8mm}}c}6\," not in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}20\," not in tex
+
+    tex_latex = matrixlayout.render_eig_tex(
+        {
+            "lambda": [1, 2],
+            "ma": [1, 1],
+            "sigma": [sym.Rational(1, 2), sym.Rational(1, 3)],
+            "evecs": [
+                [[sym.Rational(1, 2), 0]],
+                [[0, sym.Rational(1, 3)]],
+            ],
+            "qvecs": [
+                [[sym.Rational(1, 2), 0]],
+                [[0, sym.Rational(1, 3)]],
+            ],
+            "uvecs": [
+                [[sym.Rational(1, 4), 0]],
+                [[0, sym.Rational(1, 5)]],
+            ],
+            "sz": (2, 2),
+        },
+        case="SVD",
+        formatter=matrixlayout.formatting.latexify,
+        fig_scale=None,
+        matrix_factor_out={"sigma_matrix": True, "u": True},
+    )
+    assert r"\frac{1}{6}\,\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex_latex
+    assert r"\frac{1}{20}\,\begin{pNiceArray}{r@{\hspace{4mm}}r}" in tex_latex
 
 
 def test_render_eig_tex_missing_keys_and_q_case_without_qvecs():
