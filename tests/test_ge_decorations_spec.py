@@ -25,8 +25,8 @@ def test_render_ge_tex_decorations_background_entries_do_not_fill_whole_block():
         {"grid": (0, 0), "entries": [(0, 0)], "background": "yellow!25"},
     ]
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
-    assert "fit=(1-1-medium) (1-1-medium)" in tex
-    assert "fit=(1-1-medium) (2-2-medium)" not in tex
+    assert "fit=(1-|1) (2-|2)" in tex
+    assert "fit=(1-|1) (3-|3)" not in tex
 
 
 def test_render_ge_tex_decorations_background_entry_selectors():
@@ -35,9 +35,9 @@ def test_render_ge_tex_decorations_background_entry_selectors():
         {"grid": (0, 0), "entries": [sel_col(1)], "background": "yellow!25"},
     ]
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
-    assert "fit=(1-2-medium) (1-2-medium)" in tex
-    assert "fit=(2-2-medium) (2-2-medium)" in tex
-    assert "fit=(1-1-medium) (1-1-medium)" not in tex
+    assert "fit=(1-|2) (2-|3)" in tex
+    assert "fit=(2-|2) (3-|3)" in tex
+    assert "fit=(1-|1) (2-|2)" not in tex
 
 
 def test_render_ge_tex_multi_block_backgrounds_stay_on_target_grid():
@@ -52,8 +52,8 @@ def test_render_ge_tex_multi_block_backgrounds_stay_on_target_grid():
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str, create_medium_nodes=True)
 
     assert tex.count("fill=yellow!25") == 1
-    assert "fit=(3-3-medium) (3-3-medium)" in tex
-    assert "fit=(1-1-medium) (1-1-medium)" not in tex
+    assert "fit=(3-|3) (4-|4)" in tex
+    assert "fit=(1-|1) (2-|2)" not in tex
 
 
 def test_render_ge_tex_decorations_accept_callable_decorator_specs():

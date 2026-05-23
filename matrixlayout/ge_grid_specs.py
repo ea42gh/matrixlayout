@@ -251,8 +251,8 @@ def grid_highlight_specs(
 ) -> List[str]:
     """Return ``codebefore`` entries that highlight rectangular sub-blocks."""
 
-    def _medium_coord(row: int, col: int) -> str:
-        return f"({row}-{col}-medium)"
+    def _rule_coord(row: int, col: int) -> str:
+        return f"({row}-|{col})"
 
     def _coerce_block(obj: Any) -> Dict[str, Any]:
         if isinstance(obj, dict):
@@ -299,6 +299,6 @@ def grid_highlight_specs(
         fill = str(item.get("color", color))
         pad = float(item.get("padding_pt", padding_pt))
         out.append(
-            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit={_medium_coord(row_start, col_start)} {_medium_coord(row_end, col_end)}] {{}};"
+            rf"\tikz \node [fill={fill}, inner sep={pad}pt, fit={_rule_coord(row_start, col_start)} {_rule_coord(row_end + 1, col_end + 1)}] {{}};"
         )
     return out
