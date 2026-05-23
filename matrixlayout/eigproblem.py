@@ -111,35 +111,24 @@ def _resolve_matrix_factor_out(matrix_factor_out: MatrixFactorOutSpec, matrix_id
 
 def _display_matrix_factor(mat: Sequence[Sequence[Any]]) -> tuple[Any, Optional[List[List[Any]]]]:
     expr_rows = [[sym.factor_terms(sym.together(sym.sympify(v))) for v in row] for row in mat]
-    denoms: List[int] = []
-    for row in expr_rows:
-        for entry in row:
-            if entry == 0:
-                continue
-            denom = sym.denom(entry)
-            if not getattr(denom, "is_Integer", False):
-                return sym.Integer(1), None
-            denoms.append(int(abs(denom)))
-    if not denoms:
+    if not expr_rows or not expr_rows[0]:
         return sym.Integer(1), None
 
-    factor = sym.Integer(1)
-    for denom in denoms:
-        factor = sym.ilcm(int(factor), denom)
-    if factor == 1:
+    nrows = len(expr_rows)
+    ncols = len(expr_rows[0])
+    flat = [entry for row in expr_rows for entry in row]
+    factor, reduced_flat = _display_vector_factor(flat)
+    if reduced_flat is None:
         return sym.Integer(1), None
 
-    reduced = [
-        [sym.factor_terms(sym.cancel(sym.together(sym.simplify(factor * entry)))) for entry in row]
-        for row in expr_rows
-    ]
-    return sym.Integer(factor), reduced
+    reduced = [reduced_flat[i * ncols : (i + 1) * ncols] for i in range(nrows)]
+    return factor, reduced
 
 
 def _format_matrix_factor_prefix(factor: Any, formatter: LatexFormatter) -> str:
     if sym.simplify(sym.sympify(factor) - 1) == 0:
         return ""
-    return formatter(sym.Rational(1, 1) / sym.sympify(factor)) + r"\,"
+    return formatter(sym.sympify(factor)) + r"\,"
 
 
 def _format_vector_for_display(

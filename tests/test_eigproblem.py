@@ -167,7 +167,7 @@ def test_positive_rational_gcd_and_display_vector_factor_helpers():
             [0, sym.Rational(5, 6)],
         ]
     )
-    assert matrix_factor == 12
+    assert matrix_factor == sym.Rational(1, 12)
     assert matrix_reduced == [[6, 9], [0, 10]]
     assert _format_matrix_factor_prefix(matrix_factor, str) == r"1/12\,"
 
@@ -316,6 +316,67 @@ def test_matrix_factor_out_can_target_selected_svd_blocks():
     )
     assert r"\frac{1}{6}\,\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex_latex
     assert r"\frac{1}{20}\,\begin{pNiceArray}{r@{\hspace{4mm}}r}" in tex_latex
+
+
+def test_matrix_factor_out_can_pull_symbolic_prefixes_for_svd_matrices():
+    tex = matrixlayout.render_eig_tex(
+        {
+            "lambda": [sym.Integer(1), sym.Integer(2)],
+            "ma": [1, 1],
+            "sigma": [sym.Integer(1), sym.Integer(2)],
+            "evecs": [
+                [[
+                    sym.sqrt(2) * (-23 + sym.sqrt(1105)) / (2 * sym.sqrt(1105 - 23 * sym.sqrt(1105))),
+                    12 * sym.sqrt(2) / sym.sqrt(1105 - 23 * sym.sqrt(1105)),
+                ]],
+                [[
+                    -sym.sqrt(2) * (23 + sym.sqrt(1105)) / (2 * sym.sqrt(23 * sym.sqrt(1105) + 1105)),
+                    12 * sym.sqrt(2) / sym.sqrt(23 * sym.sqrt(1105) + 1105),
+                ]],
+            ],
+            "qvecs": [
+                [[
+                    sym.sqrt(2) * (-23 + sym.sqrt(1105)) / (2 * sym.sqrt(1105 - 23 * sym.sqrt(1105))),
+                    12 * sym.sqrt(2) / sym.sqrt(1105 - 23 * sym.sqrt(1105)),
+                ]],
+                [[
+                    -sym.sqrt(2) * (23 + sym.sqrt(1105)) / (2 * sym.sqrt(23 * sym.sqrt(1105) + 1105)),
+                    12 * sym.sqrt(2) / sym.sqrt(23 * sym.sqrt(1105) + 1105),
+                ]],
+            ],
+            "uvecs": [
+                [[
+                    4
+                    * (31 + sym.sqrt(1105))
+                    / (sym.sqrt(1105 - 23 * sym.sqrt(1105)) * sym.sqrt(3 * sym.sqrt(1105) + 101)),
+                    48
+                    / (sym.sqrt(1105 - 23 * sym.sqrt(1105)) * sym.sqrt(3 * sym.sqrt(1105) + 101)),
+                ]],
+                [[
+                    4
+                    * (31 - sym.sqrt(1105))
+                    / (sym.sqrt(101 - 3 * sym.sqrt(1105)) * sym.sqrt(23 * sym.sqrt(1105) + 1105)),
+                    48
+                    / (sym.sqrt(101 - 3 * sym.sqrt(1105)) * sym.sqrt(23 * sym.sqrt(1105) + 1105)),
+                ]],
+            ],
+            "sz": (2, 2),
+        },
+        case="SVD",
+        formatter=matrixlayout.formatting.latexify,
+        fig_scale=None,
+        matrix_factor_out={"u": True, "v": True, "sigma_matrix": False},
+    )
+
+    assert r"\color{blue}{ \Sigma =}$ & \multicolumn{2}{c}{" in tex
+    assert (
+        r"\frac{\sqrt{2}}{2}\,\begin{pNiceArray}{r@{\hspace{4mm}}r}"
+        in tex
+    )
+    assert (
+        r"4\,\begin{pNiceArray}{r@{\hspace{4mm}}r}"
+        in tex
+    )
 
 
 def test_render_eig_tex_missing_keys_and_q_case_without_qvecs():
