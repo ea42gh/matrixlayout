@@ -50,6 +50,7 @@ htmlcov/
 *~
 .DS_Store
 Thumbs.db
+AGENTS.md
 
 # -----------------------------------------------------------------------------
 # Local render/debug artifacts (created by notebook/debug helpers or tests)
