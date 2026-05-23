@@ -200,14 +200,14 @@ def _mk_vector_blocks(
     for g_idx, vecs in enumerate(vec_groups):
         vec_tex: List[str] = []
         for v_idx, vec in enumerate(vecs):
-            def _decorate(i_idx: int, v: Any, cell: str) -> str:
+            def _decorate(i_idx: int, v: Any, cell: str, *, _g_idx: int = g_idx, _v_idx: int = v_idx) -> str:
                 if not dec_specs:
                     return cell
                 return _apply_vector_decorators(
                     cell,
                     value=v,
-                    group_index=g_idx,
-                    vector_index=v_idx,
+                    group_index=_g_idx,
+                    vector_index=_v_idx,
                     entry_index=i_idx,
                     dec_specs=dec_specs,
                     applied_counts=applied_counts,
