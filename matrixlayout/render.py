@@ -39,7 +39,7 @@ _RENDER_OPTION_KEYS = frozenset(
 )
 _MIN_JUPYTER_TIKZ_VERSION = (0, 5, 8)
 _PATCHED_JUPYTER_TIKZ_SOURCE = (
-    "git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a"
+    "git+https://github.com/ea42gh/jupyter-tikz.git@8e18e495934c907e9e6568135d2e84d55762ae91"
 )
 
 

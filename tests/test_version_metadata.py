@@ -30,7 +30,7 @@ def test_package_version_is_nonempty():
 def test_render_extra_requires_patched_jupyter_tikz():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
-    assert '"jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea' in text
+    assert '"jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@8e18e495' in text
     assert '"jupyter-tikz>=' not in text
 
 
@@ -38,7 +38,7 @@ def test_binder_uses_same_patched_jupyter_tikz_source():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
     binder_requirements = Path("binder/requirements.txt").read_text(encoding="utf-8")
 
-    source = "git+https://github.com/ea42gh/jupyter-tikz.git@47ca7ea885075871631852eda1433a695260490a"
+    source = "git+https://github.com/ea42gh/jupyter-tikz.git@8e18e495934c907e9e6568135d2e84d55762ae91"
     assert source in pyproject
     assert source in binder_requirements
 

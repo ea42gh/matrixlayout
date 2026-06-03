@@ -31,7 +31,7 @@ labels are inserted by adding padding rows/cols to the block.
 Matrixlayout renders through `jupyter_tikz`. The rendering layer is external;
 matrixlayout does not manage toolchain installation or environment setup.
 The render extra intentionally pins the patched renderer source at
-`ea42gh/jupyter-tikz@47ca7ea`; the PyPI `jupyter-tikz` package does not expose
+`ea42gh/jupyter-tikz@8e18e495`; the PyPI `jupyter-tikz` package does not expose
 the artifact-rendering API required by matrixlayout and is rejected at runtime.
 
 ## Compatibility matrix
@@ -39,7 +39,7 @@ the artifact-rendering API required by matrixlayout and is rejected at runtime.
 | Component | Minimum | Notes |
 | --- | --- | --- |
 | Python | 3.10 | Tested with 3.10–3.13. |
-| jupyter-tikz | ea42gh/jupyter-tikz `47ca7ea` | Required for `render_svg_with_artifacts`; do not substitute PyPI `jupyter-tikz`. |
+| jupyter-tikz | ea42gh/jupyter-tikz `8e18e495` | Required for `render_svg_with_artifacts`; do not substitute PyPI `jupyter-tikz`. |
 | TeX toolchain | TeX Live 2022+ | Needed for SVG rendering. |
 
 ## Data flow
