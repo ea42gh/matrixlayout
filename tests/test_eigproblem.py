@@ -208,7 +208,13 @@ def test_mk_vector_blocks_covers_factored_latexify_and_strict_decorators():
         ]
     ]
 
-    block = _mk_vector_blocks(vec_groups, formatter=matrixlayout.formatting.latexify, add_height_mm=1)
+    block = _mk_vector_blocks(
+        vec_groups,
+        formatter=matrixlayout.formatting.latexify,
+        add_height_mm=1,
+        vector_ids=["evecs"],
+        factor_out={"evecs": True},
+    )
     assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\," in block
     assert r"-69 + \sqrt{5017}" in block
 
@@ -251,6 +257,7 @@ def test_svd_matrix_rows_stay_entrywise_while_vector_rows_factor():
         case="SVD",
         formatter=matrixlayout.formatting.latexify,
         fig_scale=None,
+        factor_out=["qvecs"],
     )
 
     assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}-69 + \sqrt{5017}" in tex
@@ -258,7 +265,7 @@ def test_svd_matrix_rows_stay_entrywise_while_vector_rows_factor():
     assert r"\frac{\sqrt{2}}{2 \sqrt{5017 - 69 \sqrt{5017}}}\,\begin{pNiceArray}{r}\frac{\sqrt{2} \left(-69 + \sqrt{5017}\right)}" not in tex
 
 
-def test_matrix_factor_out_can_target_selected_svd_blocks():
+def test_factor_out_can_target_selected_svd_blocks():
     tex = matrixlayout.render_eig_tex(
         {
             "lambda": [1, 2],
@@ -281,7 +288,7 @@ def test_matrix_factor_out_can_target_selected_svd_blocks():
         case="SVD",
         formatter=str,
         fig_scale=None,
-        matrix_factor_out={"sigma_matrix": True, "u": True},
+        factor_out={"sigma": True, "u": True},
     )
 
     assert r"1/6\,\begin{pNiceArray}{c@{\hspace{8mm}}c}3 & 0 \\ 0 & 2" in tex
@@ -312,13 +319,32 @@ def test_matrix_factor_out_can_target_selected_svd_blocks():
         case="SVD",
         formatter=matrixlayout.formatting.latexify,
         fig_scale=None,
-        matrix_factor_out={"sigma_matrix": True, "u": True},
+        factor_out={"sigma": True, "u": True},
     )
     assert r"\frac{1}{6}\,\begin{pNiceArray}{c@{\hspace{8mm}}c}" in tex_latex
     assert r"\frac{1}{20}\,\begin{pNiceArray}{r@{\hspace{4mm}}r}" in tex_latex
 
 
-def test_matrix_factor_out_can_pull_symbolic_prefixes_for_svd_matrices():
+def test_factor_out_can_target_basis_vector_rows():
+    spec = {
+        "lambda": [1],
+        "ma": [1],
+        "evecs": [[[sym.Rational(1, 2), sym.Rational(1, 4)]]],
+        "qvecs": [[[sym.Rational(1, 3), sym.Rational(1, 6)]]],
+    }
+
+    tex = matrixlayout.render_eig_tex(spec, case="Q", formatter=str, factor_out={"evecs": True}, fig_scale=None)
+
+    assert r"$1/4\,\begin{pNiceArray}{r}2 \\ 1 \end{pNiceArray}$" in tex
+    assert r"$1/6\,\begin{pNiceArray}{r}2 \\ 1 \end{pNiceArray}$" not in tex
+
+    tex_q = matrixlayout.render_eig_tex(spec, case="Q", formatter=str, factor_out={"qvecs": True}, fig_scale=None)
+
+    assert r"$1/6\,\begin{pNiceArray}{r}2 \\[1mm] 1 \end{pNiceArray}$" in tex_q
+    assert r"$1/4\,\begin{pNiceArray}{r}2 \\ 1 \end{pNiceArray}$" not in tex_q
+
+
+def test_factor_out_can_pull_symbolic_prefixes_for_svd_matrices():
     tex = matrixlayout.render_eig_tex(
         {
             "lambda": [sym.Integer(1), sym.Integer(2)],
@@ -365,7 +391,7 @@ def test_matrix_factor_out_can_pull_symbolic_prefixes_for_svd_matrices():
         case="SVD",
         formatter=matrixlayout.formatting.latexify,
         fig_scale=None,
-        matrix_factor_out={"u": True, "v": True, "sigma_matrix": False},
+        factor_out={"u": True, "v": True, "sigma": False},
     )
 
     assert r"\color{blue}{ \Sigma =}$ & \multicolumn{2}{c}{" in tex

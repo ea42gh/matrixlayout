@@ -30,7 +30,7 @@ from .render import _resolve_render_svg_kwargs, render_svg
 
 
 LatexFormatter = Callable[[Any], str]
-MatrixFactorOutSpec = Union[bool, Sequence[str], Mapping[str, bool], None]
+FactorOutSpec = Union[bool, Sequence[str], Mapping[str, bool], None]
 
 
 def _positive_rational_gcd(values: Sequence[Any]) -> Any:
@@ -93,18 +93,18 @@ def _display_vector_factor(vec: Sequence[Any]) -> tuple[Any, Optional[List[Any]]
     return factor, reduced
 
 
-def _resolve_matrix_factor_out(matrix_factor_out: MatrixFactorOutSpec, matrix_ids: Optional[Sequence[str]]) -> bool:
-    if not matrix_factor_out:
+def _resolve_factor_out(factor_out: FactorOutSpec, target_ids: Optional[Sequence[str]]) -> bool:
+    if not factor_out:
         return False
-    if matrix_factor_out is True:
+    if factor_out is True:
         return True
-    ids = tuple(matrix_ids or ())
-    if isinstance(matrix_factor_out, Mapping):
-        return any(bool(matrix_factor_out.get(mid, False)) for mid in ids)
-    if isinstance(matrix_factor_out, str):
-        return matrix_factor_out in ids
-    if isinstance(matrix_factor_out, ABCSequence):
-        selected = set(matrix_factor_out)
+    ids = tuple(target_ids or ())
+    if isinstance(factor_out, Mapping):
+        return any(bool(factor_out.get(mid, False)) for mid in ids)
+    if isinstance(factor_out, str):
+        return factor_out in ids
+    if isinstance(factor_out, ABCSequence):
+        selected = set(factor_out)
         return any(mid in selected for mid in ids)
     return False
 
@@ -230,11 +230,13 @@ def _mk_vector_blocks(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     target_name: Optional[str] = None,
+    vector_ids: Optional[Sequence[str]] = None,
+    factor_out: FactorOutSpec = None,
     strict: bool = False,
 ) -> str:
     nl = r" \\ " if add_height_mm == 0 else rf" \\[{add_height_mm}mm] "
     dec_specs = _collect_vector_decorator_specs(vec_groups, decorators, target_name)
-    factor_common = getattr(formatter, "__name__", "") == "latexify"
+    factor_common = _resolve_factor_out(factor_out, vector_ids)
     groups_out: List[str] = []
     applied_counts = [0 for _ in dec_specs]
     for g_idx, vecs in enumerate(vec_groups):
@@ -282,7 +284,7 @@ def _mk_diag_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
-    matrix_factor_out: MatrixFactorOutSpec = None,
+    factor_out: FactorOutSpec = None,
     strict: bool = False,
 ) -> str:
     # Expand distinct values by multiplicity to length N (diagonal entries)
@@ -308,7 +310,7 @@ def _mk_diag_matrix(
         mat_raw[i][i] = v
         mat_tex[i][i] = formatter(v)
 
-    if _resolve_matrix_factor_out(matrix_factor_out, matrix_ids):
+    if _resolve_factor_out(factor_out, matrix_ids):
         factor, reduced = _display_matrix_factor(mat_raw)
         if reduced is not None:
             mat_raw = reduced
@@ -341,7 +343,7 @@ def _mk_sigma_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
-    matrix_factor_out: MatrixFactorOutSpec = None,
+    factor_out: FactorOutSpec = None,
     strict: bool = False,
 ) -> str:
     diag: List[Any] = []
@@ -367,7 +369,7 @@ def _mk_sigma_matrix(
         mat_raw[i][i] = diag[i]
         mat_tex[i][i] = formatter(diag[i])
 
-    if _resolve_matrix_factor_out(matrix_factor_out, matrix_ids):
+    if _resolve_factor_out(factor_out, matrix_ids):
         factor, reduced = _display_matrix_factor(mat_raw)
         if reduced is not None:
             mat_raw = reduced
@@ -398,7 +400,7 @@ def _mk_vecs_matrix(
     add_height_mm: int = 0,
     decorators: Optional[Sequence[Any]] = None,
     matrix_ids: Optional[Sequence[str]] = None,
-    matrix_factor_out: MatrixFactorOutSpec = None,
+    factor_out: FactorOutSpec = None,
     strict: bool = False,
 ) -> Optional[str]:
     # Flatten vectors column-wise
@@ -428,7 +430,7 @@ def _mk_vecs_matrix(
             mat_raw[i][j] = v
             mat_tex[i][j] = formatter(v)
 
-    if _resolve_matrix_factor_out(matrix_factor_out, matrix_ids):
+    if _resolve_factor_out(factor_out, matrix_ids):
         factor, reduced = _display_matrix_factor(mat_raw)
         if reduced is not None:
             mat_raw = reduced
@@ -464,7 +466,7 @@ def render_eig_tex(
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
-    matrix_factor_out: MatrixFactorOutSpec = None,
+    factor_out: FactorOutSpec = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
 ) -> str:
@@ -536,6 +538,8 @@ def render_eig_tex(
         formatter=formatter,
         decorators=decorators,
         target_name="eigenbasis",
+        vector_ids=["evecs", "eigenbasis"],
+        factor_out=factor_out,
         strict=strict,
     ) + r" \\"
 
@@ -549,6 +553,8 @@ def render_eig_tex(
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
+                vector_ids=["qvecs", "orthonormal_basis"],
+                factor_out=factor_out,
                 strict=strict,
             ) + r" \\"
     elif case.upper() == "SVD":
@@ -559,6 +565,8 @@ def render_eig_tex(
                 add_height_mm=1,
                 decorators=decorators,
                 target_name="orthonormal_basis",
+                vector_ids=["qvecs", "orthonormal_basis"],
+                factor_out=factor_out,
                 strict=strict,
             ) + r" \\"
         # Left singular vectors are shown as a matrix (U) below, if provided.
@@ -570,8 +578,8 @@ def render_eig_tex(
                 mm=mmS,
                 span_cols=matrix_span_cols,
                 decorators=decorators,
-                matrix_ids=["uvecs", "left_singular_matrix", "u"],
-                matrix_factor_out=matrix_factor_out,
+                matrix_ids=["u"],
+                factor_out=factor_out,
                 strict=strict,
             )
 
@@ -586,8 +594,8 @@ def render_eig_tex(
             mm=mmLambda,
             span_cols=matrix_span_cols,
             decorators=decorators,
-            matrix_ids=["sigma", "sigma_matrix", "lambda", "lambda_matrix"],
-            matrix_factor_out=matrix_factor_out,
+            matrix_ids=["sigma"],
+            factor_out=factor_out,
             strict=strict,
         )
     else:
@@ -599,8 +607,8 @@ def render_eig_tex(
             mm=mmLambda,
             span_cols=matrix_span_cols,
             decorators=decorators,
-            matrix_ids=["lambda", "lambda_matrix"],
-            matrix_factor_out=matrix_factor_out,
+            matrix_ids=["lambda", "Lambda"],
+            factor_out=factor_out,
             strict=strict,
         )
 
@@ -612,8 +620,8 @@ def render_eig_tex(
             mm=mmS,
             span_cols=matrix_span_cols,
             decorators=decorators,
-            matrix_ids=["evecs", "evecs_matrix", "s"],
-            matrix_factor_out=matrix_factor_out,
+            matrix_ids=["s"],
+            factor_out=factor_out,
             strict=strict,
         )
     else:
@@ -626,8 +634,8 @@ def render_eig_tex(
                 mm=mmS,
                 span_cols=matrix_span_cols,
                 decorators=decorators,
-                matrix_ids=["qvecs", "evecs", "evecs_matrix", "q", "v"],
-                matrix_factor_out=matrix_factor_out,
+                matrix_ids=["q", "v"],
+                factor_out=factor_out,
                 strict=strict,
             )
             if qvecs
@@ -677,7 +685,7 @@ def render_eig_svg(
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
-    matrix_factor_out: MatrixFactorOutSpec = None,
+    factor_out: FactorOutSpec = None,
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
     toolchain_name: Optional[str] = None,
@@ -705,7 +713,7 @@ def render_eig_svg(
         fig_scale=fig_scale,
         body_preamble=body_preamble,
         sz=sz,
-        matrix_factor_out=matrix_factor_out,
+        factor_out=factor_out,
         decorators=decorators,
         strict=strict,
     )
