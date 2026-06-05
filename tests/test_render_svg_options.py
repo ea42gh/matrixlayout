@@ -351,6 +351,24 @@ def test_render_qr_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["output_stem"] == "qr_opts"
 
 
+def test_render_qr_svg_defaults_to_tight_crop(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_qr, "render_svg", fake_render_svg)
+    monkeypatch.setattr(ml_qr, "render_qr_tex", lambda *args, **kwargs: "TEX")
+
+    out = ml_qr.render_qr_svg(matrices=[[None, [[1]]]])
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
+    assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
+
+
 def test_render_qr_svg_rejects_unknown_render_opts(monkeypatch):
     monkeypatch.setattr(
         ml_qr,
