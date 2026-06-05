@@ -162,7 +162,7 @@ def backsubst_svg(
     panel_boxes: Any = None,
     panel_padding_pt: Any = None,
     toolchain_name: Optional[str] = None,
-    crop: Optional[str] = None,
+    crop: Optional[str] = "tight",
     padding: Any = None,
     frame: Any = None,
     exact_bbox: Optional[bool] = None,

@@ -681,7 +681,7 @@ def render_eig_svg(
     decorators: Optional[Sequence[Any]] = None,
     strict: bool = False,
     toolchain_name: Optional[str] = None,
-    crop: Optional[str] = None,
+    crop: Optional[str] = "tight",
     padding: Any = None,
     frame: Any = None,
     exact_bbox: Optional[bool] = None,

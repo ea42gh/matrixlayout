@@ -50,6 +50,26 @@ def test_matrixlayout_render_svg_uses_with_artifacts_and_forwards_options(monkey
     assert Path(kwargs["output_dir"]) == tmp_path
 
 
+def test_matrixlayout_render_svg_defaults_to_tight_crop(monkeypatch, tmp_path):
+    calls = []
+
+    fake = types.SimpleNamespace()
+
+    def fake_render_svg_with_artifacts(tex_source, **kwargs):
+        calls.append((tex_source, kwargs))
+        return _FakeArtifacts("<svg/>")
+
+    fake.__version__ = "0.5.8"
+    fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
+
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    out = ml_render.render_svg("TEX", output_dir=tmp_path)
+
+    assert out == "<svg/>"
+    assert calls[0][1]["crop"] == "tight"
+
+
 def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp_path):
     calls = []
 
@@ -228,6 +248,22 @@ def test_backsubst_svg_passes_through_options(monkeypatch):
     assert recorded["kwargs"]["padding"] == {"top": 5}
 
 
+def test_backsubst_svg_defaults_to_tight_crop(monkeypatch):
+    recorded = {}
+
+    def fake_ml_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_backsubst, "render_svg", fake_ml_render_svg)
+
+    out = ml_backsubst.backsubst_svg(system_txt="SYS")
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
+
+
 def test_backsubst_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
     recorded = {}
 
@@ -287,6 +323,22 @@ def test_render_ge_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["frame"] is True
     assert recorded["kwargs"]["exact_bbox"] is True
     assert recorded["kwargs"]["output_stem"] == "ge_opts"
+
+
+def test_render_ge_svg_defaults_to_tight_crop(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_ge, "_render_svg", fake_render_svg)
+
+    out = ml_ge.render_ge_svg(matrices=[[None, [[1]]]])
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
 
 
 def test_render_ge_svg_exposes_ge_layout_options(monkeypatch):
@@ -406,6 +458,23 @@ def test_render_eig_svg_merges_render_opts(monkeypatch):
     assert recorded["kwargs"]["padding"] == (2, 2, 2, 2)
     assert recorded["kwargs"]["exact_bbox"] is True
     assert recorded["kwargs"]["output_stem"] == "eig_opts"
+
+
+def test_render_eig_svg_defaults_to_tight_crop(monkeypatch):
+    recorded = {}
+
+    def fake_render_svg(tex_source, **kwargs):
+        recorded["tex_source"] = tex_source
+        recorded["kwargs"] = kwargs
+        return "<svg/>"
+
+    monkeypatch.setattr(ml_eig, "render_svg", fake_render_svg)
+    monkeypatch.setattr(ml_eig, "render_eig_tex", lambda *args, **kwargs: "TEX")
+
+    out = ml_eig.render_eig_svg({"dummy": True})
+
+    assert out == "<svg/>"
+    assert recorded["kwargs"]["crop"] == "tight"
 
 
 def test_render_eig_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
