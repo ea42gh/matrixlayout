@@ -38,8 +38,9 @@ _RENDER_OPTION_KEYS = frozenset(
     }
 )
 _MIN_JUPYTER_TIKZ_VERSION = (0, 5, 8)
+DEFAULT_TOOLCHAIN_NAME = "pdftex_dvisvgm"
 _PATCHED_JUPYTER_TIKZ_SOURCE = (
-    "git+https://github.com/ea42gh/jupyter-tikz.git@8e18e495934c907e9e6568135d2e84d55762ae91"
+    "git+https://github.com/ea42gh/jupyter-tikz.git@f15578bac1fce0d9c80be791eda9c3c189d36ee1"
 )
 
 
@@ -69,6 +70,10 @@ def _validate_toolchain_name(jupyter_tikz: Any, toolchain_name: Optional[str]) -
             f"Unknown jupyter_tikz toolchain: {toolchain_name!r}. "
             f"Available toolchains: {available}"
         )
+
+
+def _default_toolchain_name(toolchain_name: Optional[str]) -> str:
+    return norm_str(toolchain_name) or DEFAULT_TOOLCHAIN_NAME
 
 
 def _parse_version_tuple(value: Any) -> Optional[tuple[int, ...]]:
@@ -201,7 +206,7 @@ def render_svg_with_artifacts(
             "jupyter_tikz is required for SVG rendering. Install the optional dependency via: pip install 'matrixlayout[render]'"
         ) from e
 
-    toolchain_name = norm_str(toolchain_name)
+    toolchain_name = _default_toolchain_name(toolchain_name)
     crop = norm_str(crop)
     validate_jupyter_tikz_renderer(jupyter_tikz)
     _validate_toolchain_name(jupyter_tikz, toolchain_name)

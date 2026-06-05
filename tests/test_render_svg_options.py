@@ -68,6 +68,25 @@ def test_matrixlayout_render_svg_defaults_to_tight_crop(monkeypatch, tmp_path):
 
     assert out == "<svg/>"
     assert calls[0][1]["crop"] == "tight"
+    assert calls[0][1]["toolchain_name"] == "pdftex_dvisvgm"
+
+
+def test_matrixlayout_render_svg_defaults_to_dvisvgm_toolchain(monkeypatch, tmp_path):
+    calls = []
+
+    fake = types.SimpleNamespace(TOOLCHAINS={"pdftex_dvisvgm": object()}, __version__="0.5.8")
+
+    def fake_render_svg_with_artifacts(tex_source, **kwargs):
+        calls.append((tex_source, kwargs))
+        return _FakeArtifacts("<svg/>")
+
+    fake.render_svg_with_artifacts = fake_render_svg_with_artifacts
+    monkeypatch.setitem(sys.modules, "jupyter_tikz", fake)
+
+    out = ml_render.render_svg("TEX", output_dir=tmp_path)
+
+    assert out == "<svg/>"
+    assert calls[0][1]["toolchain_name"] == "pdftex_dvisvgm"
 
 
 def test_matrixlayout_render_svg_forwards_toolchain_and_options(monkeypatch, tmp_path):
