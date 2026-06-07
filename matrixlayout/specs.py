@@ -468,6 +468,55 @@ _GE_SPEC_ALLOWED_KEYS = {
 }
 
 
+_ANNOTATION_ALLOWED_KEYS = {
+    "grid",
+    "side",
+    "labels",
+    "label",
+    "overlay",
+    "anchor",
+    "angle_deg",
+    "length_mm",
+    "color",
+    "line_width_pt",
+    "tip",
+    "label_shift_y_mm",
+    "label_shift_x_mm",
+    "math_mode",
+}
+
+
+def _validate_annotation_specs(
+    annotations: Optional[Sequence[Any]],
+    *,
+    grid: Optional[Tuple[int, int]],
+    strict: bool,
+    field: str = "annotations",
+) -> List[str]:
+    errors: List[str] = []
+    if annotations is None:
+        return errors
+    for idx, item in enumerate(annotations):
+        if not isinstance(item, Mapping):
+            errors.append(f"{field}[{idx}] must be a mapping")
+            continue
+        if strict:
+            extra = set(item) - _ANNOTATION_ALLOWED_KEYS
+            if extra:
+                errors.append(f"{field}[{idx}] has unknown field(s): {sorted(extra)}")
+        if "grid" in item:
+            errors.extend(_validate_grid_coord(item["grid"], field=f"{field}[{idx}].grid", grid=grid))
+        elif grid != (1, 1):
+            errors.append(f"{field}[{idx}] requires grid=(row, col) for multi-block grids")
+        if "labels" not in item and "label" not in item:
+            errors.append(f"{field}[{idx}] must include 'labels' or 'label'")
+        if "side" in item:
+            side = str(item["side"]).strip().lower()
+            if side not in {"left", "right", "above", "below", "top", "bottom"}:
+                errors.append(f"{field}[{idx}].side must be left/right/above/below")
+    return errors
+
+
 def _validate_ge_decorations(
     decorations: Optional[Sequence[Any]],
     *,
@@ -610,7 +659,7 @@ def validate_qr_spec(spec: Any, *, strict: bool = True) -> List[str]:
     if annotations is not None and (isinstance(annotations, (str, bytes)) or not isinstance(annotations, Sequence)):
         errors.append("annotations must be a sequence of mappings")
     elif annotations is not None:
-        errors.extend(_validate_ge_decorations(annotations, grid=grid, strict=strict, field="annotations"))
+        errors.extend(_validate_annotation_specs(annotations, grid=grid, strict=strict, field="annotations"))
     decorators = mapping.get("decorators")
     if decorators is not None and (isinstance(decorators, (str, bytes)) or not isinstance(decorators, Sequence)):
         errors.append("decorators must be a sequence of mappings")
