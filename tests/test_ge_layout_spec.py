@@ -16,7 +16,7 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
     layout = GELayoutSpec(
         submatrix_locs=[(SymLike(":name=Z"), (1, 1), (1, 1))],
         pivot_locs=[(((1, 1), (1, 1)), SymLike(":thick"))],
-        txt_with_locs=[((1, 1), "x", SymLike(":red"))],
+        text_annotations=[((1, 1), "x", SymLike(":red"))],
     )
 
     tex_out = tex(

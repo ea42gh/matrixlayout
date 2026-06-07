@@ -261,11 +261,11 @@ def normalize_pivot_locs(pivot_locs: Optional[Sequence[Tuple[Any, Any]]]) -> Lis
     return [(fit_target(target), julia_str(style)) for target, style in pivot_locs]
 
 
-def normalize_txt_with_locs(txt_with_locs: Optional[Sequence[Tuple[Any, Any, Any]]]) -> List[Tuple[str, str, str]]:
+def normalize_text_annotations(text_annotations: Optional[Sequence[Tuple[Any, Any, Any]]]) -> List[Tuple[str, str, str]]:
     """Normalize text-at-coordinate descriptors."""
-    if not txt_with_locs:
+    if not text_annotations:
         return []
-    return [(coord_paren(coord), str(text), julia_str(style)) for coord, text, style in txt_with_locs]
+    return [(coord_paren(coord), str(text), julia_str(style)) for coord, text, style in text_annotations]
 
 
 def coerce_submatrix_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
@@ -309,7 +309,7 @@ def coerce_pivot_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
     return out
 
 
-def coerce_txt_with_locs(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
+def coerce_text_annotations(items: Optional[Sequence[Any]]) -> Optional[List[Any]]:
     if items is None:
         return None
     out: List[Any] = []

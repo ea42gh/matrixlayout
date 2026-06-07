@@ -52,14 +52,14 @@ from .ge_template import (
     coerce_pivot_locs as _coerce_pivot_locs,
     coerce_rowechelon_paths as _coerce_rowechelon_paths,
     coerce_submatrix_locs as _coerce_submatrix_locs,
-    coerce_txt_with_locs as _coerce_txt_with_locs,
+    coerce_text_annotations as _coerce_text_annotations,
     guess_shape_from_mat_rep as _guess_shape_from_mat_rep,
     merge_callouts as _merge_callouts,
     normalize_mat_format as _normalize_mat_format,
     normalize_mat_rep as _normalize_mat_rep,
     normalize_pivot_locs as _normalize_pivot_locs,
     normalize_submatrix_locs as _normalize_submatrix_locs,
-    normalize_txt_with_locs as _normalize_txt_with_locs,
+    normalize_text_annotations as _normalize_text_annotations,
     validate_body_preamble as _validate_body_preamble,
 )
 from .ge_text_specs import render_ge_tex_specs as render_ge_tex_specs
@@ -165,7 +165,6 @@ def tex(
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Any]] = None,
     text_annotations: Optional[Sequence[Any]] = None,
-    txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
     matrix_labels: Optional[Sequence[Any]] = None,
@@ -204,7 +203,7 @@ def tex(
         submatrix_locs,
         submatrix_names,
         pivot_locs,
-        txt_with_locs,
+        text_annotations,
         rowechelon_paths,
         callouts,
     ) = _merge_layout_fields(
@@ -222,14 +221,13 @@ def tex(
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
         text_annotations=text_annotations,
-        txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
         matrix_labels=matrix_labels,
     )
     submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
     pivot_locs = _coerce_pivot_locs(pivot_locs)
-    txt_with_locs = _coerce_txt_with_locs(txt_with_locs)
+    text_annotations = _coerce_text_annotations(text_annotations)
     rowechelon_paths = _coerce_rowechelon_paths(rowechelon_paths)
 
     # Callouts (including matrix labels) require extra nodes for delimiter anchors.
@@ -292,7 +290,7 @@ def tex(
         "submatrix_spans": sub_spans,  # list[(opts, "{i-j}{k-l}")]
         "submatrix_names": list(submatrix_names or []),
         "pivot_locs": _normalize_pivot_locs(pivot_locs),
-        "txt_with_locs": _normalize_txt_with_locs(txt_with_locs),
+        "text_annotations": _normalize_text_annotations(text_annotations),
         "rowechelon_paths": list(rowechelon_paths or []) + rendered_callouts,
     }
     return render_template("ge.tex.j2", ctx)
@@ -311,7 +309,6 @@ def svg(
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Any]] = None,
     text_annotations: Optional[Sequence[Any]] = None,
-    txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
     matrix_labels: Optional[Sequence[Any]] = None,
@@ -345,7 +342,6 @@ def svg(
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
         text_annotations=text_annotations,
-        txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
         matrix_labels=matrix_labels,
@@ -577,12 +573,7 @@ def render_ge_tex(
     )
 
     # Ensure node coordinates exist when text nodes are requested.
-    if "text_annotations" in kwargs and "txt_with_locs" not in kwargs:
-        kwargs["txt_with_locs"] = kwargs.pop("text_annotations")
-    elif "text_annotations" in kwargs:
-        kwargs["txt_with_locs"] = list(kwargs.get("txt_with_locs") or []) + list(kwargs.pop("text_annotations") or [])
-
-    if "txt_with_locs" in kwargs and kwargs.get("create_cell_nodes") is None:
+    if "text_annotations" in kwargs and kwargs.get("create_cell_nodes") is None:
         kwargs["create_cell_nodes"] = True
 
     user_sub = kwargs.pop("submatrix_locs", None)

@@ -25,7 +25,7 @@ def test_ge_tex_accepts_typed_layout_items():
     layout = GELayoutSpec(
         submatrix_locs=[SubMatrixLoc("name=A0", "1-1", "1-1")],
         pivot_locs=[PivotBox("(1-1)(1-1)", "draw, dashed")],
-        txt_with_locs=[TextAt("(1-1)", "x_label", "anchor=west")],
+        text_annotations=[TextAt("(1-1)", "x_label", "anchor=west")],
         rowechelon_paths=[RowEchelonPath(r"\draw (1-1) -- (1-1);")],
     )
     tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
@@ -43,7 +43,7 @@ def test_ge_tex_accepts_dict_layout_items():
         "pivot_locs": [
             {"fit_target": "(1-1)(1-1)", "style": "draw, dashed"},
         ],
-        "txt_with_locs": [
+        "text_annotations": [
             {"coord": "(1-1)", "text": "x_label", "style": "anchor=west"},
         ],
         "rowechelon_paths": [
@@ -157,7 +157,7 @@ def test_ge_svg_smoke_with_typed_layout_items():
     layout = GELayoutSpec(
         submatrix_locs=[SubMatrixLoc("name=A0", "1-1", "1-1")],
         pivot_locs=[PivotBox("(1-1)(1-1)", "draw, dashed")],
-        txt_with_locs=[TextAt("(1-1)", r"$x_1$", "anchor=west")],
+        text_annotations=[TextAt("(1-1)", r"$x_1$", "anchor=west")],
         rowechelon_paths=[RowEchelonPath(r"\draw (1-1) -- (1-1);")],
     )
     svg_out = svg(

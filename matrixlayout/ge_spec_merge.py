@@ -185,12 +185,6 @@ def merge_grid_spec_inputs(
             kwargs.get("text_annotations"),
             grid_spec.text_annotations,
         )
-    if grid_spec.txt_with_locs is not None:
-        kwargs["txt_with_locs"] = merge_scalar_prefer_explicit(
-            "txt_with_locs",
-            kwargs.get("txt_with_locs"),
-            grid_spec.txt_with_locs,
-        )
     if grid_spec.rowechelon_paths is not None:
         kwargs["rowechelon_paths"] = merge_scalar_prefer_explicit(
             "rowechelon_paths",

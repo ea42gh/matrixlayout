@@ -14,7 +14,7 @@ from matrixlayout.ge_template import (
     coerce_pivot_locs,
     coerce_rowechelon_paths,
     coerce_submatrix_locs,
-    coerce_txt_with_locs,
+    coerce_text_annotations,
     coord_paren,
     coord_token,
     fit_span,
@@ -26,7 +26,7 @@ from matrixlayout.ge_template import (
     normalize_mat_rep,
     normalize_pivot_locs,
     normalize_submatrix_locs,
-    normalize_txt_with_locs,
+    normalize_text_annotations,
     validate_body_preamble,
 )
 from matrixlayout.specs import GELayoutSpec, PivotBox, RowEchelonPath, SubMatrixLoc, TextAt
@@ -133,8 +133,8 @@ def test_pivot_and_text_location_normalizers():
         ("(3-3)(4-4)", ""),
     ]
 
-    assert normalize_txt_with_locs(None) == []
-    assert normalize_txt_with_locs([((1, 2), "label", None), ("(3-4)", 12, "blue")]) == [
+    assert normalize_text_annotations(None) == []
+    assert normalize_text_annotations([((1, 2), "label", None), ("(3-4)", 12, "blue")]) == [
         ("(1-2)", "label", ""),
         ("(3-4)", "12", "blue"),
     ]
@@ -158,7 +158,7 @@ def test_typed_spec_coercion_helpers():
         ("{1-1}{1-1}", "draw=blue"),
         ("x", "s"),
     ]
-    assert coerce_txt_with_locs([TextAt(coord="1-1", text="T", style="red"), {"coord": "2-2", "text": "U"}]) == [
+    assert coerce_text_annotations([TextAt(coord="1-1", text="T", style="red"), {"coord": "2-2", "text": "U"}]) == [
         ("1-1", "T", "red"),
         ("2-2", "U", ""),
     ]
@@ -208,7 +208,6 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
             submatrix_names=["S"],
             pivot_locs=[("spec-pivot", "draw")],
             text_annotations=[("1-1", "spec-text", "")],
-            txt_with_locs=[("1-1", "legacy-text", "")],
             rowechelon_paths=["spec-path"],
             callouts=[{"name": "S", "label": "spec"}],
             matrix_labels=[{"name": "S", "label": "matrix"}],
@@ -226,7 +225,6 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
         submatrix_names=None,
         pivot_locs=None,
         text_annotations=[("1-1", "explicit-text", "")],
-        txt_with_locs=None,
         rowechelon_paths=None,
         callouts=[{"name": "S", "label": "explicit"}],
         matrix_labels=[{"name": "S", "label": "kw-label"}],
@@ -245,7 +243,7 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
         submatrix_locs,
         submatrix_names,
         pivot_locs,
-        txt_with_locs,
+        text_annotations,
         rowechelon_paths,
         callouts,
     ) = result
@@ -262,10 +260,9 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
     assert submatrix_locs == [("name=S", "1-1", "1-1")]
     assert submatrix_names == ["S"]
     assert pivot_locs == [("spec-pivot", "draw")]
-    assert txt_with_locs == [
+    assert text_annotations == [
         ("1-1", "explicit-text", ""),
         ("1-1", "spec-text", ""),
-        ("1-1", "legacy-text", ""),
     ]
     assert rowechelon_paths == ["spec-path"]
     assert callouts == [
@@ -292,7 +289,6 @@ def test_ge_layout_field_helper_passes_through_without_layout():
         submatrix_names=["A"],
         pivot_locs=[("p", "")],
         text_annotations=[("1-1", "new", "")],
-        txt_with_locs=[("1-1", "t", "")],
         rowechelon_paths=["path"],
         callouts=[{"name": "A", "label": "A"}],
         matrix_labels=[{"name": "A", "label": "ignored"}],
@@ -300,7 +296,7 @@ def test_ge_layout_field_helper_passes_through_without_layout():
 
     assert result[0] == "opt"
     assert result[8] == ["code"]
-    assert result[12] == [("1-1", "t", ""), ("1-1", "new", "")]
+    assert result[12] == [("1-1", "new", "")]
     assert result[-1] == [{"name": "A", "label": "A"}]
 
 

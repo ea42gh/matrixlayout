@@ -214,7 +214,6 @@ Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`
 - `format_nrhs`: control whether RHS separators are emitted via the column format.
 - `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
 - `text_annotations`: explicit text nodes placed at nicematrix coordinates.
-  `txt_with_locs` remains accepted as a compatibility spelling.
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
 unless the grid has a single matrix, in which case `grid` defaults to `(0,0)`,

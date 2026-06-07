@@ -66,7 +66,7 @@ $% begin math
 {%%- endfor -%%}%
 \Body%
 {{ mat_rep }}%
-{%%- set has_after = (submatrix_spans|length > 0) or (submatrix_names|length > 0) or (pivot_locs|length > 0) or (txt_with_locs|length > 0) or (rowechelon_paths|length > 0) -%%}%
+{%%- set has_after = (submatrix_spans|length > 0) or (submatrix_names|length > 0) or (pivot_locs|length > 0) or (text_annotations|length > 0) or (rowechelon_paths|length > 0) -%%}%
 {%% if has_after %%}%
 \CodeAfter%
 % ----- \SubMatrix delimiters%
@@ -80,14 +80,14 @@ $% begin math
 {{ txt }}%
 {%%- endfor -%%}%
 % ----- TikZ decorations%
-{%%- if (pivot_locs|length > 0) or (txt_with_locs|length > 0) or (rowechelon_paths|length > 0) -%%}%
+{%%- if (pivot_locs|length > 0) or (text_annotations|length > 0) or (rowechelon_paths|length > 0) -%%}%
 \begin{tikzpicture}%
 \begin{scope}[every node/.style = draw]%
 {%%- for fit_target, extra_style in pivot_locs -%%}%
 \node[draw{%% if extra_style %%},{{ extra_style }}{%% endif %%},fit={{ fit_target }}] {};%
 {%%- endfor -%%}%
 \end{scope}%
-{%%- for coord, txt, style in txt_with_locs -%%}%
+{%%- for coord, txt, style in text_annotations -%%}%
 \node[{%% if style %%}{{ style }}{%% endif %%}] at {{ coord }} { {{ txt }} };%
 {%%- endfor -%%}%
 {%%- for p in rowechelon_paths -%%}%
