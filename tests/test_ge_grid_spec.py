@@ -50,6 +50,18 @@ def test_render_ge_tex_accepts_spec_dict_with_tex_hooks():
     assert tex.index("%grid-body") > tex.index(r"\begin{document}")
 
 
+def test_render_ge_tex_accepts_spec_text_annotations():
+    spec = GEGridSpec(
+        matrices=[[[1]]],
+        text_annotations=[((1, 1), "spec text", "blue")],
+    )
+
+    tex = matrixlayout.render_ge_tex(spec=spec)
+
+    assert r"\node[blue] at (1-1)" in tex
+    assert "{ spec text }" in tex
+
+
 def test_ge_grid_spec_accepts_legacy_nrhs_key():
     spec = GEGridSpec.from_dict({"matrices": [[[1, 2, 3]]], "n_rhs": 1})
 

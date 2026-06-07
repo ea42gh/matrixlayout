@@ -179,6 +179,12 @@ def merge_grid_spec_inputs(
             kwargs.get("pivot_locs"),
             grid_spec.pivot_locs,
         )
+    if grid_spec.text_annotations is not None:
+        kwargs["text_annotations"] = merge_scalar_prefer_explicit(
+            "text_annotations",
+            kwargs.get("text_annotations"),
+            grid_spec.text_annotations,
+        )
     if grid_spec.txt_with_locs is not None:
         kwargs["txt_with_locs"] = merge_scalar_prefer_explicit(
             "txt_with_locs",

@@ -207,7 +207,8 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
             submatrix_locs=[("name=S", "1-1", "1-1")],
             submatrix_names=["S"],
             pivot_locs=[("spec-pivot", "draw")],
-            txt_with_locs=[("1-1", "spec-text", "")],
+            text_annotations=[("1-1", "spec-text", "")],
+            txt_with_locs=[("1-1", "legacy-text", "")],
             rowechelon_paths=["spec-path"],
             callouts=[{"name": "S", "label": "spec"}],
             matrix_labels=[{"name": "S", "label": "matrix"}],
@@ -224,6 +225,7 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
         submatrix_locs=None,
         submatrix_names=None,
         pivot_locs=None,
+        text_annotations=[("1-1", "explicit-text", "")],
         txt_with_locs=None,
         rowechelon_paths=None,
         callouts=[{"name": "S", "label": "explicit"}],
@@ -260,7 +262,11 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
     assert submatrix_locs == [("name=S", "1-1", "1-1")]
     assert submatrix_names == ["S"]
     assert pivot_locs == [("spec-pivot", "draw")]
-    assert txt_with_locs == [("1-1", "spec-text", "")]
+    assert txt_with_locs == [
+        ("1-1", "explicit-text", ""),
+        ("1-1", "spec-text", ""),
+        ("1-1", "legacy-text", ""),
+    ]
     assert rowechelon_paths == ["spec-path"]
     assert callouts == [
         {"name": "S", "label": "explicit"},
@@ -285,6 +291,7 @@ def test_ge_layout_field_helper_passes_through_without_layout():
         submatrix_locs=[("name=A", "1-1", "1-1")],
         submatrix_names=["A"],
         pivot_locs=[("p", "")],
+        text_annotations=[("1-1", "new", "")],
         txt_with_locs=[("1-1", "t", "")],
         rowechelon_paths=["path"],
         callouts=[{"name": "A", "label": "A"}],
@@ -293,6 +300,7 @@ def test_ge_layout_field_helper_passes_through_without_layout():
 
     assert result[0] == "opt"
     assert result[8] == ["code"]
+    assert result[12] == [("1-1", "t", ""), ("1-1", "new", "")]
     assert result[-1] == [{"name": "A", "label": "A"}]
 
 

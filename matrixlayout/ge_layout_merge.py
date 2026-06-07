@@ -58,6 +58,7 @@ def merge_layout_fields(
     submatrix_locs: Optional[Sequence[Any]],
     submatrix_names: Optional[Sequence[str]],
     pivot_locs: Optional[Sequence[Any]],
+    text_annotations: Optional[Sequence[Any]],
     txt_with_locs: Optional[Sequence[Any]],
     rowechelon_paths: Optional[Sequence[Any]],
     callouts: Optional[Sequence[Any]],
@@ -80,6 +81,7 @@ def merge_layout_fields(
     Optional[Sequence[Any]],
 ]:
     if spec is None:
+        txt_with_locs = _merge_list(txt_with_locs, text_annotations)
         return (
             nice_options,
             landscape,
@@ -111,7 +113,9 @@ def merge_layout_fields(
     submatrix_locs = _merge_list(submatrix_locs, spec.submatrix_locs)
     submatrix_names = _merge_list(submatrix_names, spec.submatrix_names)
     pivot_locs = _merge_list(pivot_locs, spec.pivot_locs)
-    txt_with_locs = _merge_list(txt_with_locs, spec.txt_with_locs)
+    text_annotations = _merge_list(text_annotations, spec.text_annotations)
+    text_annotations = _merge_list(text_annotations, spec.txt_with_locs)
+    txt_with_locs = _merge_list(txt_with_locs, text_annotations)
     rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
     callouts = _merge_callouts(callouts, spec.callouts)
     callouts = _merge_callouts(callouts, spec.matrix_labels)
@@ -134,5 +138,3 @@ def merge_layout_fields(
         rowechelon_paths,
         callouts,
     )
-
-

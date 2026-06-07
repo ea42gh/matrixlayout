@@ -30,6 +30,30 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
     assert r"\node[red] at (1-1)" in tex_out
 
 
+def test_ge_tex_accepts_layout_spec_text_annotations():
+    layout = GELayoutSpec(text_annotations=[((1, 1), "new", "blue")])
+
+    tex_out = tex(
+        mat_rep="1",
+        mat_format="c",
+        layout=layout,
+    )
+
+    assert r"\node[blue] at (1-1)" in tex_out
+    assert "{ new }" in tex_out
+
+
+def test_ge_tex_accepts_direct_text_annotations():
+    tex_out = tex(
+        mat_rep="1",
+        mat_format="c",
+        text_annotations=[((1, 1), "direct", "green")],
+    )
+
+    assert r"\node[green] at (1-1)" in tex_out
+    assert "{ direct }" in tex_out
+
+
 def test_render_ge_tex_merges_layout_spec_callouts():
     # One GE layer in the legacy 2-column layout: [[None, A0]]
     matrices = [[None, [[1, 2], [3, 4]]]]

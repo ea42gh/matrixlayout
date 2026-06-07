@@ -164,6 +164,7 @@ def tex(
     submatrix_locs: Optional[Sequence[Any]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Any]] = None,
+    text_annotations: Optional[Sequence[Any]] = None,
     txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
@@ -220,6 +221,7 @@ def tex(
         submatrix_locs=submatrix_locs,
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
+        text_annotations=text_annotations,
         txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
@@ -308,6 +310,7 @@ def svg(
     submatrix_locs: Optional[Sequence[Any]] = None,
     submatrix_names: Optional[Sequence[str]] = None,
     pivot_locs: Optional[Sequence[Any]] = None,
+    text_annotations: Optional[Sequence[Any]] = None,
     txt_with_locs: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
@@ -341,6 +344,7 @@ def svg(
         submatrix_locs=submatrix_locs,
         submatrix_names=submatrix_names,
         pivot_locs=pivot_locs,
+        text_annotations=text_annotations,
         txt_with_locs=txt_with_locs,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
@@ -573,6 +577,11 @@ def render_ge_tex(
     )
 
     # Ensure node coordinates exist when text nodes are requested.
+    if "text_annotations" in kwargs and "txt_with_locs" not in kwargs:
+        kwargs["txt_with_locs"] = kwargs.pop("text_annotations")
+    elif "text_annotations" in kwargs:
+        kwargs["txt_with_locs"] = list(kwargs.get("txt_with_locs") or []) + list(kwargs.pop("text_annotations") or [])
+
     if "txt_with_locs" in kwargs and kwargs.get("create_cell_nodes") is None:
         kwargs["create_cell_nodes"] = True
 

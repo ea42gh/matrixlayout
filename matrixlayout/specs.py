@@ -154,6 +154,8 @@ class GELayoutSpec:
     submatrix_locs: Optional[Sequence[Union[SubMatrixLoc, Dict[str, Any], Tuple[Any, ...]]]] = None
     submatrix_names: Optional[Sequence[Any]] = None
     pivot_locs: Optional[Sequence[Union[PivotBox, Dict[str, Any], Tuple[Any, ...]]]] = None
+    text_annotations: Optional[Sequence[Union[TextAt, Dict[str, Any], Tuple[Any, ...]]]] = None
+    # Compatibility name for text annotations positioned at explicit coordinates.
     txt_with_locs: Optional[Sequence[Union[TextAt, Dict[str, Any], Tuple[Any, ...]]]] = None
     rowechelon_paths: Optional[Sequence[Union[RowEchelonPath, str, Dict[str, Any]]]] = None
     callouts: Optional[Union[Sequence[Any], bool]] = None
@@ -283,6 +285,8 @@ class GEGridSpec:
     decorators: Optional[Sequence[Any]] = None
     decorations: Optional[Sequence[Union[GEDecorationSpec, Mapping[str, Any]]]] = None
     pivot_locs: Optional[Sequence[Any]] = None
+    text_annotations: Optional[Sequence[Any]] = None
+    # Compatibility name for text annotations positioned at explicit coordinates.
     txt_with_locs: Optional[Sequence[Any]] = None
     rowechelon_paths: Optional[Sequence[Any]] = None
     callouts: Optional[Sequence[Any]] = None
