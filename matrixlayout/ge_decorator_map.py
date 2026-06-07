@@ -27,17 +27,17 @@ def build_ge_decorator_map(
         if not isinstance(spec_item, dict):
             raise ValueError("decorators must be dict specs")
 
-        grid_pos = spec_item.get("grid")
-        if isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2:
-            grid_pos = (int(grid_pos[0]), int(grid_pos[1]))
+        grid = spec_item.get("grid")
+        if isinstance(grid, (list, tuple)) and len(grid) == 2:
+            grid_key = (int(grid[0]), int(grid[1]))
         else:
-            grid_pos = None
-        if grid_pos is None:
+            grid_key = None
+        if grid_key is None:
             if strict:
                 raise ValueError("decorator grid must be a (row,col) pair")
             continue
 
-        block_row, block_col = grid_pos
+        block_row, block_col = grid_key
         decorator = spec_item.get("decorator")
         if not callable(decorator):
             raise ValueError("decorator must be callable")

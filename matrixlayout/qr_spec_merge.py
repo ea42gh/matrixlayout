@@ -88,10 +88,10 @@ def filter_qr_name_specs(
     for spec in name_specs:
         if not (isinstance(spec, (list, tuple)) and len(spec) >= 1):
             continue
-        grid_pos = spec[0]
-        if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+        target_grid = spec[0]
+        if not (isinstance(target_grid, (list, tuple)) and len(target_grid) == 2):
             continue
-        gM, gN = int(grid_pos[0]), int(grid_pos[1])
+        gM, gN = int(target_grid[0]), int(target_grid[1])
         if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
             continue
         try:

@@ -360,17 +360,17 @@ def append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels:
 
 
 def _single_block_default_grid(
-    grid_pos: Any,
+    grid: Any,
     *,
     n_block_rows: int,
     n_block_cols: int,
 ) -> Any:
-    if grid_pos is None and n_block_rows == 1 and n_block_cols == 1:
+    if grid is None and n_block_rows == 1 and n_block_cols == 1:
         return (0, 0)
-    return grid_pos
+    return grid
 
 
-def _label_grid_position(
+def _label_grid_key(
     spec_item: Mapping[str, Any],
     *,
     field: str,
@@ -378,16 +378,16 @@ def _label_grid_position(
     n_block_cols: int,
     strict: bool,
 ) -> Optional[Tuple[int, int]]:
-    grid_pos = _single_block_default_grid(
+    grid = _single_block_default_grid(
         spec_item.get("grid"),
         n_block_rows=n_block_rows,
         n_block_cols=n_block_cols,
     )
-    if not (isinstance(grid_pos, (list, tuple)) and len(grid_pos) == 2):
+    if not (isinstance(grid, (list, tuple)) and len(grid) == 2):
         if strict:
             raise ValueError(f"{field} grid must be a (row,col) pair")
         return None
-    gM, gN = int(grid_pos[0]), int(grid_pos[1])
+    gM, gN = int(grid[0]), int(grid[1])
     if gM < 0 or gN < 0 or gM >= n_block_rows or gN >= n_block_cols:
         if strict:
             raise ValueError(f"{field} grid position out of range")
@@ -438,14 +438,14 @@ def build_label_maps(
             if strict:
                 raise ValueError("label_rows entries must be dict specs")
             continue
-        grid_pos = _label_grid_position(
+        grid_key = _label_grid_key(
             spec_item,
             field="label_rows",
             n_block_rows=n_block_rows,
             n_block_cols=n_block_cols,
             strict=strict,
         )
-        if grid_pos is None:
+        if grid_key is None:
             continue
         side = _label_side(
             spec_item,
@@ -459,7 +459,7 @@ def build_label_maps(
         rows = normalize_label_rows(spec_item.get("labels"))
         if not rows:
             continue
-        gM, gN = grid_pos
+        gM, gN = grid_key
         label_rows_map[(gM, gN, side)] = label_rows_map.get((gM, gN, side), []) + rows
 
     for spec_item in label_cols or []:
@@ -467,14 +467,14 @@ def build_label_maps(
             if strict:
                 raise ValueError("label_cols entries must be dict specs")
             continue
-        grid_pos = _label_grid_position(
+        grid_key = _label_grid_key(
             spec_item,
             field="label_cols",
             n_block_rows=n_block_rows,
             n_block_cols=n_block_cols,
             strict=strict,
         )
-        if grid_pos is None:
+        if grid_key is None:
             continue
         side = _label_side(
             spec_item,
@@ -491,7 +491,7 @@ def build_label_maps(
         cols = normalize_label_cols(spec_item.get("labels"))
         if not cols:
             continue
-        gM, gN = grid_pos
+        gM, gN = grid_key
         label_cols_map[(gM, gN, side)] = label_cols_map.get((gM, gN, side), []) + cols
 
     return label_rows_map, label_cols_map, overlay_label_specs
