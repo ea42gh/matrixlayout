@@ -53,10 +53,11 @@ def test_render_qr_tex_accepts_spec_dict_with_tex_hooks():
 
 
 def test_qr_callout_rules_apply_to_qt_and_r():
-    from matrixlayout.qr import _qr_default_name_specs, _qr_name_specs_to_callouts
+    from matrixlayout.qr import _name_specs_to_callouts
+    from matrixlayout.qr_spec_merge import qr_default_name_specs
 
-    callouts = _qr_name_specs_to_callouts(
-        _qr_default_name_specs(),
+    callouts = _name_specs_to_callouts(
+        qr_default_name_specs(),
         color="blue",
         angle_deg=-35.0,
         length_mm=6.0,

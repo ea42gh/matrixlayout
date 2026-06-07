@@ -1,10 +1,10 @@
 from matrixlayout.qr import (
-    _filter_qr_name_specs,
+    _filter_name_specs,
     _mat_shape,
-    _qr_callout_rules,
-    _qr_known_zero_entries,
-    _qr_label_layouts,
-    _qr_name_specs_to_callouts,
+    _callout_rules,
+    _known_zero_entries,
+    _label_layouts,
+    _name_specs_to_callouts,
 )
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
@@ -21,12 +21,12 @@ from matrixlayout.qr_spec_merge import (
 from matrixlayout.specs import QRGridSpec
 
 
-def test_qr_known_zero_entries_module_matches_compatibility_alias():
+def test_qr_known_zero_entries_matches_qr_local_shape_adapter():
     grid = [
         [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
         [None, [[1, 0], [0, 1]], [[1, 0], [2, 3]], [[1, 0], [0, 1]]],
     ]
-    assert qr_known_zero_entries(grid, mat_shape=_mat_shape) == _qr_known_zero_entries(grid)
+    assert qr_known_zero_entries(grid, mat_shape=_mat_shape) == _known_zero_entries(grid)
 
 
 def test_qr_known_zero_entries_handles_short_malformed_and_zero_shapes():
@@ -39,22 +39,22 @@ def test_qr_known_zero_entries_handles_short_malformed_and_zero_shapes():
     ) == []
 
 
-def test_qr_label_layouts_module_matches_compatibility_alias():
+def test_qr_label_layouts_matches_qr_local_shape_adapter():
     grid = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]], [None, [[1, 0], [0, 1]]]]
-    assert qr_label_layouts(grid, "red", mat_shape=_mat_shape) == _qr_label_layouts(grid, "red")
+    assert qr_label_layouts(grid, "red", mat_shape=_mat_shape) == _label_layouts(grid, "red")
 
 
-def test_qr_name_specs_to_callouts_module_matches_compatibility_alias():
+def test_qr_name_specs_to_callouts_matches_qr_local_adapter():
     specs = [[(0, 2), "al", r"\mathbf{A}"], [(2, 2), "br", r"\mathbf{R = S W^T A}"]]
     kwargs = {
         "color": "blue",
         "label_shift_rules": [(r"\mathbf{R = S W^T A}", -1.0)],
         "length_rules": [(r"\mathbf{A}", 8.0)],
     }
-    assert qr_name_specs_to_callouts(specs, **kwargs) == _qr_name_specs_to_callouts(specs, **kwargs)
+    assert qr_name_specs_to_callouts(specs, **kwargs) == _name_specs_to_callouts(specs, **kwargs)
 
 
-def test_filter_qr_name_specs_module_matches_compatibility_alias():
+def test_filter_qr_name_specs_matches_qr_local_adapter():
     grid = [[None, None, [[1]], None], [None, [[1]]]]
     specs = [
         "bad",
@@ -67,11 +67,11 @@ def test_filter_qr_name_specs_module_matches_compatibility_alias():
 
     expected = [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
     assert filter_qr_name_specs(specs, grid=grid) == expected
-    assert _filter_qr_name_specs(specs, grid=grid) == expected
+    assert _filter_name_specs(specs, grid=grid) == expected
 
 
-def test_qr_callout_rules_module_matches_compatibility_alias():
-    assert qr_callout_rules(a_rows=2, a_cols=2) == _qr_callout_rules(a_rows=2, a_cols=2)
+def test_qr_callout_rules_matches_qr_local_adapter():
+    assert qr_callout_rules(a_rows=2, a_cols=2) == _callout_rules(a_rows=2, a_cols=2)
 
 
 def test_qr_callout_rules_adjust_compact_a_block():

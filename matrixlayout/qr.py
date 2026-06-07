@@ -14,14 +14,14 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 from .formatting import latexify
 from .ge import grid_submatrix_spans, render_ge_tex
 from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
-from .qr_spec_merge import filter_qr_name_specs as _filter_qr_name_specs_impl
+from .qr_spec_merge import filter_qr_name_specs
 from .qr_spec_merge import merge_scalar_default as _merge_scalar_default
 from .qr_spec_merge import merge_scalar as _merge_scalar
-from .qr_spec_merge import qr_callout_rules as _qr_callout_rules_impl
-from .qr_spec_merge import qr_default_name_specs as _qr_default_name_specs
-from .qr_spec_merge import qr_known_zero_entries as _qr_known_zero_entries_impl
-from .qr_spec_merge import qr_label_layouts as _qr_label_layouts_impl
-from .qr_spec_merge import qr_name_specs_to_callouts as _qr_name_specs_to_callouts_impl
+from .qr_spec_merge import qr_callout_rules
+from .qr_spec_merge import qr_default_name_specs
+from .qr_spec_merge import qr_known_zero_entries
+from .qr_spec_merge import qr_label_layouts
+from .qr_spec_merge import qr_name_specs_to_callouts
 from .render import _resolve_render_svg_kwargs, render_svg
 from .specs import QRGridBundle, QRGridSpec
 
@@ -362,11 +362,11 @@ def _make_decorator(
     return lambda a: x.format(a=a)
 
 
-def _qr_known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tuple[int, int], List[Tuple[int, int]]]]:
-    return _qr_known_zero_entries_impl(matrices, mat_shape=_mat_shape)
+def _known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tuple[int, int], List[Tuple[int, int]]]]:
+    return qr_known_zero_entries(matrices, mat_shape=_mat_shape)
 
 
-def _qr_name_specs_to_callouts(
+def _name_specs_to_callouts(
     name_specs: Sequence[Any],
     *,
     color: str,
@@ -375,7 +375,7 @@ def _qr_name_specs_to_callouts(
     label_shift_rules: Optional[Sequence[Tuple[str, float]]] = None,
     length_rules: Optional[Sequence[Tuple[str, float]]] = None,
 ) -> List[Dict[str, Any]]:
-    return _qr_name_specs_to_callouts_impl(
+    return qr_name_specs_to_callouts(
         name_specs,
         color=color,
         angle_deg=angle_deg,
@@ -385,16 +385,16 @@ def _qr_name_specs_to_callouts(
     )
 
 
-def _filter_qr_name_specs(name_specs: Sequence[Any], *, grid: Sequence[Sequence[Any]]) -> List[Any]:
-    return _filter_qr_name_specs_impl(name_specs, grid=grid)
+def _filter_name_specs(name_specs: Sequence[Any], *, grid: Sequence[Sequence[Any]]) -> List[Any]:
+    return filter_qr_name_specs(name_specs, grid=grid)
 
 
-def _qr_callout_rules(*, a_rows: int, a_cols: int) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
-    return _qr_callout_rules_impl(a_rows=a_rows, a_cols=a_cols)
+def _callout_rules(*, a_rows: int, a_cols: int) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
+    return qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
 
 
-def _qr_label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    return _qr_label_layouts_impl(grid, label_text_color, mat_shape=_mat_shape)
+def _label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    return qr_label_layouts(grid, label_text_color, mat_shape=_mat_shape)
 
 
 def _qr_render_parts(
@@ -413,25 +413,25 @@ def _qr_render_parts(
 
     qr_decorators: List[Dict[str, Any]] = list(decorators or [])
     brown = _make_decorator(text_color=known_zero_color, bf=True)
-    for (gM, gN), entries in _qr_known_zero_entries(grid):
+    for (gM, gN), entries in _known_zero_entries(grid):
         qr_decorators.append({"grid": (gM, gN), "entries": entries, "decorator": brown})
 
-    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
+    label_rows, label_cols = _label_layouts(grid, label_text_color)
 
     callouts: Optional[List[Dict[str, Any]]] = None
     if array_names:
-        name_specs = _qr_default_name_specs() if array_names is True else array_names
+        name_specs = qr_default_name_specs() if array_names is True else array_names
         if name_specs:
-            name_specs = _filter_qr_name_specs(name_specs, grid=grid)
+            name_specs = _filter_name_specs(name_specs, grid=grid)
         a_rows = a_cols = 0
         if n_block_rows > 0 and n_block_cols > 2:
             try:
                 a_rows, a_cols = _mat_shape(grid[0][2])
             except Exception:
                 a_rows = a_cols = 0
-        label_shift_rules, length_rules = _qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
+        label_shift_rules, length_rules = _callout_rules(a_rows=a_rows, a_cols=a_cols)
         if name_specs:
-            callouts = _qr_name_specs_to_callouts(
+            callouts = _name_specs_to_callouts(
                 name_specs,
                 color=label_color,
                 angle_deg=-35.0,
@@ -603,7 +603,7 @@ def qr_grid_bundle(
         raise ValueError("qr_grid_bundle requires `matrices`")
 
     grid = _as_grid(matrices)
-    label_rows, label_cols = _qr_label_layouts(grid, label_text_color)
+    label_rows, label_cols = _label_layouts(grid, label_text_color)
     spans = grid_submatrix_spans(
         grid,
         label_rows=label_rows or None,
