@@ -80,6 +80,13 @@ def parse_ge_decorations(
             key = (int(grid[0]), int(grid[1]))
 
         if "label" in item:
+            removed_callout_options = {"angle", "length"} & set(item)
+            if removed_callout_options:
+                removed = ", ".join(sorted(removed_callout_options))
+                raise TypeError(
+                    f"Unexpected removed decoration callout option(s): {removed}. "
+                    "Use angle_deg= and length_mm= instead."
+                )
             callout: Dict[str, Any] = {"grid": key, "label": str(item["label"])}
             for src, dst in [
                 ("side", "side"),
