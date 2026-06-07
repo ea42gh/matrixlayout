@@ -177,7 +177,7 @@ def test_render_ge_tex_specs_axis_consistency():
         [None, [[1, 2], [3, 4]]],
         [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
     ]
-    targets = [
+    annotations = [
         {"grid": (0, 1), "side": "left", "labels": ["a", "b"]},
         {"grid": (1, 1), "side": "right", "labels": ["c", "d"]},
         {"grid": (1, 0), "side": "above", "labels": ["e", "f"]},
@@ -185,11 +185,11 @@ def test_render_ge_tex_specs_axis_consistency():
     ]
     spans = grid_submatrix_spans(matrices)
     span_map = {(span.block_row, span.block_col): span for span in spans}
-    for target in targets:
-        side = target["side"]
-        grid = tuple(target["grid"])
+    for annotation in annotations:
+        side = annotation["side"]
+        grid = tuple(annotation["grid"])
         span = span_map[grid]
-        specs = render_ge_tex_specs(matrices, [target])
+        specs = render_ge_tex_specs(matrices, [annotation])
         parsed = [_parse_coord(coord) for coord, *_ in specs]
         assert parsed
         if side in ("left", "right"):
@@ -227,10 +227,10 @@ def test_render_ge_tex_specs_offset_alignment():
     assert any("xshift=0.75mm" in opt for opt in opts)
 
 
-def test_render_ge_tex_specs_strict_rejects_bad_targets():
+def test_render_ge_tex_specs_strict_rejects_bad_annotations():
     matrices = [[[1, 2], [3, 4]]]
 
-    with pytest.raises(ValueError, match="targets must be mappings"):
+    with pytest.raises(ValueError, match="annotations must be mappings"):
         render_ge_tex_specs(matrices, [object()], strict=True)
 
     with pytest.raises(ValueError, match="require grid"):
@@ -243,25 +243,25 @@ def test_render_ge_tex_specs_strict_rejects_bad_targets():
         render_ge_tex_specs(matrices, [{"grid": (0, 0), "side": "diagonal", "labels": ["x"]}], strict=True)
 
 
-def test_render_ge_tex_specs_default_still_ignores_bad_targets():
+def test_render_ge_tex_specs_default_still_ignores_bad_annotations():
     matrices = [[[1, 2], [3, 4]]]
 
     assert render_ge_tex_specs(matrices, [object(), {"labels": ["x"]}, {"grid": (9, 0), "labels": ["x"]}]) == []
 
 
-def test_render_ge_svg_label_targets_overlay():
+def test_render_ge_svg_annotations_overlay():
     matrices = [
         [None, [[1, 2], [3, 4]]],
         [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
     ]
-    targets = [
+    annotations = [
         {"grid": (0, 1), "side": "left", "labels": ["$w_1^T$", "$w_2^T$"]},
     ]
     with patch("matrixlayout.ge.render_ge_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
         mock_tex.return_value = "TEX"
         mock_svg.return_value = "SVG"
-        render_ge_svg(matrices=matrices, annotations=targets)
-        assert mock_tex.call_args.kwargs.get("annotations") == targets
+        render_ge_svg(matrices=matrices, annotations=annotations)
+        assert mock_tex.call_args.kwargs.get("annotations") == annotations
 
 
 def test_render_ge_svg_accepts_annotations_alias():
@@ -279,32 +279,32 @@ def test_render_ge_svg_accepts_annotations_alias():
         assert mock_tex.call_args.kwargs.get("annotations") == annotations
 
 
-def test_render_ge_svg_label_targets_add_blank_rows():
+def test_render_ge_svg_annotations_add_blank_rows():
     matrices = [[[1, 2], [3, 4]]]
-    targets = [
+    annotations = [
         {"grid": (0, 0), "side": "above", "labels": ["head", "tail"]},
     ]
-    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=annotations)
     assert "\\text{head}" in tex
     assert "\\text{tail}" in tex
 
 
-def test_render_ge_svg_label_targets_preserve_label_rows():
+def test_render_ge_svg_annotations_preserve_label_rows():
     matrices = [[[1, 2], [3, 4]]]
-    targets = [
+    annotations = [
         {"grid": (0, 0), "side": "above", "labels": ["head"]},
     ]
     existing_rows = [{"grid": (0, 0), "side": "above", "labels": [["X"]]}]
-    tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, annotations=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, label_rows=existing_rows, annotations=annotations)
     assert "\\text{X}" in tex
     assert "\\text{head}" in tex
 
 
-def test_render_ge_svg_label_targets_do_not_add_label_cols():
+def test_render_ge_svg_annotations_do_not_add_label_cols():
     matrices = [[[1, 2], [3, 4]]]
-    targets = [
+    annotations = [
         {"grid": (0, 0), "side": "left", "labels": ["a", "b"]},
     ]
-    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=targets)
+    tex = render_ge_tex(matrices=matrices, formatter=str, annotations=annotations)
     assert "\\text{a}" in tex
     assert "\\text{b}" in tex

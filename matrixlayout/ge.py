@@ -79,7 +79,6 @@ _compute_label_extras = _ge_labels.compute_label_extras
 _embed_col_labels = _ge_labels.embed_col_labels
 _embed_row_labels = _ge_labels.embed_row_labels
 _normalize_index_list = _ge_decorations.normalize_index_list
-_label_targets_from_specs = _ge_labels.label_targets_from_specs
 _merge_label_specs = _ge_labels.merge_label_specs
 _normalize_label_cols = _ge_labels.normalize_label_cols
 _normalize_label_rows = _ge_labels.normalize_label_rows

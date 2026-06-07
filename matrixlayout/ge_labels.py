@@ -59,12 +59,12 @@ def _normalize_label_entries(val: Any) -> List[List[str]]:
 
 
 def grid_label_layouts(
-    targets: Sequence[Mapping[str, Any]],
+    annotations: Sequence[Mapping[str, Any]],
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    r"""Convert label targets into ``label_rows``/``label_cols`` specs."""
+    r"""Convert label annotations into ``label_rows``/``label_cols`` specs."""
     label_rows: List[Dict[str, Any]] = []
     label_cols: List[Dict[str, Any]] = []
-    for item in targets:
+    for item in annotations:
         if not isinstance(item, Mapping):
             continue
         grid = item.get("grid")
@@ -86,13 +86,13 @@ def grid_label_layouts(
     return label_rows, label_cols
 
 
-def label_targets_from_specs(
+def annotation_label_specs(
     specs: Optional[Sequence[Mapping[str, Any]]]
 ) -> List[Dict[str, Any]]:
-    """Extract ``render_ge_tex_specs``-style label targets from generic specs."""
+    """Extract label-row/column specs from generic annotations."""
     if not specs:
         return []
-    label_targets: List[Dict[str, Any]] = []
+    label_specs: List[Dict[str, Any]] = []
     for item in specs:
         if not isinstance(item, Mapping):
             continue
@@ -115,8 +115,8 @@ def label_targets_from_specs(
         target["grid"] = (int(grid[0]), int(grid[1]))
         target["side"] = side
         target["labels"] = label_values
-        label_targets.append(target)
-    return label_targets
+        label_specs.append(target)
+    return label_specs
 
 
 def blank_label_specs(
@@ -210,7 +210,7 @@ def merge_label_specs(
             return [val]
         return [item for item in val if isinstance(item, Mapping)]
 
-    label_specs = label_targets_from_specs(annotations)
+    label_specs = annotation_label_specs(annotations)
     callout_specs = [item for item in _collect_items(annotations) if "label" in item]
     if callout_specs:
         decorations = list(decorations or [])
@@ -219,11 +219,11 @@ def merge_label_specs(
     if not label_specs:
         return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
 
-    label_rows_from_targets, label_cols_from_targets = grid_label_layouts(label_specs)
+    label_rows_from_annotations, label_cols_from_annotations = grid_label_layouts(label_specs)
 
-    if label_rows_from_targets:
+    if label_rows_from_annotations:
         existing_rows = list(label_rows or [])
-        for spec_item in label_rows_from_targets:
+        for spec_item in label_rows_from_annotations:
             grid = spec_item.get("grid")
             if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
                 continue
@@ -263,9 +263,9 @@ def merge_label_specs(
                 existing_rows.append(dict(spec_item))
         label_rows = existing_rows
 
-    if label_cols_from_targets:
+    if label_cols_from_annotations:
         existing_cols = list(label_cols or [])
-        for spec_item in label_cols_from_targets:
+        for spec_item in label_cols_from_annotations:
             grid = spec_item.get("grid")
             if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
                 continue

@@ -6,7 +6,7 @@ from matrixlayout.ge_labels import embed_col_labels
 from matrixlayout.ge_labels import embed_row_labels
 from matrixlayout.ge_labels import escape_label_text_segment
 from matrixlayout.ge_labels import grid_label_layouts
-from matrixlayout.ge_labels import label_targets_from_specs
+from matrixlayout.ge_labels import annotation_label_specs
 from matrixlayout.ge_labels import merge_label_specs
 from matrixlayout.ge_labels import normalize_label_cols
 from matrixlayout.ge_labels import normalize_label_rows
@@ -43,8 +43,8 @@ def test_grid_label_layouts_filters_invalid_and_normalizes_side_aliases():
     ]
 
 
-def test_label_targets_from_specs_uses_labels_and_filters_invalid():
-    targets = label_targets_from_specs(
+def test_annotation_label_specs_uses_labels_and_filters_invalid():
+    label_specs = annotation_label_specs(
         [
             {"grid": (0, 0), "side": "above", "labels": [["r"]], "extra": 1},
             {"grid": (0, 1), "side": "left", "labels": [["c"]]},
@@ -56,7 +56,7 @@ def test_label_targets_from_specs_uses_labels_and_filters_invalid():
         ]
     )
 
-    assert targets == [
+    assert label_specs == [
         {"grid": (0, 0), "side": "above", "extra": 1, "labels": [["r"]]},
         {"grid": (0, 1), "side": "left", "labels": [["c"]]},
         {"grid": (1, 0), "side": "below", "labels": [["b"]]},

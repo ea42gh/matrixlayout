@@ -43,7 +43,7 @@ def _wrap_math(text: Any) -> str:
 
 def render_ge_tex_specs(
     matrices: Sequence[Sequence[Any]],
-    targets: Sequence[Mapping[str, Any]],
+    annotations: Sequence[Mapping[str, Any]],
     *,
     n_rhs: int = 0,
     outer_hspace_mm: int = 6,
@@ -58,7 +58,7 @@ def render_ge_tex_specs(
 ) -> List[Tuple[str, str, str]]:
     """Return text placements around matrix blocks.
 
-    Each target supports:
+    Each annotation supports:
       - grid: (block_row, block_col)
       - side: right/left/above/below
       - labels: list of strings (rows for left/right; cols for above/below)
@@ -98,21 +98,21 @@ def render_ge_tex_specs(
         if count:
             label_rows_count[(gM, gN, side)] = label_rows_count.get((gM, gN, side), 0) + count
 
-    for item in targets:
+    for item in annotations:
         if not isinstance(item, MappingABC):
             if strict:
-                raise ValueError("render_ge_tex_specs targets must be mappings")
+                raise ValueError("render_ge_tex_specs annotations must be mappings")
             continue
         grid = item.get("grid")
         if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
             if strict:
-                raise ValueError("render_ge_tex_specs targets require grid=(row, col)")
+                raise ValueError("render_ge_tex_specs annotations require grid=(row, col)")
             continue
         key = (int(grid[0]), int(grid[1]))
         span = span_map.get(key)
         if span is None:
             if strict:
-                raise ValueError(f"render_ge_tex_specs target grid {key} is outside the matrix grid")
+                raise ValueError(f"render_ge_tex_specs annotation grid {key} is outside the matrix grid")
             continue
         yshift_mm = float(item.get("yshift_mm", item.get("row_offset", 0)) or 0)
         xshift_mm = float(item.get("xshift_mm", item.get("col_offset", 0)) or 0)
@@ -124,7 +124,7 @@ def render_ge_tex_specs(
         elif side == "bottom":
             side = "below"
         if strict and side not in {"right", "left", "above", "below"}:
-            raise ValueError("render_ge_tex_specs target side must be right/left/above/below")
+            raise ValueError("render_ge_tex_specs annotation side must be right/left/above/below")
         offset_raw = item.get("offset_mm")
         if offset_raw is None and "label_gap_mm" in item:
             offset_raw = item.get("label_gap_mm")

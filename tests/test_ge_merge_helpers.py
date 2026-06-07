@@ -154,19 +154,19 @@ def test_merge_label_specs_uses_annotations_when_no_explicit():
 
 
 def test_ge_label_module_helpers_match_public_aliases():
-    targets = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
-    rows, cols = grid_label_layouts(targets)
+    annotations = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
+    rows, cols = grid_label_layouts(annotations)
     assert rows == [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}]
     assert cols == []
 
     direct_rows, direct_cols, direct_decorations = merge_label_specs(
-        annotations=targets,
+        annotations=annotations,
         label_rows=None,
         label_cols=None,
         decorations=None,
     )
     compat_rows, compat_cols, compat_decorations = _merge_label_specs(
-        annotations=targets,
+        annotations=annotations,
         label_rows=None,
         label_cols=None,
         decorations=None,
