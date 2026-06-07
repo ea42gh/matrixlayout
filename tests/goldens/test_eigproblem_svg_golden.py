@@ -5,7 +5,7 @@ import pytest
 from matrixlayout.eigproblem import render_eig_svg
 
 pytest.importorskip("jupyter_tikz")
-normalize_svg = pytest.importorskip("jupyter_tikz.svg_normalize").normalize_svg
+from svg_golden import assert_svg_matches_golden
 
 
 @pytest.mark.render
@@ -17,8 +17,7 @@ def test_render_eig_svg_golden():
         "qvecs": [[[1, 0]]],
         "sz": (2, 2),
     }
-    svg = normalize_svg(render_eig_svg(spec, case="Q", formatter=str))
+    svg = render_eig_svg(spec, case="Q", formatter=str)
 
     golden = Path(__file__).parent / "eigproblem_basic.svg"
-    expected = normalize_svg(golden.read_text())
-    assert svg == expected
+    assert_svg_matches_golden(svg, golden)
