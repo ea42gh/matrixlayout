@@ -167,15 +167,10 @@ def backsubst_svg(
     frame: Any = None,
     exact_bbox: Optional[bool] = None,
     output_stem: Optional[str] = None,
-    tmp_dir: Optional[Any] = None,
     output_dir: Optional[Any] = None,
     render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
-    """Render the back-substitution document to SVG using jupyter_tikz.
-
-    ``tmp_dir`` is retained as a compatibility alias for ``output_dir``.
-    Prefer ``output_dir`` for new code.
-    """
+    """Render the back-substitution document to SVG using jupyter_tikz."""
 
     tex = backsubst_tex(
         body_preamble=body_preamble,
@@ -199,7 +194,6 @@ def backsubst_svg(
         padding=padding,
         frame=frame,
         output_dir=output_dir,
-        tmp_dir=tmp_dir,
         output_stem=output_stem,
         exact_bbox=exact_bbox,
     )

@@ -56,7 +56,7 @@ Common options: `annotations` (labels/callouts), `output_dir`/`output_stem` (per
 
 The eigen/SVD template uses `body_preamble` for body-local TeX setup such as
 `\NiceMatrixOptions`.
-`render_eig_svg` keeps `tmp_dir` as a compatibility alias for `output_dir`.
+Use `output_dir` to preserve rendered artifacts from `render_eig_svg`.
 Prefer `output_dir` for new code.
 
 ## Backsubstitution
@@ -66,7 +66,7 @@ Prefer `output_dir` for new code.
 
 The back-substitution template uses `body_preamble` for body-local TeX setup.
 The back-substitution template requires `systeme.sty` from the TeX toolchain.
-`backsubst_svg` keeps `tmp_dir` as a compatibility alias for `output_dir`.
+Use `output_dir` to preserve rendered artifacts from `backsubst_svg`.
 Prefer `output_dir` for new code.
 
 ## Formatting and selectors

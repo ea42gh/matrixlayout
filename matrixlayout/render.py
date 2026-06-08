@@ -157,16 +157,12 @@ def _resolve_render_svg_kwargs(
     exact_bbox: Optional[bool] = None,
     output_stem: Optional[str] = None,
     output_dir: Optional[_PathLike] = None,
-    tmp_dir: Optional[_PathLike] = None,
 ) -> dict[str, Any]:
     """Resolve wrapper-specific SVG keyword arguments.
 
-    Explicit non-``None`` keyword arguments override ``render_opts``. If
-    ``output_dir`` is not provided, ``tmp_dir`` is used as the fallback.
+    Explicit non-``None`` keyword arguments override ``render_opts``.
     """
 
-    if output_dir is None:
-        output_dir = tmp_dir
     return merge_render_opts(
         render_opts,
         toolchain_name=toolchain_name,

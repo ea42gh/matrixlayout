@@ -212,12 +212,12 @@ def test_merge_render_opts_applies_non_none_overrides():
     assert opts["frame"] is False
 
 
-def test_resolve_render_svg_kwargs_uses_tmp_dir_fallback(tmp_path):
+def test_resolve_render_svg_kwargs_uses_output_dir(tmp_path):
     opts = ml_render._resolve_render_svg_kwargs(  # noqa: SLF001
         {"crop": "page"},
         toolchain_name="pdftex_pdftocairo",
         crop="tight",
-        tmp_dir=tmp_path,
+        output_dir=tmp_path,
     )
 
     assert opts["toolchain_name"] == "pdftex_pdftocairo"
@@ -283,7 +283,7 @@ def test_backsubst_svg_defaults_to_tight_crop(monkeypatch):
     assert recorded["kwargs"]["crop"] == "tight"
 
 
-def test_backsubst_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
+def test_backsubst_svg_uses_output_dir(monkeypatch, tmp_path):
     recorded = {}
 
     def fake_ml_render_svg(tex_source, **kwargs):
@@ -297,11 +297,16 @@ def test_backsubst_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
         system_txt="SYS",
         cascade_txt="CAS",
         solution_txt="SOL",
-        tmp_dir=tmp_path,
+        output_dir=tmp_path,
     )
 
     assert out == "<svg/>"
     assert recorded["kwargs"]["output_dir"] == tmp_path
+
+
+def test_backsubst_svg_rejects_removed_tmp_dir_alias(tmp_path):
+    with pytest.raises(TypeError, match="tmp_dir"):
+        ml_backsubst.backsubst_svg(system_txt="SYS", tmp_dir=tmp_path)
 
 
 def test_backsubst_svg_rejects_unknown_render_opts(monkeypatch):
@@ -496,7 +501,7 @@ def test_render_eig_svg_defaults_to_tight_crop(monkeypatch):
     assert recorded["kwargs"]["crop"] == "tight"
 
 
-def test_render_eig_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
+def test_render_eig_svg_uses_output_dir(monkeypatch, tmp_path):
     recorded = {}
 
     def fake_render_svg(tex_source, **kwargs):
@@ -507,10 +512,15 @@ def test_render_eig_svg_uses_tmp_dir_fallback(monkeypatch, tmp_path):
     monkeypatch.setattr(ml_eig, "render_svg", fake_render_svg)
     monkeypatch.setattr(ml_eig, "render_eig_tex", lambda *args, **kwargs: "TEX")
 
-    out = ml_eig.render_eig_svg({"dummy": True}, tmp_dir=tmp_path)
+    out = ml_eig.render_eig_svg({"dummy": True}, output_dir=tmp_path)
 
     assert out == "<svg/>"
     assert recorded["kwargs"]["output_dir"] == tmp_path
+
+
+def test_render_eig_svg_rejects_removed_tmp_dir_alias(tmp_path):
+    with pytest.raises(TypeError, match="tmp_dir"):
+        ml_eig.render_eig_svg({"dummy": True}, tmp_dir=tmp_path)
 
 
 def test_render_eig_svg_rejects_unknown_render_opts(monkeypatch):
