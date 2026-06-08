@@ -61,13 +61,13 @@ def test_render_ge_tex_specs_mixed_text_latex():
     assert any(t == "plain" for t in texts)
 
 
-def test_render_ge_tex_specs_label_value_variants_and_alias_sides():
+def test_render_ge_tex_specs_label_value_variants_and_canonical_sides():
     matrices = [[[1, 2], [3, 4]]]
     specs = render_ge_tex_specs(
         matrices,
         [
-            {"grid": (0, 0), "side": "top", "labels": [{"text": "top"}, ("ignored", "pair")]},
-            {"grid": (0, 0), "side": "bottom", "labels": [["b1", "b2"], ["c1", "c2"]], "line_gap_mm": 6},
+            {"grid": (0, 0), "side": "above", "labels": [{"text": "top"}, ("ignored", "pair")]},
+            {"grid": (0, 0), "side": "below", "labels": [["b1", "b2"], ["c1", "c2"]], "line_gap_mm": 6},
             {"grid": (0, 0), "side": "left", "labels": [["L1", "L2"], ["M1", "M2"]], "line_gap_mm": 2},
         ],
     )
@@ -77,6 +77,16 @@ def test_render_ge_tex_specs_label_value_variants_and_alias_sides():
     assert any(coord == "(2-1.center)" and text == "b1" for coord, text, _ in specs)
     assert any("yshift=-6.0mm" in opts for _, _, opts in specs)
     assert any(text == "M1" and "xshift=-2.0mm" in opts for _, text, opts in specs)
+
+
+def test_render_ge_tex_specs_rejects_removed_side_aliases_in_strict_mode():
+    matrices = [[[1, 2], [3, 4]]]
+
+    with pytest.raises(ValueError, match="side"):
+        render_ge_tex_specs(matrices, [{"grid": (0, 0), "side": "top", "labels": ["x"]}], strict=True)
+
+    with pytest.raises(ValueError, match="side"):
+        render_ge_tex_specs(matrices, [{"grid": (0, 0), "side": "bottom", "labels": ["x"]}], strict=True)
 
 
 def test_render_ge_tex_specs_ignores_bad_label_row_metadata():

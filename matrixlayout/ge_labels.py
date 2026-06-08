@@ -72,10 +72,6 @@ def grid_label_layouts(
             continue
         gM, gN = int(grid[0]), int(grid[1])
         side = str(item.get("side", "right")).strip().lower()
-        if side == "top":
-            side = "above"
-        elif side == "bottom":
-            side = "below"
         labels = _normalize_label_entries(item.get("labels") or [])
         if not labels:
             continue
@@ -100,10 +96,8 @@ def annotation_label_specs(
         if not (isinstance(grid, (tuple, list)) and len(grid) == 2):
             continue
         side = str(item.get("side", "right")).strip().lower()
-        if side == "top":
-            side = "above"
-        elif side == "bottom":
-            side = "below"
+        if side not in {"left", "right", "above", "below"}:
+            continue
         label_values = item.get("labels")
         if label_values is None:
             continue

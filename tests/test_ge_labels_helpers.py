@@ -20,16 +20,18 @@ def test_label_text_escaping_and_dollar_segments():
     assert split_label_dollar_segments("bad $math") is None
 
 
-def test_grid_label_layouts_filters_invalid_and_normalizes_side_aliases():
+def test_grid_label_layouts_filters_invalid_sides():
     rows, cols = grid_label_layouts(
         [
             "bad",
             {"grid": (0,), "labels": ["skip"]},
-            {"grid": (0, 0), "side": "top", "labels": [[("name", "x"), {"text": "y"}]]},
-            {"grid": (0, 1), "side": "bottom", "labels": [["b1", "b2"]]},
+            {"grid": (0, 0), "side": "above", "labels": [[("name", "x"), {"text": "y"}]]},
+            {"grid": (0, 1), "side": "below", "labels": [["b1", "b2"]]},
             {"grid": (1, 0), "side": "left", "labels": "row"},
             {"grid": (1, 1), "side": "right", "labels": [["r1"], ["r2"]]},
-            {"grid": (2, 0), "side": "diagonal", "labels": ["skip"]},
+            {"grid": (2, 0), "side": "top", "labels": ["skip"]},
+            {"grid": (2, 1), "side": "bottom", "labels": ["skip"]},
+            {"grid": (2, 2), "side": "diagonal", "labels": ["skip"]},
         ]
     )
 
@@ -48,7 +50,8 @@ def test_annotation_label_specs_uses_labels_and_filters_invalid():
         [
             {"grid": (0, 0), "side": "above", "labels": [["r"]], "extra": 1},
             {"grid": (0, 1), "side": "left", "labels": [["c"]]},
-            {"grid": (1, 0), "side": "bottom", "labels": [["b"]]},
+            {"grid": (1, 0), "side": "below", "labels": [["b"]]},
+            {"grid": (1, 3), "side": "bottom", "labels": [["skip"]]},
             {"grid": (1, 1), "side": "above", "rows": [["skip"]]},
             {"grid": (1, 2), "side": "left", "cols": [["skip"]]},
             {"grid": (1,), "labels": ["skip"]},

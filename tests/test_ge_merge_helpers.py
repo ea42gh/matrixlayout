@@ -286,7 +286,7 @@ def test_build_label_maps_strict_rejects_bad_side():
         _build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
-            label_rows=[{"grid": (0, 0), "labels": [["x"]], "side": "top"}],
+            label_rows=[{"grid": (0, 0), "labels": [["x"]], "side": "diagonal"}],
             label_cols=None,
             variable_labels=None,
             allow_overlay=False,

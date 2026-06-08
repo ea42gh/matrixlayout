@@ -6,7 +6,7 @@ Quick reference:
 - `entries`: list of `(i, j)` entry coordinates to decorate.
 - `labels`: list of strings (or list-of-lists) for row/col labels.
 - `label`: single string label for a callout or title.
-- `side`: `left`, `right`, `above`, `below`, `top`, `bottom`.
+- `side`: `left`, `right`, `above`, `below`.
 - `hlines`/`vlines`: draw block separators.
 - `box`: draw a box around entries or blocks.
 - `angle_deg`/`length_mm`: callout arrow direction/length.

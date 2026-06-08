@@ -119,10 +119,6 @@ def render_ge_tex_specs(
         labels_raw = item.get("labels") or []
         labels = list(labels_raw) if isinstance(labels_raw, (list, tuple)) else [labels_raw]
         side = str(item.get("side", "right")).strip().lower()
-        if side == "top":
-            side = "above"
-        elif side == "bottom":
-            side = "below"
         if strict and side not in {"right", "left", "above", "below"}:
             raise ValueError("render_ge_tex_specs annotation side must be right/left/above/below")
         offset_raw = item.get("offset_mm")

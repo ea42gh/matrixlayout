@@ -512,7 +512,7 @@ def _validate_annotation_specs(
             errors.append(f"{field}[{idx}] must include 'labels' or 'label'")
         if "side" in item:
             side = str(item["side"]).strip().lower()
-            if side not in {"left", "right", "above", "below", "top", "bottom"}:
+            if side not in {"left", "right", "above", "below"}:
                 errors.append(f"{field}[{idx}].side must be left/right/above/below")
     return errors
 
@@ -543,7 +543,7 @@ def _validate_ge_decorations(
             errors.append(f"{field}[{idx}].decorator must be callable")
         if "side" in item:
             side = str(item["side"]).strip().lower()
-            if side not in {"left", "right", "above", "below", "top", "bottom"}:
+            if side not in {"left", "right", "above", "below"}:
                 errors.append(f"{field}[{idx}].side must be left/right/above/below")
     return errors
 
