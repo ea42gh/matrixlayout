@@ -321,6 +321,7 @@ class QRGridSpec:
 
     matrices: Sequence[Sequence[Any]]
     formatter: Optional[Any] = None
+    callouts: Optional[Sequence[Any]] = None
     array_names: Any = True
     fig_scale: Optional[Any] = None
     document_preamble: Optional[str] = None
@@ -665,5 +666,8 @@ def validate_qr_spec(spec: Any, *, strict: bool = True) -> List[str]:
         errors.append("decorators must be a sequence of mappings")
     elif decorators is not None:
         errors.extend(_validate_ge_decorations(decorators, grid=grid, strict=strict, field="decorators"))
+    callouts = mapping.get("callouts")
+    if callouts is not None and (isinstance(callouts, (str, bytes)) or not isinstance(callouts, Sequence)):
+        errors.append("callouts must be a sequence of mappings")
     errors.extend(_validate_grid_matrices(mats))
     return errors

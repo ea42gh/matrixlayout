@@ -93,6 +93,7 @@ def test_qr_render_parts_collects_known_zero_labels_and_callouts():
     decorators, label_rows, label_cols, callouts, create_extra_nodes = _qr_render_parts(
         matrices,
         decorators=None,
+        callouts=None,
         array_names=True,
         label_color="blue",
         label_text_color="red",
@@ -106,3 +107,35 @@ def test_qr_render_parts_collects_known_zero_labels_and_callouts():
     assert callouts is not None
     assert any(item["label"] == r"\mathbf{A}" for item in callouts)
     assert create_extra_nodes is True
+
+
+def test_render_qr_tex_accepts_explicit_callouts():
+    from matrixlayout.qr import render_qr_tex
+
+    matrices = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]]
+    tex = render_qr_tex(
+        matrices=matrices,
+        array_names=False,
+        callouts=[{"grid": (0, 2), "label": "A", "side": "right"}],
+        body_preamble="",
+    )
+
+    assert "A" in tex
+    assert "\\draw" in tex
+
+
+def test_render_qr_tex_merges_spec_callouts_with_array_names():
+    from matrixlayout.qr import render_qr_tex
+
+    matrices = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]]]
+    tex = render_qr_tex(
+        spec={
+            "matrices": matrices,
+            "callouts": [{"grid": (0, 2), "label": "Custom", "side": "right"}],
+            "array_names": True,
+        },
+        body_preamble="",
+    )
+
+    assert "Custom" in tex
+    assert r"\mathbf{A}" in tex

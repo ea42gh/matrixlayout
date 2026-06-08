@@ -144,6 +144,7 @@ def test_validate_qr_spec_checks_nested_annotations_and_decorators():
 def test_validate_qr_spec_accepts_typed_grid_spec():
     spec = QRGridSpec(
         matrices=[[[[1, 0], [0, 1]]]],
+        callouts=[{"name": "M-0-0", "label": "A", "side": "right"}],
         annotations=[
             {"grid": (0, 0), "side": "above", "labels": ["x_1", "x_2"]},
             {"grid": (0, 0), "side": "right", "label": "A"},
@@ -151,6 +152,13 @@ def test_validate_qr_spec_accepts_typed_grid_spec():
     )
 
     assert validate_qr_spec(spec) == []
+
+
+def test_validate_qr_spec_rejects_string_callouts():
+    spec = {"matrices": [[[[1]]]], "callouts": "not a sequence of mappings"}
+    errors = validate_qr_spec(spec)
+
+    assert any("callouts must be a sequence of mappings" in msg for msg in errors)
 
 
 def test_validate_qr_spec_rejects_decoration_actions_as_annotations():

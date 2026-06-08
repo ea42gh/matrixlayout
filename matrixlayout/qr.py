@@ -401,12 +401,13 @@ def _qr_render_parts(
     grid: Sequence[Sequence[Any]],
     *,
     decorators: Optional[Sequence[Any]],
+    callouts: Optional[Sequence[Any]],
     array_names: Any,
     label_color: str,
     label_text_color: str,
     known_zero_color: str,
     create_extra_nodes: Optional[bool],
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], Optional[List[Dict[str, Any]]], Optional[bool]]:
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], Optional[List[Any]], Optional[bool]]:
     """Build QR-specific decorators, labels, callouts, and node requirements."""
     n_block_rows = len(grid)
     n_block_cols = max((len(r) for r in grid), default=0)
@@ -418,7 +419,7 @@ def _qr_render_parts(
 
     label_rows, label_cols = _label_layouts(grid, label_text_color)
 
-    callouts: Optional[List[Dict[str, Any]]] = None
+    render_callouts: Optional[List[Any]] = list(callouts) if callouts else None
     if array_names:
         name_specs = qr_default_name_specs() if array_names is True else array_names
         if name_specs:
@@ -431,7 +432,7 @@ def _qr_render_parts(
                 a_rows = a_cols = 0
         label_shift_rules, length_rules = _callout_rules(a_rows=a_rows, a_cols=a_cols)
         if name_specs:
-            callouts = _name_specs_to_callouts(
+            generated_callouts = _name_specs_to_callouts(
                 name_specs,
                 color=label_color,
                 angle_deg=-35.0,
@@ -439,10 +440,11 @@ def _qr_render_parts(
                 label_shift_rules=label_shift_rules,
                 length_rules=length_rules,
             )
+            render_callouts = (render_callouts or []) + generated_callouts
             if create_extra_nodes is None:
                 create_extra_nodes = True
 
-    return qr_decorators, label_rows, label_cols, callouts, create_extra_nodes
+    return qr_decorators, label_rows, label_cols, render_callouts, create_extra_nodes
 
 
 def render_qr_tex(
@@ -451,6 +453,7 @@ def render_qr_tex(
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
     annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
+    callouts: Optional[Sequence[Any]] = None,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
     body_preamble: Optional[str] = None,
@@ -481,6 +484,7 @@ def render_qr_tex(
     if spec_obj is not None:
         matrices = _merge_scalar("matrices", matrices, spec_obj.matrices)
         formatter = _merge_scalar("formatter", formatter, spec_obj.formatter)
+        callouts = _merge_scalar("callouts", callouts, spec_obj.callouts)
         array_names = _merge_scalar_default("array_names", array_names, spec_obj.array_names, True)
         fig_scale = _merge_scalar("fig_scale", fig_scale, spec_obj.fig_scale)
         body_preamble = _merge_scalar_default(
@@ -524,6 +528,7 @@ def render_qr_tex(
     qr_decorators, label_rows, label_cols, callouts, create_extra_nodes = _qr_render_parts(
         grid,
         decorators=decorators,
+        callouts=callouts,
         array_names=array_names,
         label_color=label_color,
         label_text_color=label_text_color,
@@ -557,6 +562,7 @@ def qr_grid_bundle(
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
     annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
+    callouts: Optional[Sequence[Any]] = None,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
     body_preamble: Optional[str] = None,
@@ -579,6 +585,7 @@ def qr_grid_bundle(
         spec=spec,
         annotations=annotations,
         formatter=formatter,
+        callouts=callouts,
         array_names=array_names,
         fig_scale=fig_scale,
         body_preamble=body_preamble,
@@ -618,6 +625,7 @@ def render_qr_svg(
     spec: Optional[Union[Dict[str, Any], QRGridSpec]] = None,
     annotations: Optional[Sequence[Mapping[str, Any]]] = None,
     formatter: Any = latexify,
+    callouts: Optional[Sequence[Any]] = None,
     array_names: Any = True,
     fig_scale: Optional[Any] = None,
     body_preamble: Optional[str] = None,
@@ -646,6 +654,7 @@ def render_qr_svg(
         matrices=matrices,
         spec=spec,
         formatter=formatter,
+        callouts=callouts,
         array_names=array_names,
         fig_scale=fig_scale,
         body_preamble=body_preamble,
