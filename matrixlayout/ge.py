@@ -418,10 +418,10 @@ def render_ge_tex(
     outer_hspace_mm:
         Horizontal spacing between adjacent matrix blocks.
     decorations:
-        One-line dicts for backgrounds, separators, callouts, and entry styles.
+        One-line dicts for backgrounds, separators, outlines, and entry styles.
     annotations:
-        Optional label/callout annotation specs. Label entries are merged into
-        ``label_rows``/``label_cols``; callout labels are merged into decorations.
+        Optional label annotation specs. Label entries are merged into
+        ``label_rows``/``label_cols``. Use ``callouts`` for arrow labels.
 
     Returns
     -------

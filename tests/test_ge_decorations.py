@@ -75,34 +75,9 @@ def test_parse_requires_dict_decorations_and_grid_for_multi_block():
         parse([{"grid": (0,), "background": "yellow"}])
 
 
-def test_parse_callout_copies_supported_fields():
-    _, _, callouts, codebefore = parse(
-        [
-            {
-                "label": "rank 2",
-                "side": "right",
-                "angle_deg": -35,
-                "length_mm": 8,
-                "color": "blue",
-                "tip": "Stealth",
-                "label_shift_x_mm": 1,
-            }
-        ]
-    )
-
-    assert codebefore == []
-    assert callouts == [
-        {
-            "grid": (0, 0),
-            "label": "rank 2",
-            "side": "right",
-            "angle_deg": -35,
-            "length_mm": 8,
-            "color": "blue",
-            "tip": "Stealth",
-            "label_shift_x_mm": 1,
-        }
-    ]
+def test_parse_rejects_label_specs_in_decorations():
+    with pytest.raises(TypeError, match="use top-level callouts"):
+        parse([{"label": "rank 2", "side": "right"}])
 
 
 def test_parse_line_specs_coerces_submatrix_bounds_and_all():
@@ -119,7 +94,7 @@ def test_parse_line_specs_coerces_submatrix_bounds_and_all():
 
 
 def test_parse_callout_rejects_removed_angle_length_aliases():
-    with pytest.raises(TypeError, match="Use angle_deg= and length_mm="):
+    with pytest.raises(TypeError, match="use top-level callouts"):
         parse([{"label": "rank 2", "side": "right", "angle": -35, "length": 8}])
 
 

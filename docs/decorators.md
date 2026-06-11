@@ -47,11 +47,10 @@ Selector semantics:
 | Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. Use `outline` for outer borders. |
 | Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`, `padding_pt`. |
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
-| Legacy callout shorthand | `label` | Optional `side`, `angle_deg`, `length_mm`, `anchor`, `color`. Prefer top-level `callouts` for new code. |
 
 Selection keys apply to `background`, `box`, `color`, and `bold`. Line specs use
-`rows`/`cols`/`submatrix` to decide where lines are placed. Label specs ignore
-row/col selectors.
+`rows`/`cols`/`submatrix` to decide where lines are placed. Use top-level
+`callouts` for arrow labels attached to blocks.
 
 ### One-liners
 
@@ -98,8 +97,7 @@ svg = render_ge_svg(
 )
 ```
 
-`decorations` still accepts a legacy `label` action for compatibility. Prefer
-top-level `callouts` for new arrow labels, `decorations` for highlights and
+Use top-level `callouts` for arrow labels, `decorations` for highlights and
 lines, and lower-level `decorators` for entry-formatting callables such as
 `decorator_box(...)`.
 

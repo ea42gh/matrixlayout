@@ -142,14 +142,16 @@ def test_render_ge_tex_decorations_outline():
     assert "draw=blue" in tex
 
 
-def test_render_ge_tex_decorations_lines_and_label():
+def test_render_ge_tex_decorations_lines_and_callout():
     matrices = [[[1, 2], [3, 4]]]
     decorations = [
         {"grid": (0, 0), "hlines": 1},
         {"grid": (0, 0), "vlines": 1},
+    ]
+    callouts = [
         {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
     ]
-    tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str)
+    tex = render_ge_tex(matrices=matrices, decorations=decorations, callouts=callouts, formatter=str)
     assert "hlines=1" in tex
     assert "vlines=1" in tex
     assert r"\mathbf{A}" in tex

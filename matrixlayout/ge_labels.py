@@ -205,11 +205,6 @@ def merge_label_specs(
         return [item for item in val if isinstance(item, Mapping)]
 
     label_specs = annotation_label_specs(annotations)
-    callout_specs = [item for item in _collect_items(annotations) if "label" in item]
-    if callout_specs:
-        decorations = list(decorations or [])
-        decorations.extend(callout_specs)
-
     if not label_specs:
         return list(label_rows or []) or None, list(label_cols or []) or None, list(decorations or []) or None
 

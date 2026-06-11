@@ -97,7 +97,6 @@ def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
         annotations=[
             {"grid": (0, 0), "side": "above", "labels": [["spec1"], ["spec2"]]},
             {"grid": (0, 0), "side": "left", "labels": [["col1"], ["col2"]]},
-            {"grid": (0, 0), "label": "callout"},
         ],
         label_rows=[{"grid": (0, 0), "side": "above", "labels": [[{"text": r"\NotEmpty"}]]}],
         label_cols=[{"grid": (0, 0), "side": "left", "labels": [[{"text": r"\NotEmpty"}]]}],
@@ -106,8 +105,7 @@ def test_merge_label_specs_replaces_blank_rows_and_cols_then_appends_extras():
 
     assert label_rows == [{"grid": (0, 0), "side": "above", "labels": [["spec1"], ["spec2"]]}]
     assert label_cols == [{"grid": (0, 0), "side": "left", "labels": [["col1"], ["col2"]]}]
-    assert decorations is not None
-    assert decorations[-1]["label"] == "callout"
+    assert decorations == [{"grid": (0, 0), "background": "yellow"}]
 
 
 def test_merge_label_specs_handles_no_annotations_or_unmatched_annotations():
@@ -117,7 +115,7 @@ def test_merge_label_specs_handles_no_annotations_or_unmatched_annotations():
         label_rows=None,
         label_cols=None,
         decorations=None,
-    ) == (None, None, [{"grid": (0, 0), "label": "callout"}])
+    ) == (None, None, None)
 
 
 def test_append_variable_labels_and_build_label_maps_defaults_and_non_strict_ignores():

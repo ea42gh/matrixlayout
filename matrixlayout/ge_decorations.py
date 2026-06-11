@@ -80,29 +80,7 @@ def parse_ge_decorations(
             key = (int(grid[0]), int(grid[1]))
 
         if "label" in item:
-            removed_callout_options = {"angle", "length"} & set(item)
-            if removed_callout_options:
-                removed = ", ".join(sorted(removed_callout_options))
-                raise TypeError(
-                    f"Unexpected removed decoration callout option(s): {removed}. "
-                    "Use angle_deg= and length_mm= instead."
-                )
-            callout: Dict[str, Any] = {"grid": key, "label": str(item["label"])}
-            for src, dst in [
-                ("side", "side"),
-                ("anchor", "anchor"),
-                ("angle_deg", "angle_deg"),
-                ("length_mm", "length_mm"),
-                ("color", "color"),
-                ("line_width_pt", "line_width_pt"),
-                ("tip", "tip"),
-                ("label_shift_y_mm", "label_shift_y_mm"),
-                ("label_shift_x_mm", "label_shift_x_mm"),
-            ]:
-                if src in item:
-                    callout[dst] = item[src]
-            callouts.append(callout)
-            continue
+            raise TypeError("decorations no longer accepts label specs; use top-level callouts instead.")
 
         if "hlines" in item or "vlines" in item:
             mat = matrices[key[0]][key[1]]
