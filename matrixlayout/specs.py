@@ -157,7 +157,6 @@ class GELayoutSpec:
     text_annotations: Optional[Sequence[Union[TextAt, Dict[str, Any], Tuple[Any, ...]]]] = None
     rowechelon_paths: Optional[Sequence[Union[RowEchelonPath, str, Dict[str, Any]]]] = None
     callouts: Optional[Union[Sequence[Any], bool]] = None
-    matrix_labels: Optional[Union[Sequence[Any], bool]] = None
 
     landscape: Optional[bool] = None
     create_cell_nodes: Optional[bool] = None

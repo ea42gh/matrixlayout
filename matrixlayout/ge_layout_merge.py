@@ -61,7 +61,6 @@ def merge_layout_fields(
     text_annotations: Optional[Sequence[Any]],
     rowechelon_paths: Optional[Sequence[Any]],
     callouts: Optional[Sequence[Any]],
-    matrix_labels: Optional[Sequence[Any]],
 ) -> Tuple[
     Optional[str],
     Optional[bool],
@@ -114,8 +113,6 @@ def merge_layout_fields(
     text_annotations = _merge_list(text_annotations, spec.text_annotations)
     rowechelon_paths = _merge_list(rowechelon_paths, spec.rowechelon_paths)
     callouts = _merge_callouts(callouts, spec.callouts)
-    callouts = _merge_callouts(callouts, spec.matrix_labels)
-    callouts = _merge_callouts(callouts, matrix_labels)
 
     return (
         nice_options,

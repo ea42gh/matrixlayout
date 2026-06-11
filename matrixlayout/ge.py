@@ -54,7 +54,6 @@ from .ge_template import (
     coerce_submatrix_locs as _coerce_submatrix_locs,
     coerce_text_annotations as _coerce_text_annotations,
     guess_shape_from_mat_rep as _guess_shape_from_mat_rep,
-    merge_callouts as _merge_callouts,
     normalize_mat_format as _normalize_mat_format,
     normalize_mat_rep as _normalize_mat_rep,
     normalize_pivot_locs as _normalize_pivot_locs,
@@ -131,12 +130,9 @@ def _extract_submatrix_names(spans: Sequence[Tuple[Any, ...]]) -> List[str]:
 def _render_matrix_callouts(
     *,
     callouts: Optional[Sequence[Any]],
-    matrix_labels: Optional[Sequence[Any]],
     sub_spans: Sequence[Tuple[Any, ...]],
     callout_name_map: Optional[Mapping[Tuple[int, int], str]],
 ) -> List[str]:
-    if matrix_labels is not None:
-        callouts = _merge_callouts(callouts, matrix_labels)
     if not callouts:
         return []
     try:
@@ -167,7 +163,6 @@ def tex(
     text_annotations: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
-    matrix_labels: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,
     create_cell_nodes: Optional[bool] = None,
@@ -223,14 +218,13 @@ def tex(
         text_annotations=text_annotations,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
-        matrix_labels=matrix_labels,
     )
     submatrix_locs = _coerce_submatrix_locs(submatrix_locs)
     pivot_locs = _coerce_pivot_locs(pivot_locs)
     text_annotations = _coerce_text_annotations(text_annotations)
     rowechelon_paths = _coerce_rowechelon_paths(rowechelon_paths)
 
-    # Callouts (including matrix labels) require extra nodes for delimiter anchors.
+    # Callouts require extra nodes for delimiter anchors.
     if callouts and create_extra_nodes is None:
         create_extra_nodes = True
 
@@ -269,7 +263,6 @@ def tex(
     )
     rendered_callouts = _render_matrix_callouts(
         callouts=callouts,
-        matrix_labels=None,
         sub_spans=sub_spans,
         callout_name_map=callout_name_map,
     )
@@ -311,7 +304,6 @@ def svg(
     text_annotations: Optional[Sequence[Any]] = None,
     rowechelon_paths: Optional[Sequence[Any]] = None,
     callouts: Optional[Sequence[Any]] = None,
-    matrix_labels: Optional[Sequence[Any]] = None,
     fig_scale: Optional[Union[float, int, str]] = None,
     landscape: Optional[bool] = None,
     create_cell_nodes: Optional[bool] = None,
@@ -344,7 +336,6 @@ def svg(
         text_annotations=text_annotations,
         rowechelon_paths=rowechelon_paths,
         callouts=callouts,
-        matrix_labels=matrix_labels,
         fig_scale=fig_scale,
         landscape=landscape,
         create_cell_nodes=create_cell_nodes,
@@ -609,7 +600,6 @@ def render_ge_tex(
         fig_scale=fig_scale,
         submatrix_locs=parts.submatrix_locs,
         callouts=kwargs.pop("callouts", None),
-        matrix_labels=kwargs.pop("matrix_labels", None),
         callout_name_map=parts.name_map,
         **kwargs,
     )

@@ -210,7 +210,6 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
             text_annotations=[("1-1", "spec-text", "")],
             rowechelon_paths=["spec-path"],
             callouts=[{"name": "S", "label": "spec"}],
-            matrix_labels=[{"name": "S", "label": "matrix"}],
         ),
         nice_options=None,
         landscape=None,
@@ -227,7 +226,6 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
         text_annotations=[("1-1", "explicit-text", "")],
         rowechelon_paths=None,
         callouts=[{"name": "S", "label": "explicit"}],
-        matrix_labels=[{"name": "S", "label": "kw-label"}],
     )
 
     (
@@ -268,8 +266,6 @@ def test_ge_layout_field_helper_merges_layout_values_and_callouts():
     assert callouts == [
         {"name": "S", "label": "explicit"},
         {"name": "S", "label": "spec"},
-        {"name": "S", "label": "matrix"},
-        {"name": "S", "label": "kw-label"},
     ]
 
 
@@ -291,7 +287,6 @@ def test_ge_layout_field_helper_passes_through_without_layout():
         text_annotations=[("1-1", "new", "")],
         rowechelon_paths=["path"],
         callouts=[{"name": "A", "label": "A"}],
-        matrix_labels=[{"name": "A", "label": "ignored"}],
     )
 
     assert result[0] == "opt"
@@ -333,23 +328,20 @@ def test_ge_submatrix_name_extraction_helper_skips_empty_options():
     ]
 
 
-def test_ge_render_matrix_callouts_helper_merges_labels_and_wraps_errors():
-    assert _render_matrix_callouts(callouts=None, matrix_labels=None, sub_spans=[], callout_name_map=None) == []
+def test_ge_render_matrix_callouts_helper_renders_callouts_and_wraps_errors():
+    assert _render_matrix_callouts(callouts=None, sub_spans=[], callout_name_map=None) == []
 
     rendered = _render_matrix_callouts(
         callouts=[{"name": "A", "label": "A", "side": "right"}],
-        matrix_labels=[{"name": "B", "label": "B", "side": "left"}],
-        sub_spans=[("name=A", "{1-1}{1-1}"), ("name=B", "{1-1}{1-1}")],
+        sub_spans=[("name=A", "{1-1}{1-1}")],
         callout_name_map=None,
     )
-    assert len(rendered) == 2
+    assert len(rendered) == 1
     assert "A-right" in rendered[0]
-    assert "B-left" in rendered[1]
 
     with pytest.raises(ValueError, match="Failed to render callouts"):
         _render_matrix_callouts(
             callouts=[{"name": "missing", "label": "X"}],
-            matrix_labels=None,
             sub_spans=[("name=A", "{1-1}{1-1}")],
             callout_name_map=None,
         )
