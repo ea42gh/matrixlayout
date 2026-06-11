@@ -59,6 +59,18 @@ def test_validate_ge_spec_checks_nested_decorations():
     assert any("outside" in msg for msg in errors)
 
 
+def test_validate_ge_spec_rejects_decoration_label_shorthand():
+    spec = {
+        "matrices": [[[[1]]]],
+        "decorations": [{"grid": (0, 0), "label": "A", "side": "right"}],
+    }
+
+    errors = validate_ge_spec(spec, strict=True)
+
+    assert any("decorations[0] has unknown field" in msg and "label" in msg for msg in errors)
+    assert any("decorations[0] has unknown field" in msg and "side" in msg for msg in errors)
+
+
 def test_validate_ge_spec_accepts_typed_grid_spec():
     spec = GEGridSpec(
         matrices=[[[[1, 2], [3, 4]]]],
@@ -122,9 +134,9 @@ def test_validate_qr_spec_checks_nested_annotations_and_decorators():
     spec = {
         "matrices": [[[[1]], [[2]]]],
         "annotations": [
-            {"grid": (0, 9), "label": "bad", "side": "diagonal"},
+            {"grid": (0, 9), "labels": ["bad"], "side": "diagonal"},
             {"entries": [(0, 0)], "background": "yellow!40"},
-            {"grid": (0, 1), "label": "ok", "typo": True},
+            {"grid": (0, 1), "labels": ["ok"], "typo": True},
         ],
         "decorators": [
             {"grid": (0, 1), "entries": [(0, 0)], "decorator": "not callable"},
@@ -136,7 +148,7 @@ def test_validate_qr_spec_checks_nested_annotations_and_decorators():
     assert any("annotations[0].grid" in msg and "outside" in msg for msg in errors)
     assert any("annotations[0].side" in msg for msg in errors)
     assert any("annotations[1] requires grid" in msg for msg in errors)
-    assert any("annotations[1] must include 'labels' or 'label'" in msg for msg in errors)
+    assert any("annotations[1] must include 'labels'" in msg for msg in errors)
     assert any("annotations[2] has unknown field" in msg for msg in errors)
     assert any("decorators[0].decorator must be callable" in msg for msg in errors)
 
@@ -147,7 +159,6 @@ def test_validate_qr_spec_accepts_typed_grid_spec():
         callouts=[{"name": "M-0-0", "label": "A", "side": "right"}],
         annotations=[
             {"grid": (0, 0), "side": "above", "labels": ["x_1", "x_2"]},
-            {"grid": (0, 0), "side": "right", "label": "A"},
         ],
     )
 
@@ -170,7 +181,7 @@ def test_validate_qr_spec_rejects_decoration_actions_as_annotations():
     errors = validate_qr_spec(spec)
 
     assert any("annotations[0] has unknown field" in msg and "background" in msg for msg in errors)
-    assert any("annotations[0] must include 'labels' or 'label'" in msg for msg in errors)
+    assert any("annotations[0] must include 'labels'" in msg for msg in errors)
 
 
 def test_qr_gridspec_from_dict_shared_filtering_rules():

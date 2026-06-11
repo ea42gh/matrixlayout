@@ -457,15 +457,6 @@ _GE_SPEC_ALLOWED_KEYS = {
     "hlines",
     "vlines",
     "box",
-    "label",
-    "side",
-    "anchor",
-    "angle_deg",
-    "length_mm",
-    "line_width_pt",
-    "tip",
-    "label_shift_y_mm",
-    "label_shift_x_mm",
 }
 
 
@@ -473,17 +464,7 @@ _ANNOTATION_ALLOWED_KEYS = {
     "grid",
     "side",
     "labels",
-    "label",
     "overlay",
-    "anchor",
-    "angle_deg",
-    "length_mm",
-    "color",
-    "line_width_pt",
-    "tip",
-    "label_shift_y_mm",
-    "label_shift_x_mm",
-    "math_mode",
 }
 
 
@@ -509,8 +490,8 @@ def _validate_annotation_specs(
             errors.extend(_validate_grid_coord(item["grid"], field=f"{field}[{idx}].grid", grid=grid))
         elif grid != (1, 1):
             errors.append(f"{field}[{idx}] requires grid=(row, col) for multi-block grids")
-        if "labels" not in item and "label" not in item:
-            errors.append(f"{field}[{idx}] must include 'labels' or 'label'")
+        if "labels" not in item:
+            errors.append(f"{field}[{idx}] must include 'labels'")
         if "side" in item:
             side = str(item["side"]).strip().lower()
             if side not in {"left", "right", "above", "below"}:

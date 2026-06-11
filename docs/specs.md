@@ -162,7 +162,6 @@ DecorationSpec (one-line shorthand):
   "background": "color" | None,
   "hlines": int | list | "all" | "bounds" | "submatrix" | None,
   "vlines": int | list | "all" | "bounds" | "submatrix" | None,
-  "label": "text" | None,
 }
 ```
 

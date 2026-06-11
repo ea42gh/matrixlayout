@@ -126,8 +126,8 @@ def test_render_ge_tex_spec_strict_is_not_overridden_by_default_false():
         raise AssertionError("expected spec strict=True to be honored")
 
 
-def test_merge_label_specs_preserves_explicit_rows():
-    annotations = [{"grid": (0, 1), "label": "spec", "side": "above"}]
+def test_merge_label_specs_merges_annotations_with_explicit_rows():
+    annotations = [{"grid": (0, 1), "labels": [["spec"]], "side": "above"}]
     label_rows = [{"grid": (0, 1), "labels": [["explicit"]], "side": "above"}]
     label_rows_out, label_cols_out, _decorations = _merge_label_specs(
         annotations=annotations,
@@ -137,7 +137,7 @@ def test_merge_label_specs_preserves_explicit_rows():
     )
     assert label_rows_out is not None
     assert "explicit" in str(label_rows_out)
-    assert "spec" not in str(label_rows_out)
+    assert "spec" in str(label_rows_out)
 
 
 def test_merge_label_specs_uses_annotations_when_no_explicit():
