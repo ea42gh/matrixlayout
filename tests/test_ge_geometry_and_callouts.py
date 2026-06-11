@@ -33,7 +33,7 @@ def test_render_ge_tex_renders_delim_callouts_as_draw_commands():
     """Callouts must render as valid TikZ inside the template's tikzpicture."""
 
     from matrixlayout.ge import render_ge_tex
-    from matrixlayout.nicematrix_decor import infer_ge_layer_callouts
+    from matrixlayout.nicematrix_decor import infer_ge_matrix_callouts
 
     # Two-layer GE stack: first has no E-block; second has E and A.
     matrices = [
@@ -41,7 +41,7 @@ def test_render_ge_tex_renders_delim_callouts_as_draw_commands():
         [[[1, 0], [0, 1]], [[1, 2, 5], [0, 2, 3]]],
     ]
 
-    callouts = infer_ge_layer_callouts(
+    callouts = infer_ge_matrix_callouts(
         matrices,
         angle_deg=35,
         length_mm=12,

@@ -336,7 +336,7 @@ def validate_callouts(
     return []
 
 
-def infer_ge_matrix_labels(
+def infer_ge_matrix_callouts(
     matrices: Sequence[Sequence[Any]],
     *,
     include_A: bool = True,
@@ -345,7 +345,7 @@ def infer_ge_matrix_labels(
     label_E: str = r"E_{%d}",
     **style: Any,
 ) -> List[DelimCalloutDict]:
-    """Build matrix-label descriptors for a GE-style 2-column matrix stack.
+    """Build delimiter callout descriptors for a GE-style 2-column matrix stack.
 
     Parameters
     ----------
@@ -357,7 +357,7 @@ def infer_ge_matrix_labels(
     -------
     list[dict]
         A list of :class:`DelimCalloutDict` using ``grid`` (block-row,
-        block-col) addressing. Labels are LaTeX by default (math mode).
+        block-col) addressing. Callout labels are LaTeX by default (math mode).
 
     Notes
     -----
@@ -395,23 +395,3 @@ def infer_ge_matrix_labels(
             out.append(callout)
 
     return out
-
-
-def infer_ge_layer_callouts(
-    matrices: Sequence[Sequence[Any]],
-    *,
-    include_A: bool = True,
-    include_E: bool = True,
-    label_A: str = r"A_{%d}",
-    label_E: str = r"E_{%d}",
-    **style: Any,
-) -> List[DelimCalloutDict]:
-    """Alias for :func:`infer_ge_matrix_labels`."""
-    return infer_ge_matrix_labels(
-        matrices,
-        include_A=include_A,
-        include_E=include_E,
-        label_A=label_A,
-        label_E=label_E,
-        **style,
-    )

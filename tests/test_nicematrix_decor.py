@@ -1,7 +1,7 @@
 import pytest
 
 from matrixlayout.nicematrix_decor import (
-    infer_ge_layer_callouts,
+    infer_ge_matrix_callouts,
     render_delim_callout,
     render_delim_callouts,
     validate_callouts,
@@ -53,10 +53,10 @@ def test_render_delim_callout_defaults_unknown_side_and_anchor():
     assert "{$A$}" in tex
 
 
-def test_ge_layer_callouts_merges_style_without_mutating_it():
+def test_ge_matrix_callouts_merges_style_without_mutating_it():
     style = {"color": "red", "angle_deg": -20.0}
 
-    callouts = infer_ge_layer_callouts([[[None, [[1]]]], [[[1]], [[2]]]], **style)
+    callouts = infer_ge_matrix_callouts([[[None, [[1]]]], [[[1]], [[2]]]], **style)
 
     assert style == {"color": "red", "angle_deg": -20.0}
     assert {"grid": (0, 1), "label": r"A_{0}", "side": "right", **style} in callouts
