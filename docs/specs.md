@@ -18,6 +18,9 @@ decorations = [
     {"grid": (0, 0), "entries": [(0, 0)], "box": True},
 ]
 annotations = [
+    {"grid": (0, 0), "side": "above", "labels": ["x_1", "x_2"]},
+]
+callouts = [
     {"grid": (0, 0), "side": "right", "label": r"\\mathbf{A}", "angle_deg": -35, "length_mm": 8},
 ]
 ```
@@ -65,7 +68,7 @@ annotations = [
 Callouts (arrow labels pointing at a block):
 
 ```python
-annotations = [
+callouts = [
     {"grid": (0, 0), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
     {"grid": (0, 0), "label": r"\\mathbf{B}", "side": "below", "angle_deg": 35, "length_mm": 8},
 ]
@@ -74,8 +77,8 @@ annotations = [
 ## Precedence and merging
 
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
-- `annotations` (label/callout targets) are merged into `label_rows`/`label_cols`.
-- Use `annotations` for label/callout targets.
+- `annotations` are merged into `label_rows`/`label_cols`.
+- Use `annotations` for row/column labels and `callouts` for arrow labels.
 - `variable_labels` are appended to `label_rows` with `side="below"`.
 - When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 
@@ -96,7 +99,7 @@ placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.
 | GE | `label_gap_mm` | float | Gap between labels and blocks (mm). |
 | GE | `variable_labels` | list | Shorthand for multiline annotations below a block. |
 | GE | `format_nrhs` | bool | Whether to draw RHS separators in the column format. |
-| GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, callouts, entry styles). |
+| GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, outlines, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
 | GE | `callouts` | list | Labels attached to submatrix names. |
 | QR | `matrices` | list | Grid of matrices (rows of blocks). |
@@ -212,7 +215,7 @@ Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`
 - `label_gap_mm`: gap between label rows/cols and blocks (mm).
 - `variable_labels`: convenience alias for `label_rows` with `side="below"`.
 - `format_nrhs`: control whether RHS separators are emitted via the column format.
-- `decorations`: high-level decoration specs (backgrounds, lines, callouts, entry styles).
+- `decorations`: high-level decoration specs (backgrounds, lines, outlines, entry styles).
 - `text_annotations`: explicit text nodes placed at nicematrix coordinates.
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
@@ -283,13 +286,14 @@ spec = {
 
 - Wrong `grid` index: `grid` is `(block_row, block_col)`, not entry coordinates.
 - Mixing `label` and `labels`: use `labels` for row/col lists, `label` for callouts.
-- Forgetting `side`: labels/callouts require a `side` (`left/right/above/below`).
-- Misusing `decorations` when `annotations` are intended for labels/callouts.
+- Forgetting `side`: labels and callouts require a `side` (`left/right/above/below`).
+- Misusing `decorations` when `annotations` or `callouts` are intended.
 
 ## Specs vs decorations
 
-Use `annotations` for labels/callouts and layout-adjacent annotations. Use
-`decorations` for entry styling, highlights, and lines. Both can coexist.
+Use `annotations` for row/column labels and `callouts` for arrow labels attached
+to submatrix delimiters. Use `decorations` for high-level highlights, outlines,
+and separator lines. Use `decorators` for callable entry formatting.
 
 ## QR specs
 

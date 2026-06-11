@@ -39,7 +39,7 @@ spec = {
 }
 svg = render_qr_svg(**spec)
 
-# Optional: pass label/callout targets via `annotations`.
+# Optional: pass row/column labels via `annotations` and arrow labels via `callouts`.
 ```
 
 ## Eigen/SVD with decorators

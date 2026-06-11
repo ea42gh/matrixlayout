@@ -35,25 +35,26 @@ Quick decorations (one-line specs):
 decorations = [
     {"grid": (0, 1), "entries": [(0, 0)], "box": True},
     {"grid": (0, 1), "hlines": 1},
-    {"grid": (0, 1), "label": r"\\mathbf{A}", "side": "right", "angle_deg": -35, "length_mm": 8},
 ]
 svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
 
-Labels and callouts (annotations):
+Labels and callouts:
 
 ```python
 annotations = [
     {"grid": (0, 1), "side": "above", "labels": ["x_1", "x_2"]},
+]
+callouts = [
     {"grid": (0, 1), "side": "right", "label": r"\\mathbf{A}", "angle_deg": -35, "length_mm": 8},
 ]
-svg = render_ge_svg(matrices=matrices, annotations=annotations)
+svg = render_ge_svg(matrices=matrices, annotations=annotations, callouts=callouts)
 ```
 
 Notes:
 - If both `spec`/`annotations` and explicit kwargs are provided, explicit kwargs win.
 - Labels are attached to a block and placed into empty adjacent blocks when possible.
-- Use `annotations` for label/callout targets.
+- Use `annotations` for row/column labels and `callouts` for arrow labels.
 
 ## QR grid
 
@@ -63,15 +64,22 @@ from matrixlayout.qr import render_qr_svg
 
 matrices = [[None, None, sym.Matrix([[1, 2], [3, 4]]), sym.eye(2)]]
 svg = render_qr_svg(matrices=matrices)
-
-You can also pass `annotations` to attach labels/callouts without manual label rows/cols.
 ```
+
+You can also pass `annotations` to attach row/column labels without manual label rows/cols.
 
 QR labels with annotations:
 
 ```python
 annotations = [{"grid": (0, 2), "side": "above", "labels": ["x_1", "x_2"]}]
 svg = render_qr_svg(matrices=matrices, annotations=annotations)
+```
+
+QR arrow labels with callouts:
+
+```python
+callouts = [{"grid": (0, 2), "label": r"\\mathbf{A}", "side": "right"}]
+svg = render_qr_svg(matrices=matrices, array_names=False, callouts=callouts)
 ```
 
 ## Eigen/SVD tables

@@ -47,7 +47,7 @@ Selector semantics:
 | Lines | `hlines`, `vlines` | Integer/list; `True`/`"submatrix"` uses selection end; `"bounds"` uses interior bounds; `"all"` uses every interior line. Use `outline` for outer borders. |
 | Outline | `outline` | Draws a rectangle around the selected submatrix; `color`, `line_width_pt`, `padding_pt`. |
 | Entry style | `box`, `color`, `bold` | Uses selectors; `box=True` or color string. |
-| Callout | `label` | Optional `side`, `angle_deg`, `length_mm`, `anchor`, `color`. |
+| Legacy callout shorthand | `label` | Optional `side`, `angle_deg`, `length_mm`, `anchor`, `color`. Prefer top-level `callouts` for new code. |
 
 Selection keys apply to `background`, `box`, `color`, and `bold`. Line specs use
 `rows`/`cols`/`submatrix` to decide where lines are placed. Label specs ignore
@@ -69,7 +69,6 @@ row/col selectors.
 {"grid": (2, 1), "entries": [(0, 0)], "box": True}
 {"grid": (2, 1), "rows": "0:1", "cols": "1:1", "color": "red"}
 {"grid": (2, 1), "entries": [(0, 0)], "color": "red", "bold": True}
-{"grid": (1, 0), "label": r"\\mathbf{B}", "side": "left", "angle_deg": -35, "length_mm": 8}
 ```
 
 ### Minimal list
@@ -80,7 +79,6 @@ decorations = [
     {"grid": (1, 0), "hlines": 2},
     {"grid": (0, 1), "vlines": 2},
     {"grid": (2, 1), "entries": [(0, 0)], "box": True},
-    {"grid": (0, 1), "label": r"\\mathbf{C}", "side": "right", "angle_deg": -35, "length_mm": 8},
 ]
 svg = render_ge_svg(matrices=matrices, decorations=decorations, create_medium_nodes=True)
 ```
@@ -100,9 +98,10 @@ svg = render_ge_svg(
 )
 ```
 
-`decorations` can also create callouts with a `label` action. Prefer
-`decorations` for one-line figure annotations, and reserve lower-level
-`decorators` for entry-formatting callables such as `decorator_box(...)`.
+`decorations` still accepts a legacy `label` action for compatibility. Prefer
+top-level `callouts` for new arrow labels, `decorations` for highlights and
+lines, and lower-level `decorators` for entry-formatting callables such as
+`decorator_box(...)`.
 
 ## Selectors
 

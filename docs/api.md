@@ -24,11 +24,12 @@ working with the lower-level GE template interface.
 - `matrixlayout.ge.grid_submatrix_spans(matrices, **opts)`: return delimiter spans for a GE grid.
 - `matrixlayout.ge.grid_line_specs(**opts)`: compute `submatrix_locs` entries for hlines/vlines.
 - `matrixlayout.ge.grid_highlight_specs(**opts)`: compute `codebefore` entries for block highlights.
-- `matrixlayout.ge.render_ge_tex_specs(annotations)`: convert label/callout annotations into `label_rows`/`label_cols`.
+- `matrixlayout.ge.render_ge_tex_specs(annotations)`: convert row/column label annotations into `label_rows`/`label_cols`.
 - `matrixlayout.ge.resolve_ge_grid_name(name, **opts)`: resolve matrix names (e.g., `A0`, `E1`) to grid positions.
 - `matrixlayout.ge.decorations_help()`: return help text for `decorations` spec syntax.
 
-Common options: `annotations` (labels/callouts), `decorations` (hlines/vlines/boxes),
+Common options: `annotations` (row/column labels), `callouts` (arrow labels attached
+to submatrix delimiters), `decorations` (hlines/vlines/boxes/highlights),
 `output_dir`/`output_stem` (persist TeX/SVG). Label rows/cols are inserted only
 when needed; existing blank rows/cols are reused. Explicit kwargs override values
 provided by a spec.
@@ -36,18 +37,20 @@ provided by a spec.
 The package top level also exports `grid_bundle` and `GEGridBundle`, matching
 the QR `qr_grid_bundle`/`QRGridBundle` API.
 
-Specs vs decorations:
-use `annotations` for labels/callouts and `decorations` for entry styling/lines.
-Use `annotations` for label/callout targets.
+Spec roles:
+use `annotations` or explicit `label_rows`/`label_cols` for row and column labels,
+`callouts` for arrow labels attached to matrix blocks, `decorations` for high-level
+highlights/lines/outline specs, and `decorators` for callable entry formatting.
 
 ## QR
 
-- `matrixlayout.qr.render_qr_tex(matrices, **opts)`: emit TeX for a QR grid (accepts `annotations`).
-- `matrixlayout.qr.render_qr_svg(matrices, **opts)`: render a QR grid to SVG (accepts `annotations`).
+- `matrixlayout.qr.render_qr_tex(matrices, **opts)`: emit TeX for a QR grid (accepts `annotations` and `callouts`).
+- `matrixlayout.qr.render_qr_svg(matrices, **opts)`: render a QR grid to SVG (accepts `annotations` and `callouts`).
 - `matrixlayout.qr.qr_grid_bundle(matrices, **opts)`: return a `QRGridBundle` (TeX plus submatrix span metadata).
 - `matrixlayout.qr.resolve_qr_grid_name(name, **opts)`: resolve QR grid matrix names to positions.
 
-Common options: `annotations` (labels/callouts), `output_dir`/`output_stem` (persist TeX/SVG).
+Common options: `annotations` (row/column labels), `callouts` (arrow labels),
+`output_dir`/`output_stem` (persist TeX/SVG).
 
 ## Eigen/SVD
 
