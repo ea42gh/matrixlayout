@@ -86,10 +86,10 @@ svg = render_qr_svg(matrices=matrices, array_names=False, callouts=callouts)
 
 ```python
 import sympy as sym
-from LAFigureSpecs import eig_tbl_spec
+from LAFigureSpecs import eig_spec
 from matrixlayout import render_eig_svg
 
-spec = eig_tbl_spec(sym.Matrix([[2, 0], [0, 3]]))
+spec = eig_spec(sym.Matrix([[2, 0], [0, 3]]))
 svg = render_eig_svg(spec, case="S")
 ```
 
