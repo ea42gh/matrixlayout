@@ -35,7 +35,6 @@ def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
         _label_rows,
         _label_cols,
         _label_gap_mm,
-        _variable_labels,
         _kwargs,
     ) = _merge_grid_spec_inputs(
         grid_spec=spec,
@@ -56,7 +55,6 @@ def test_merge_grid_spec_inputs_prefers_explicit_and_defaults():
         label_rows=None,
         label_cols=None,
         label_gap_mm=0.8,
-        variable_labels=None,
         kwargs={},
     )
     assert matrices == [[None, [[1]]]]
@@ -214,7 +212,6 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
         label_rows,
         label_cols,
         _label_gap_mm,
-        _variable_labels,
         _kwargs,
     ) = _merge_grid_spec_inputs(
         grid_spec=spec,
@@ -235,7 +232,6 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
         label_rows=None,
         label_cols=None,
         label_gap_mm=0.8,
-        variable_labels=None,
         kwargs={},
     )
     assert label_rows is not None
@@ -244,18 +240,16 @@ def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
     assert "col" in str(label_cols)
 
 
-def test_build_label_maps_tracks_overlay_and_variable_labels():
+def test_build_label_maps_tracks_overlay_and_label_rows():
     label_cols = [
         {"grid": (0, 1), "labels": [["left"]], "side": "left"},
         {"grid": (0, 1), "labels": [["overlay"]], "side": "right", "overlay": True},
     ]
-    variable_labels = [{"grid": (0, 1), "labels": [["var"]], "side": "below"}]
     label_rows_map, label_cols_map, overlay = _build_label_maps(
         n_block_rows=1,
         n_block_cols=2,
-        label_rows=None,
+        label_rows=[{"grid": (0, 1), "labels": [["var"]], "side": "below"}],
         label_cols=label_cols,
-        variable_labels=variable_labels,
         allow_overlay=True,
     )
     assert (0, 1, "below") in label_rows_map
@@ -271,7 +265,6 @@ def test_build_label_maps_strict_rejects_bad_grid():
             n_block_cols=1,
             label_rows=[{"grid": (2, 0), "labels": [["x"]], "side": "above"}],
             label_cols=None,
-            variable_labels=None,
             allow_overlay=False,
             strict=True,
         )
@@ -288,7 +281,6 @@ def test_build_label_maps_strict_rejects_bad_side():
             n_block_cols=1,
             label_rows=[{"grid": (0, 0), "labels": [["x"]], "side": "diagonal"}],
             label_cols=None,
-            variable_labels=None,
             allow_overlay=False,
             strict=True,
         )
@@ -305,7 +297,6 @@ def test_build_label_maps_strict_rejects_nondict():
             n_block_cols=1,
             label_rows=[["x"]],
             label_cols=None,
-            variable_labels=None,
             allow_overlay=False,
             strict=True,
         )
@@ -325,7 +316,6 @@ def test_build_label_maps_overlay_excludes_label_cols():
         n_block_cols=1,
         label_rows=None,
         label_cols=label_cols,
-        variable_labels=None,
         allow_overlay=True,
     )
     assert (0, 0, "left") in label_cols_map

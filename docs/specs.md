@@ -79,7 +79,6 @@ callouts = [
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
 - `annotations` are merged into `label_rows`/`label_cols`.
 - Use `annotations` for row/column labels and `callouts` for arrow labels.
-- `variable_labels` are appended to `label_rows` with `side="below"`.
 - When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 
 If labels are attached to a block that has adjacent empty blocks, the labels are
@@ -97,7 +96,6 @@ placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.
 | GE | `label_rows` | list | Extra label rows attached to blocks. |
 | GE | `label_cols` | list | Extra label columns attached to blocks. |
 | GE | `label_gap_mm` | float | Gap between labels and blocks (mm). |
-| GE | `variable_labels` | list | Shorthand for multiline annotations below a block. |
 | GE | `format_nrhs` | bool | Whether to draw RHS separators in the column format. |
 | GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, outlines, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
@@ -127,7 +125,6 @@ GE grid spec (core fields):
   "label_rows": list[LabelSpec],
   "label_cols": list[LabelSpec],
   "label_gap_mm": float,
-  "variable_labels": list[LabelSpec],
   "decorations": list[DecorationSpec],
   "decorators": list[DecoratorSpec],
   "callouts": list[CalloutSpec],
@@ -212,7 +209,6 @@ Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`
 - `label_rows`: add label rows above/below a block.
 - `label_cols`: add label columns left/right of a block.
 - `label_gap_mm`: gap between label rows/cols and blocks (mm).
-- `variable_labels`: convenience alias for `label_rows` with `side="below"`.
 - `format_nrhs`: control whether RHS separators are emitted via the column format.
 - `decorations`: high-level decoration specs (backgrounds, lines, outlines, entry styles).
 - `text_annotations`: explicit text nodes placed at nicematrix coordinates.

@@ -277,7 +277,6 @@ class GEGridSpec:
     label_rows: Optional[Sequence[Union[GELabelRowsSpec, Mapping[str, Any]]]] = None
     label_cols: Optional[Sequence[Union[GELabelColsSpec, Mapping[str, Any]]]] = None
     label_gap_mm: Optional[float] = 0.8
-    variable_labels: Optional[Sequence[Any]] = None
     format_nrhs: bool = True
     decorators: Optional[Sequence[Any]] = None
     decorations: Optional[Sequence[Union[GEDecorationSpec, Mapping[str, Any]]]] = None

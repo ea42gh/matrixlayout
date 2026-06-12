@@ -1,4 +1,3 @@
-from matrixlayout.ge_labels import append_variable_labels
 from matrixlayout.ge_labels import blank_label_specs
 from matrixlayout.ge_labels import build_label_maps
 from matrixlayout.ge_labels import compute_label_extras
@@ -118,16 +117,18 @@ def test_merge_label_specs_handles_no_annotations_or_unmatched_annotations():
     ) == (None, None, None)
 
 
-def test_append_variable_labels_and_build_label_maps_defaults_and_non_strict_ignores():
-    variable = [{"grid": (0, 0), "labels": [["x", "y"]]}, "bad"]
-    assert append_variable_labels(None, variable) == [{"grid": (0, 0), "labels": [["x", "y"]], "side": "below"}]
-
+def test_build_label_maps_defaults_and_non_strict_ignores():
     rows_map, cols_map, overlay = build_label_maps(
         n_block_rows=1,
         n_block_cols=1,
-        label_rows=[{"labels": ["top"]}, {"grid": (2, 0), "labels": ["skip"]}, {"grid": (0, 0), "side": "bad", "labels": ["skip"]}, "bad"],
+        label_rows=[
+            {"labels": ["top"]},
+            {"grid": (0, 0), "labels": [["x", "y"]], "side": "below"},
+            {"grid": (2, 0), "labels": ["skip"]},
+            {"grid": (0, 0), "side": "bad", "labels": ["skip"]},
+            "bad",
+        ],
         label_cols=[{"labels": [["left"]]}, {"grid": (2, 0), "labels": [["skip"]]}, {"grid": (0, 0), "side": "bad", "labels": [["skip"]]}, "bad"],
-        variable_labels=variable,
         strict=False,
     )
 

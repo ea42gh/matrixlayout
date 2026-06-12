@@ -380,7 +380,6 @@ def render_ge_tex(
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = 0.8,
-    variable_labels: Optional[Sequence[Any]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -449,7 +448,6 @@ def render_ge_tex(
             label_rows,
             label_cols,
             label_gap_mm,
-            variable_labels,
             kwargs,
         ) = _merge_grid_spec_inputs(
             grid_spec=grid_spec,
@@ -470,7 +468,6 @@ def render_ge_tex(
             label_rows=label_rows,
             label_cols=label_cols,
             label_gap_mm=label_gap_mm,
-            variable_labels=variable_labels,
             kwargs=kwargs,
         )
 
@@ -585,7 +582,6 @@ def render_ge_tex(
         label_rows=label_rows,
         label_cols=label_cols,
         label_gap_mm=label_gap_mm,
-        variable_labels=variable_labels,
         decorator_map=decorator_map,
         strict=bool(strict),
         legacy_format=legacy_format,
@@ -745,12 +741,10 @@ def grid_bundle(
         legacy_submatrix_names = bool(use_spec.legacy_submatrix_names)
         label_rows = use_spec.label_rows
         label_cols = use_spec.label_cols
-        variable_labels = use_spec.variable_labels
     else:
         legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
         label_rows = None
         label_cols = None
-        variable_labels = None
     if matrices is None:
         raise ValueError("grid_bundle requires `matrices`")
     spans = grid_submatrix_spans(
@@ -762,7 +756,6 @@ def grid_bundle(
         block_valign=block_valign,
         label_rows=label_rows,
         label_cols=label_cols,
-        variable_labels=variable_labels,
         legacy_submatrix_names=legacy_submatrix_names,
     )
     return GEGridBundle(tex=tex, submatrix_spans=spans)
@@ -799,7 +792,6 @@ def render_ge_svg(
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = None,
-    variable_labels: Optional[Sequence[Any]] = None,
     **kwargs: Any,
 ) -> str:
     r"""Render the GE matrix stack to SVG.
@@ -848,7 +840,6 @@ def render_ge_svg(
         label_rows=label_rows,
         label_cols=label_cols,
         label_gap_mm=label_gap_mm,
-        variable_labels=variable_labels,
         **kwargs,
     )
     opts = _resolve_render_svg_kwargs(

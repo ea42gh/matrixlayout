@@ -22,7 +22,6 @@ def grid_submatrix_spans(
     block_valign: Optional[str] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
-    variable_labels: Optional[Sequence[Any]] = None,
     legacy_submatrix_names: bool = False,
 ) -> List[SubMatrixSpan]:
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid."""
@@ -66,7 +65,6 @@ def grid_submatrix_spans(
         n_block_cols=n_block_cols,
         label_rows=label_rows,
         label_cols=label_cols,
-        variable_labels=variable_labels,
         allow_overlay=False,
         strict=False,
     )

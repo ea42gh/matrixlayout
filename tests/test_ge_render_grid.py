@@ -24,7 +24,6 @@ def _parts(matrices, **kwargs):
         label_rows=kwargs.pop("label_rows", None),
         label_cols=kwargs.pop("label_cols", None),
         label_gap_mm=kwargs.pop("label_gap_mm", 0.8),
-        variable_labels=kwargs.pop("variable_labels", None),
         decorator_map=kwargs.pop("decorator_map", None),
         strict=kwargs.pop("strict", False),
         legacy_format=kwargs.pop("legacy_format", False),

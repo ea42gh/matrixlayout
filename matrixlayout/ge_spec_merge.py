@@ -100,7 +100,6 @@ def merge_grid_spec_inputs(
     label_rows: Optional[Sequence[Any]],
     label_cols: Optional[Sequence[Any]],
     label_gap_mm: Optional[float],
-    variable_labels: Optional[Sequence[Any]],
     kwargs: Dict[str, Any],
 ) -> Tuple[
     Optional[Sequence[Sequence[Any]]],
@@ -120,7 +119,6 @@ def merge_grid_spec_inputs(
     Optional[Sequence[Any]],
     Optional[Sequence[Any]],
     Optional[float],
-    Optional[Sequence[Any]],
     Dict[str, Any],
 ]:
     """Merge grid spec values into explicit kwargs (explicit wins)."""
@@ -216,7 +214,6 @@ def merge_grid_spec_inputs(
     label_rows = merge_scalar_prefer_explicit("label_rows", label_rows, grid_spec.label_rows)
     label_cols = merge_scalar_prefer_explicit("label_cols", label_cols, grid_spec.label_cols)
     label_gap_mm = merge_scalar_default("label_gap_mm", label_gap_mm, grid_spec.label_gap_mm, 0.8)
-    variable_labels = merge_scalar_prefer_explicit("variable_labels", variable_labels, grid_spec.variable_labels)
     decorators = merge_scalar_prefer_explicit("decorators", decorators, grid_spec.decorators)
     decorations = merge_scalar_prefer_explicit("decorations", decorations, grid_spec.decorations)
     strict = bool(merge_scalar_default("strict", strict, grid_spec.strict, False))
@@ -239,6 +236,5 @@ def merge_grid_spec_inputs(
         label_rows,
         label_cols,
         label_gap_mm,
-        variable_labels,
         kwargs,
     )

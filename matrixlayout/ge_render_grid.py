@@ -231,7 +231,6 @@ def build_ge_grid_render_parts(
     label_rows: Optional[Sequence[Any]],
     label_cols: Optional[Sequence[Any]],
     label_gap_mm: Optional[float],
-    variable_labels: Optional[Sequence[Any]],
     decorator_map: Optional[DecoratorMap] = None,
     strict: bool = False,
     legacy_format: bool = False,
@@ -256,7 +255,6 @@ def build_ge_grid_render_parts(
         n_block_cols=n_block_cols,
         label_rows=label_rows,
         label_cols=label_cols,
-        variable_labels=variable_labels,
         allow_overlay=True,
         strict=strict,
     )

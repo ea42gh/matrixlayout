@@ -333,21 +333,6 @@ def normalize_label_cols(val: Any) -> List[List[Any]]:
     return [[val]]
 
 
-def append_variable_labels(label_rows: Optional[Sequence[Any]], variable_labels: Optional[Sequence[Any]]) -> List[Any]:
-    """Append variable label specs onto label row specs, normalizing shape."""
-    if not variable_labels:
-        return list(label_rows or [])
-    out = list(label_rows or [])
-    for item in variable_labels:
-        if not isinstance(item, dict):
-            continue
-        spec_item = dict(item)
-        if "side" not in spec_item:
-            spec_item["side"] = "below"
-        out.append(spec_item)
-    return out
-
-
 def _single_block_default_grid(
     grid: Any,
     *,
@@ -412,12 +397,10 @@ def build_label_maps(
     n_block_cols: int,
     label_rows: Optional[Sequence[Any]],
     label_cols: Optional[Sequence[Any]],
-    variable_labels: Optional[Sequence[Any]] = None,
     allow_overlay: bool = False,
     strict: bool = False,
 ) -> Tuple[LabelMap, LabelMap, List[Dict[str, Any]]]:
     """Build label-row/label-col maps and collect overlay label specs."""
-    label_rows = append_variable_labels(label_rows, variable_labels)
     label_rows_map: LabelMap = {}
     label_cols_map: LabelMap = {}
     overlay_label_specs: List[Dict[str, Any]] = []
