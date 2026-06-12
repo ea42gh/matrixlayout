@@ -13,7 +13,7 @@ This project is **layout-only** by design: it does not implement linear algebra 
 ### What `matrixlayout` *does*
 - Construct matrix/grid layouts (rows, columns, blocks, partitions, spacing)
 - Construct tables for eigenproblems and SVD
-- Place annotations (arrows, braces, highlights, labels)
+- Place row/column label annotations, matrix callouts, and visual decorations
 - Convert symbolic objects to LaTeX strings for display (e.g. `sympy.latex`)
 - Generate LaTeX/TikZ that describes the layout
 - Render to SVG by delegating to `jupyter_tikz`
