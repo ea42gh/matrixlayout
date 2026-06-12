@@ -108,6 +108,13 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
         return obj
     if isinstance(obj, Mapping):
         d = dict(obj)
+        removed = {"angle", "length"} & set(d)
+        if removed:
+            names = ", ".join(sorted(removed))
+            raise ValueError(
+                f"Removed callout option alias(es): {names}. "
+                "Use angle_deg= and length_mm= instead."
+            )
         try:
             label_shift_y_mm = d.get("label_shift_y_mm", d.get("label_shift_mm", 0.0))
             return DelimCallout(
