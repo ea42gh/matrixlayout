@@ -30,7 +30,7 @@ def test_render_ge_tex_smoke_builds_tex():
     assert r"\begin{NiceArray}[vlines-in-sub-matrix = I]{rr@{\hspace{6mm}}rr|r}" in tex
 
 
-def test_render_ge_tex_accepts_legacy_nrhs_keyword():
+def test_render_ge_tex_accepts_canonical_n_rhs_keyword():
     if not _has_ge_template():
         pytest.skip("matrixlayout GE template not available")
 
