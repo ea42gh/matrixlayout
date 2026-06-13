@@ -99,7 +99,7 @@ def apply_matrix_decorators(
     for spec_item in decorators:
         if not isinstance(spec_item, dict):
             raise ValueError("decorators must be dict specs")
-        key = spec_item.get("matrix", spec_item.get("target"))
+        key = spec_item.get("matrix")
         if key is None or str(key).lower() not in id_set:
             continue
         dec = spec_item.get("decorator")

@@ -42,14 +42,14 @@ def test_apply_vector_decorators_tracks_applied_counts():
     assert applied_counts == [1]
 
 
-def test_apply_matrix_decorators_matches_matrix_alias():
+def test_apply_matrix_decorators_matches_matrix_target():
     mat_tex = [["1", "0"], ["0", "2"]]
     mat_raw = [[1, 0], [0, 2]]
 
     out = apply_matrix_decorators(
         mat_tex,
         mat_raw,
-        [{"target": "lambda_matrix", "entries": [(1, 1)], "decorator": _box}],
+        [{"matrix": "lambda_matrix", "entries": [(1, 1)], "decorator": _box}],
         ["lambda", "lambda_matrix"],
         str,
         strict=True,
