@@ -45,8 +45,8 @@ def apply_line_decorators(
     for spec_item in decorators:
         if not isinstance(spec_item, dict):
             raise ValueError("decorators must be dict specs")
-        key = spec_item.get("block", spec_item.get("target"))
-        if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
+        key = spec_item.get("block")
+        if key is None or str(key).lower() != block_key:
             continue
         dec = spec_item.get("decorator")
         if not callable(dec):
@@ -68,8 +68,8 @@ def _raise_if_targeted_empty_block(decorators: Sequence[Any], block: str) -> Non
     for spec_item in decorators:
         if not isinstance(spec_item, dict):
             raise ValueError("decorators must be dict specs")
-        key = spec_item.get("block", spec_item.get("target"))
-        if key is None or str(key).lower() not in {block_key, f"{block_key}_txt"}:
+        key = spec_item.get("block")
+        if key is None or str(key).lower() != block_key:
             continue
         if not callable(spec_item.get("decorator")):
             raise ValueError("decorator must be callable")

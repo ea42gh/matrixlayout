@@ -38,7 +38,7 @@ def test_apply_line_decorators_strict_rejects_empty_targeted_block():
     with pytest.raises(ValueError, match="decorator selector did not match"):
         apply_line_decorators(
             [],
-            [{"target": "system_txt", "entries": [0], "decorator": dec}],
+            [{"block": "system", "entries": [0], "decorator": dec}],
             "system",
             strict=True,
         )
