@@ -21,18 +21,13 @@ def collect_vector_decorator_specs(
         return []
 
     target_key = target_name.lower()
-    alias_map = {
-        "eigenbasis": {"eigenbasis", "evecs_row", "basis"},
-        "orthonormal_basis": {"orthonormal_basis", "qvecs_row", "orthobasis"},
-    }
-    targets = alias_map.get(target_key, {target_key})
 
     dec_specs: List[DecoratorSpec] = []
     for spec_item in decorators:
         if not isinstance(spec_item, dict):
             raise ValueError("decorators must be dict specs")
         key = spec_item.get("target")
-        if key is None or str(key).lower() not in targets:
+        if key is None or str(key).lower() != target_key:
             continue
         dec = spec_item.get("decorator")
         if not callable(dec):

@@ -53,7 +53,7 @@ spec = {
     "ma": [1, 1],
     "evecs": [[[1, 0]], [[0, 1]]],
     "decorators": [
-        {"block": "evecs", "entries": [sel_vec(0, 0, 0)], "decorator": decorator_color("red")},
+        {"target": "eigenbasis", "entries": [sel_vec(0, 0, 0)], "decorator": decorator_color("red")},
     ],
 }
 svg = render_eig_svg(spec, case="S")

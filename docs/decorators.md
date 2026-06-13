@@ -140,8 +140,12 @@ Eigen/SVD vector selectors:
 from matrixlayout.formatting import decorator_color, sel_vec, sel_vec_range
 
 decorators = [
-    {"block": "evecs", "entries": [sel_vec(0, 0, 0)], "decorator": decorator_color("red")},
-    {"block": "qvecs", "entries": [sel_vec_range((0, 0, 0), (0, 0, 2))], "decorator": decorator_color("blue")},
+    {"target": "eigenbasis", "entries": [sel_vec(0, 0, 0)], "decorator": decorator_color("red")},
+    {
+        "target": "orthonormal_basis",
+        "entries": [sel_vec_range((0, 0, 0), (0, 0, 2))],
+        "decorator": decorator_color("blue"),
+    },
 ]
 ```
 

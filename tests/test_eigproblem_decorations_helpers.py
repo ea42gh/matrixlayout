@@ -9,14 +9,14 @@ def _box(tex: str) -> str:
     return rf"\boxed{{{tex}}}"
 
 
-def test_collect_vector_decorator_specs_expands_alias_range():
+def test_collect_vector_decorator_specs_expands_entry_range():
     vec_groups = [
         [[1, 2, 3]],
         [[4, 5, 6]],
     ]
     specs = collect_vector_decorator_specs(
         vec_groups,
-        [{"target": "evecs_row", "entries": [((0, 0, 1), (0, 0, 2))], "decorator": _box}],
+        [{"target": "eigenbasis", "entries": [((0, 0, 1), (0, 0, 2))], "decorator": _box}],
         "eigenbasis",
     )
 
