@@ -52,8 +52,7 @@ class DelimCalloutDict(TypedDict, total=False):
     tip: str
     extra_style: str
     math_mode: bool
-    label_shift_y_mm: float
-    label_shift_x_mm: float
+    label_shift_mm: Tuple[float, float]
     grid: Tuple[int, int]
 
 
@@ -77,8 +76,7 @@ class DelimCallout:
     tip: str = r"-{Stealth[length=2.4mm]}"
     extra_style: str = ""
     math_mode: bool = True
-    label_shift_y_mm: float = 0.0
-    label_shift_x_mm: float = 0.0
+    label_shift_mm: Tuple[float, float] = (0.0, 0.0)
 
 
 CalloutLike = Union[DelimCallout, DelimCalloutDict, Mapping[str, Any]]
@@ -105,14 +103,15 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
         return obj
     if isinstance(obj, Mapping):
         d = dict(obj)
-        removed = {"angle", "length", "label_shift_mm"} & set(d)
+        removed = {"angle", "length", "label_shift_x_mm", "label_shift_y_mm"} & set(d)
         if removed:
             names = ", ".join(sorted(removed))
             raise ValueError(
                 f"Removed callout option alias(es): {names}. "
-                "Use angle_deg=, length_mm=, and label_shift_y_mm= instead."
+                "Use angle_deg=, length_mm=, and label_shift_mm=(x_mm, y_mm) instead."
             )
         try:
+            label_shift_mm = _coerce_label_shift_mm(d.get("label_shift_mm", (0.0, 0.0)))
             return DelimCallout(
                 name=str(d["name"]),
                 label=str(d["label"]),
@@ -125,12 +124,23 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
                 tip=str(d.get("tip", r"-{Stealth[length=2.4mm]}")),
                 extra_style=str(d.get("extra_style", "")),
                 math_mode=bool(d.get("math_mode", True)),
-                label_shift_y_mm=float(d.get("label_shift_y_mm", 0.0)),
-                label_shift_x_mm=float(d.get("label_shift_x_mm", 0.0)),
+                label_shift_mm=label_shift_mm,
             )
         except KeyError as e:
             raise ValueError(f"Callout descriptor missing required key: {e}") from e
     raise TypeError(f"Unsupported callout type: {type(obj)!r}")
+
+
+def _coerce_label_shift_mm(value: Any) -> Tuple[float, float]:
+    if isinstance(value, (str, bytes)):
+        raise ValueError("label_shift_mm must be a 2-tuple/list: (x_mm, y_mm)")
+    try:
+        vals = tuple(value)
+    except TypeError as exc:
+        raise ValueError("label_shift_mm must be a 2-tuple/list: (x_mm, y_mm)") from exc
+    if len(vals) != 2:
+        raise ValueError("label_shift_mm must contain exactly two values: (x_mm, y_mm)")
+    return (float(vals[0]), float(vals[1]))
 
 
 def _norm_anchor(anchor: Anchor) -> Literal["north", "south", "center"]:
@@ -221,11 +231,11 @@ def render_delim_callout(callout: CalloutLike) -> str:
     # Use explicit anchors so the label text sits outside the matrix while the
     # arrow tail stays at the computed point.
     node_opts = [f"anchor={node_anchor}"]
-    yshift = float(c.label_shift_y_mm)
+    xshift, yshift = c.label_shift_mm
     if yshift != 0.0:
         node_opts.append(f"yshift={yshift}mm")
-    if float(c.label_shift_x_mm) != 0.0:
-        node_opts.append(f"xshift={float(c.label_shift_x_mm)}mm")
+    if xshift != 0.0:
+        node_opts.append(f"xshift={xshift}mm")
     node_opt_str = ", ".join(node_opts)
     return rf"\draw[{opt_str}] {tail} node[{node_opt_str}] {{{label}}} -- {head};"
 

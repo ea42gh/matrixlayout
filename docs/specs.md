@@ -181,6 +181,7 @@ CalloutSpec:
   "side": "left" | "right",
   "angle_deg": float,
   "length_mm": float,
+  "label_shift_mm": (x_mm, y_mm),
 }
 ```
 

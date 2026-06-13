@@ -145,7 +145,7 @@ def test_qr_name_specs_to_callouts_filters_invalid_and_applies_rules():
     assert callouts[0]["side"] == "right"
     assert callouts[0]["anchor"] == "center"
     assert callouts[0]["angle_deg"] == 40.0
-    assert callouts[0]["label_shift_y_mm"] == 2.5
+    assert callouts[0]["label_shift_mm"] == (0.0, 2.5)
     assert callouts[1]["length_mm"] == 9.0
 
 

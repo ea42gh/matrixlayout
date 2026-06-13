@@ -102,6 +102,20 @@ def test_render_delim_callouts_rejects_removed_angle_length_aliases():
         render_delim_callout({"name": "A0", "label": "A", "angle": -35, "length": 8})
 
 
-def test_render_delim_callouts_rejects_removed_label_shift_alias():
-    with pytest.raises(ValueError, match="label_shift_mm.*label_shift_y_mm"):
+def test_render_delim_callout_uses_xy_label_shift():
+    tex = render_delim_callout({"name": "A0", "label": "A", "label_shift_mm": (2, -1)})
+
+    assert "xshift=2.0mm" in tex
+    assert "yshift=-1.0mm" in tex
+
+
+def test_render_delim_callouts_rejects_scalar_label_shift():
+    with pytest.raises(ValueError, match="label_shift_mm must be a 2-tuple"):
         render_delim_callout({"name": "A0", "label": "A", "label_shift_mm": 2})
+
+
+def test_render_delim_callouts_rejects_split_label_shift_aliases():
+    with pytest.raises(ValueError, match="label_shift_x_mm.*label_shift_mm"):
+        render_delim_callout({"name": "A0", "label": "A", "label_shift_x_mm": 2})
+    with pytest.raises(ValueError, match="label_shift_y_mm.*label_shift_mm"):
+        render_delim_callout({"name": "A0", "label": "A", "label_shift_y_mm": 2})

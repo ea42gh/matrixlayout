@@ -189,11 +189,11 @@ def qr_name_specs_to_callouts(
         local_angle = angle_deg
         if "Q^T" in label_str or "R =" in label_str:
             local_angle = 40.0
-        label_shift_y_mm = None
+        label_shift_mm = None
         if label_shift_rules:
             for needle, shift in label_shift_rules:
                 if needle in label_str:
-                    label_shift_y_mm = float(shift)
+                    label_shift_mm = (0.0, float(shift))
                     break
         local_length = float(length_mm)
         if length_rules:
@@ -210,7 +210,7 @@ def qr_name_specs_to_callouts(
             "angle_deg": float(local_angle),
             "length_mm": float(local_length),
         }
-        if label_shift_y_mm is not None:
-            callout["label_shift_y_mm"] = float(label_shift_y_mm)
+        if label_shift_mm is not None:
+            callout["label_shift_mm"] = label_shift_mm
         out.append(callout)
     return out

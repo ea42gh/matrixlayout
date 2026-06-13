@@ -73,11 +73,11 @@ def test_qr_callout_rules_apply_to_qt_and_r():
     r_label = by_label[r"\mathbf{R = S W^T A}"]
 
     assert qt["angle_deg"] == 40.0
-    assert qt["label_shift_y_mm"] == -1.0
+    assert qt["label_shift_mm"] == (0.0, -1.0)
     assert qt["length_mm"] == 8.0
 
     assert r_label["angle_deg"] == 40.0
-    assert r_label["label_shift_y_mm"] == -2.0
+    assert r_label["label_shift_mm"] == (0.0, -2.0)
     assert r_label["length_mm"] == 6.0
 
 
