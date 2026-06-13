@@ -100,3 +100,8 @@ def test_render_delim_callouts_rejects_removed_grid_aliases():
 def test_render_delim_callouts_rejects_removed_angle_length_aliases():
     with pytest.raises(ValueError, match="angle.*length.*angle_deg.*length_mm"):
         render_delim_callout({"name": "A0", "label": "A", "angle": -35, "length": 8})
+
+
+def test_render_delim_callouts_rejects_removed_label_shift_alias():
+    with pytest.raises(ValueError, match="label_shift_mm.*label_shift_y_mm"):
+        render_delim_callout({"name": "A0", "label": "A", "label_shift_mm": 2})

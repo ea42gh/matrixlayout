@@ -52,7 +52,6 @@ class DelimCalloutDict(TypedDict, total=False):
     tip: str
     extra_style: str
     math_mode: bool
-    label_shift_mm: float
     label_shift_y_mm: float
     label_shift_x_mm: float
     grid: Tuple[int, int]
@@ -78,8 +77,6 @@ class DelimCallout:
     tip: str = r"-{Stealth[length=2.4mm]}"
     extra_style: str = ""
     math_mode: bool = True
-    # Prefer label_shift_y_mm instead.
-    label_shift_mm: float = 0.0
     label_shift_y_mm: float = 0.0
     label_shift_x_mm: float = 0.0
 
@@ -108,15 +105,14 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
         return obj
     if isinstance(obj, Mapping):
         d = dict(obj)
-        removed = {"angle", "length"} & set(d)
+        removed = {"angle", "length", "label_shift_mm"} & set(d)
         if removed:
             names = ", ".join(sorted(removed))
             raise ValueError(
                 f"Removed callout option alias(es): {names}. "
-                "Use angle_deg= and length_mm= instead."
+                "Use angle_deg=, length_mm=, and label_shift_y_mm= instead."
             )
         try:
-            label_shift_y_mm = d.get("label_shift_y_mm", d.get("label_shift_mm", 0.0))
             return DelimCallout(
                 name=str(d["name"]),
                 label=str(d["label"]),
@@ -129,8 +125,7 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
                 tip=str(d.get("tip", r"-{Stealth[length=2.4mm]}")),
                 extra_style=str(d.get("extra_style", "")),
                 math_mode=bool(d.get("math_mode", True)),
-                label_shift_mm=float(d.get("label_shift_mm", 0.0)),
-                label_shift_y_mm=float(label_shift_y_mm),
+                label_shift_y_mm=float(d.get("label_shift_y_mm", 0.0)),
                 label_shift_x_mm=float(d.get("label_shift_x_mm", 0.0)),
             )
         except KeyError as e:
@@ -226,7 +221,7 @@ def render_delim_callout(callout: CalloutLike) -> str:
     # Use explicit anchors so the label text sits outside the matrix while the
     # arrow tail stays at the computed point.
     node_opts = [f"anchor={node_anchor}"]
-    yshift = float(c.label_shift_y_mm) if float(c.label_shift_y_mm) != 0.0 else float(c.label_shift_mm)
+    yshift = float(c.label_shift_y_mm)
     if yshift != 0.0:
         node_opts.append(f"yshift={yshift}mm")
     if float(c.label_shift_x_mm) != 0.0:
