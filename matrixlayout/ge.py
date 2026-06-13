@@ -72,16 +72,7 @@ from .specs import (
 
 LatexFormatter = Callable[[Any], str]
 
-_blank_label_specs = _ge_labels.blank_label_specs
-_build_label_maps = _ge_labels.build_label_maps
-_compute_label_extras = _ge_labels.compute_label_extras
-_embed_col_labels = _ge_labels.embed_col_labels
-_embed_row_labels = _ge_labels.embed_row_labels
 _normalize_index_list = _ge_decorations.normalize_index_list
-_merge_label_specs = _ge_labels.merge_label_specs
-_normalize_label_cols = _ge_labels.normalize_label_cols
-_normalize_label_rows = _ge_labels.normalize_label_rows
-grid_label_layouts = _ge_labels.grid_label_layouts
 
 
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
@@ -474,7 +465,7 @@ def render_ge_tex(
     annotations = _resolve_annotations(annotations=annotations)
 
     if annotations:
-        label_rows, label_cols, decorations = _merge_label_specs(
+        label_rows, label_cols, decorations = _ge_labels.merge_label_specs(
             annotations=annotations,
             label_rows=label_rows,
             label_cols=label_cols,

@@ -1,8 +1,6 @@
 from matrixlayout.specs import GEGridSpec
 from matrixlayout.ge import (
     _merge_grid_spec_inputs,
-    _merge_label_specs,
-    _build_label_maps,
     latexify,
     render_ge_tex,
 )
@@ -127,7 +125,7 @@ def test_render_ge_tex_spec_strict_is_not_overridden_by_default_false():
 def test_merge_label_specs_merges_annotations_with_explicit_rows():
     annotations = [{"grid": (0, 1), "labels": [["spec"]], "side": "above"}]
     label_rows = [{"grid": (0, 1), "labels": [["explicit"]], "side": "above"}]
-    label_rows_out, label_cols_out, _decorations = _merge_label_specs(
+    label_rows_out, label_cols_out, _decorations = merge_label_specs(
         annotations=annotations,
         label_rows=label_rows,
         label_cols=None,
@@ -140,7 +138,7 @@ def test_merge_label_specs_merges_annotations_with_explicit_rows():
 
 def test_merge_label_specs_uses_annotations_when_no_explicit():
     annotations = [{"grid": (0, 0), "labels": [["spec"]], "side": "above"}]
-    label_rows_out, label_cols_out, _decorations = _merge_label_specs(
+    label_rows_out, label_cols_out, _decorations = merge_label_specs(
         annotations=annotations,
         label_rows=None,
         label_cols=None,
@@ -151,25 +149,20 @@ def test_merge_label_specs_uses_annotations_when_no_explicit():
     assert label_cols_out is None
 
 
-def test_ge_label_module_helpers_match_public_aliases():
+def test_ge_label_module_helpers_handle_annotations_and_maps():
     annotations = [{"grid": (0, 0), "labels": [["x", "y"]], "side": "above"}]
     rows, cols = grid_label_layouts(annotations)
     assert rows == [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}]
     assert cols == []
 
-    direct_rows, direct_cols, direct_decorations = merge_label_specs(
+    direct_rows, direct_cols, _direct_decorations = merge_label_specs(
         annotations=annotations,
         label_rows=None,
         label_cols=None,
         decorations=None,
     )
-    compat_rows, compat_cols, compat_decorations = _merge_label_specs(
-        annotations=annotations,
-        label_rows=None,
-        label_cols=None,
-        decorations=None,
-    )
-    assert (direct_rows, direct_cols, direct_decorations) == (compat_rows, compat_cols, compat_decorations)
+    assert direct_rows == [{"grid": (0, 0), "side": "above", "labels": [["x", "y"]]}]
+    assert direct_cols is None
 
     direct_maps = build_label_maps(
         n_block_rows=1,
@@ -177,13 +170,7 @@ def test_ge_label_module_helpers_match_public_aliases():
         label_rows=direct_rows,
         label_cols=direct_cols,
     )
-    compat_maps = _build_label_maps(
-        n_block_rows=1,
-        n_block_cols=1,
-        label_rows=compat_rows,
-        label_cols=compat_cols,
-    )
-    assert direct_maps == compat_maps
+    assert (0, 0, "above") in direct_maps[0]
 
 
 def test_merge_grid_spec_inputs_passes_spec_labels_when_no_explicit():
@@ -245,7 +232,7 @@ def test_build_label_maps_tracks_overlay_and_label_rows():
         {"grid": (0, 1), "labels": [["left"]], "side": "left"},
         {"grid": (0, 1), "labels": [["overlay"]], "side": "right", "overlay": True},
     ]
-    label_rows_map, label_cols_map, overlay = _build_label_maps(
+    label_rows_map, label_cols_map, overlay = build_label_maps(
         n_block_rows=1,
         n_block_cols=2,
         label_rows=[{"grid": (0, 1), "labels": [["var"]], "side": "below"}],
@@ -260,7 +247,7 @@ def test_build_label_maps_tracks_overlay_and_label_rows():
 
 def test_build_label_maps_strict_rejects_bad_grid():
     try:
-        _build_label_maps(
+        build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
             label_rows=[{"grid": (2, 0), "labels": [["x"]], "side": "above"}],
@@ -276,7 +263,7 @@ def test_build_label_maps_strict_rejects_bad_grid():
 
 def test_build_label_maps_strict_rejects_bad_side():
     try:
-        _build_label_maps(
+        build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
             label_rows=[{"grid": (0, 0), "labels": [["x"]], "side": "diagonal"}],
@@ -292,7 +279,7 @@ def test_build_label_maps_strict_rejects_bad_side():
 
 def test_build_label_maps_strict_rejects_nondict():
     try:
-        _build_label_maps(
+        build_label_maps(
             n_block_rows=1,
             n_block_cols=1,
             label_rows=[["x"]],
@@ -311,7 +298,7 @@ def test_build_label_maps_overlay_excludes_label_cols():
         {"grid": (0, 0), "labels": [["x"]], "side": "left"},
         {"grid": (0, 0), "labels": [["y"]], "side": "right", "overlay": True},
     ]
-    label_rows_map, label_cols_map, overlay = _build_label_maps(
+    label_rows_map, label_cols_map, overlay = build_label_maps(
         n_block_rows=1,
         n_block_cols=1,
         label_rows=None,

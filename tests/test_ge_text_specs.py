@@ -3,12 +3,12 @@ from unittest.mock import patch
 import pytest
 
 from matrixlayout.ge import (
-    grid_label_layouts,
     render_ge_svg,
     grid_submatrix_spans,
     render_ge_tex_specs,
     render_ge_tex,
 )
+from matrixlayout.ge_labels import grid_label_layouts
 
 
 def _parse_coord(coord: str) -> tuple[int, int, str]:

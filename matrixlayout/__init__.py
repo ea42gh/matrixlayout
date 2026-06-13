@@ -21,9 +21,9 @@ from .ge import (
     grid_line_specs,
     grid_highlight_specs,
     render_ge_tex_specs,
-    grid_label_layouts,
     decorations_help,
 )
+from .ge_labels import grid_label_layouts
 from .qr import render_qr_tex, render_qr_svg, resolve_qr_grid_name, qr_grid_bundle
 from .specs import GEGridSpec, QRGridSpec, GEGridBundle, QRGridBundle, validate_ge_spec, validate_qr_spec
 from .formatting import (
