@@ -65,12 +65,49 @@ def test_render_eig_tex_case_Q_includes_orthonormal():
     assert re.search(r"\\color\{[^}]+\}\{\s*Q\s*=\s*\}", tex) is not None
 
 
+def test_render_eig_tex_uses_matrix_specific_spacing_for_q_case():
+    tex = matrixlayout.render_eig_tex(
+        _sample_eig(),
+        case="Q",
+        formatter=str,
+        fig_scale=None,
+        mmLambda=11,
+        mmS=4,
+        mmQ=6,
+    )
+
+    assert r"\begin{pNiceArray}{c@{\hspace{11mm}}c}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{6mm}}r}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" not in tex
+
+
 def test_render_eig_tex_case_SVD_includes_sigma_and_U():
     tex = matrixlayout.render_eig_tex(_sample_eig(), case="SVD", formatter=str, fig_scale=1.2, sz=(2, 2))
     assert r"\sigma" in tex
     assert re.search(r"\\color\{[^}]+\}\{\s*\\Sigma\s*=\s*\}", tex) is not None
     assert re.search(r"\\color\{[^}]+\}\{\s*U\s*=\s*\}", tex) is not None
     assert r"\begin{minipage}" not in tex
+
+
+def test_render_eig_tex_uses_matrix_specific_spacing_for_svd_case():
+    tex = matrixlayout.render_eig_tex(
+        _sample_eig(),
+        case="SVD",
+        formatter=str,
+        fig_scale=None,
+        sz=(2, 2),
+        mmLambda=11,
+        mmSigma=9,
+        mmS=4,
+        mmU=5,
+        mmV=7,
+    )
+
+    assert r"\begin{pNiceArray}{c@{\hspace{9mm}}c}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{7mm}}r}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{5mm}}r}" in tex
+    assert r"\begin{pNiceArray}{c@{\hspace{11mm}}c}" not in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" not in tex
 
 
 def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():

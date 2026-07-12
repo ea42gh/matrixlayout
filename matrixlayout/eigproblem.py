@@ -462,7 +462,11 @@ def render_eig_tex(
     formatter: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
+    mmSigma: Optional[int] = None,
     mmS: int = 4,
+    mmU: Optional[int] = None,
+    mmV: Optional[int] = None,
+    mmQ: Optional[int] = None,
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
@@ -485,8 +489,11 @@ def render_eig_tex(
         Converts scalar entries to LaTeX strings (e.g. sympy.latex).
     color:
         xcolor color name (e.g. 'blue', 'RoyalBlue', 'DarkGreen').
-    mmLambda, mmS:
-        Column spacing (mm) for diagonal/matrix blocks.
+    mmLambda, mmSigma, mmS, mmU, mmV, mmQ:
+        Column spacing (mm) for matrix blocks. ``mmLambda`` controls Lambda,
+        ``mmSigma`` controls Sigma, ``mmU`` controls U, ``mmV`` controls V, and
+        ``mmQ`` controls Q. ``mmS`` is the compatibility default for S/Q/U/V
+        when a matrix-specific spacing is omitted.
     fig_scale:
         If provided, wraps the content in ``\\scalebox{<fig_scale>}{% ... }``.
         This matches the template convention.
@@ -515,6 +522,10 @@ def render_eig_tex(
 
     case = norm_str(case) or ""
     color = norm_str(color) or ""
+    mmSigma = mmLambda if mmSigma is None else mmSigma
+    mmU = mmS if mmU is None else mmU
+    mmV = mmS if mmV is None else mmV
+    mmQ = mmS if mmQ is None else mmQ
     lambdas_distinct = list(eig["lambda"])
     multiplicities = list(eig["ma"])
     n = int(sum(multiplicities))
@@ -575,7 +586,7 @@ def render_eig_tex(
                 eig["uvecs"],
                 formatter=formatter,
                 sz=size[0],
-                mm=mmS,
+                mm=mmU,
                 span_cols=matrix_span_cols,
                 decorators=decorators,
                 matrix_ids=["u"],
@@ -591,7 +602,7 @@ def render_eig_tex(
             multiplicities,
             formatter=formatter,
             sz=size,
-            mm=mmLambda,
+            mm=mmSigma,
             span_cols=matrix_span_cols,
             decorators=decorators,
             matrix_ids=["sigma"],
@@ -626,12 +637,13 @@ def render_eig_tex(
         )
     else:
         qvecs = eig.get("qvecs")
+        vector_matrix_mm = mmV if case.upper() == "SVD" else mmQ
         evecs_matrix = (
             _mk_vecs_matrix(
                 qvecs,
                 formatter=formatter,
                 sz=size[1],
-                mm=mmS,
+                mm=vector_matrix_mm,
                 span_cols=matrix_span_cols,
                 decorators=decorators,
                 matrix_ids=["q", "v"],
@@ -681,7 +693,11 @@ def render_eig_svg(
     formatter: LatexFormatter = latexify,
     color: str = "blue",
     mmLambda: int = 8,
+    mmSigma: Optional[int] = None,
     mmS: int = 4,
+    mmU: Optional[int] = None,
+    mmV: Optional[int] = None,
+    mmQ: Optional[int] = None,
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
@@ -704,7 +720,11 @@ def render_eig_svg(
         formatter=formatter,
         color=color,
         mmLambda=mmLambda,
+        mmSigma=mmSigma,
         mmS=mmS,
+        mmU=mmU,
+        mmV=mmV,
+        mmQ=mmQ,
         fig_scale=fig_scale,
         body_preamble=body_preamble,
         sz=sz,
