@@ -99,7 +99,7 @@ placed in those blank rows/cols; otherwise extra padding rows/cols are inserted.
 | GE | `format_nrhs` | bool | Whether to draw RHS separators in the column format. |
 | GE | `decorations` | list | One-line decoration dicts (backgrounds, lines, outlines, entry styles). |
 | GE | `pivot_locs` | list | TeX spans `(i-j)(k-l)` with optional styles. |
-| GE | `callouts` | list | Labels attached to submatrix names. |
+| GE | `callouts` | list | Arrow labels attached to matrix blocks. |
 | QR | `matrices` | list | Grid of matrices (rows of blocks). |
 | QR | `array_names` | bool | Enable default matrix labels. |
 | QR | `decorators` | list | Entry decorators after formatting. |
@@ -176,7 +176,7 @@ CalloutSpec:
 
 ```text
 {
-  "name": "A0" | "E1" | ...,
+  "grid": (block_row, block_col),
   "label": "text",
   "side": "left" | "right",
   "angle_deg": float,
@@ -184,6 +184,10 @@ CalloutSpec:
   "label_shift_mm": (x_mm, y_mm),
 }
 ```
+
+Name-targeted callouts such as `{"name": "A0", ...}` are still accepted when
+you already know the generated `\SubMatrix` delimiter name. For grid renderers,
+prefer `grid=(block_row, block_col)`.
 
 Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`,
 `formatter=latexify`). See `matrixlayout.formatting` for decorator helpers.
@@ -238,7 +242,7 @@ See `decorators.md` for full syntax and examples.
   options.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.
-- `callouts`: name/label callouts attached to submatrix delimiters.
+- `callouts`: arrow labels attached to matrix blocks.
 
 Minimal example:
 
@@ -265,7 +269,7 @@ Callouts and row-echelon paths:
 spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
     "callouts": [
-        {"name": "A0", "label": r"$A$", "anchor": "right", "angle_deg": -35, "length_mm": 8},
+        {"grid": (0, 1), "label": r"$A$", "side": "right", "angle_deg": -35, "length_mm": 8},
     ],
     "rowechelon_paths": [
         r"\draw[blue,line width=0.4mm] (1-1) -- (2-1) -- (2-2);",
@@ -276,7 +280,7 @@ spec = {
 ## Common patterns
 
 - Use `pivot_locs` for explicit pivot boxes rather than manual TikZ rectangles.
-- Keep `callouts` attached to submatrix names when labeling matrices.
+- Prefer grid-targeted `callouts` when labeling matrices.
 
 ## Common mistakes
 

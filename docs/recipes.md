@@ -11,7 +11,7 @@ spec = {
     "matrices": [[None, [[1, 2], [3, 4]]]],
     "pivot_locs": ["(1-1)(1-1)", "(2-2)(2-2)"],
     "callouts": [
-        {"name": "A0", "label": r"$A$", "anchor": "right", "angle_deg": -35, "length_mm": 8},
+        {"grid": (0, 1), "label": r"$A$", "side": "right", "angle_deg": -35, "length_mm": 8},
     ],
 }
 svg = render_ge_svg(**spec)
