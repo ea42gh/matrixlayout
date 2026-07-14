@@ -204,15 +204,32 @@ def rowechelon_paths_from_specs(
     return out
 
 
+def rowechelon_paths_from_legacy_tuples(
+    matrices: Sequence[Sequence[Any]],
+    legacy_paths: Sequence[Any],
+    *,
+    legacy_submatrix_names: bool = True,
+) -> List[str]:
+    """Convert old tuple-based GE path specs into canonical path commands."""
+
+    specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in legacy_paths]
+    return rowechelon_paths_from_specs(
+        matrices,
+        [spec for spec in specs if spec is not None],
+        legacy_submatrix_names=legacy_submatrix_names,
+    )
+
+
 def ref_path_list_to_rowechelon_paths(
     matrices: Sequence[Sequence[Any]],
     ref_path_list: Sequence[Any],
     *,
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
-    specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in ref_path_list]
-    return rowechelon_paths_from_specs(
+    """Compatibility alias for old ``ref_path_list`` tuple inputs."""
+
+    return rowechelon_paths_from_legacy_tuples(
         matrices,
-        [spec for spec in specs if spec is not None],
+        ref_path_list,
         legacy_submatrix_names=legacy_submatrix_names,
     )
