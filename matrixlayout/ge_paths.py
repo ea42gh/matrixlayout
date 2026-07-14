@@ -75,7 +75,7 @@ def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
     return None
 
 
-def _legacy_ref_path_to_rowechelon_spec(spec: Any) -> RowEchelonPathSpec | None:
+def _tuple_ref_path_to_rowechelon_spec(spec: Any) -> RowEchelonPathSpec | None:
     if not isinstance(spec, (list, tuple)) or len(spec) < 3:
         return None
     return RowEchelonPathSpec(
@@ -210,7 +210,7 @@ def ref_path_list_to_rowechelon_paths(
     *,
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
-    specs = [_legacy_ref_path_to_rowechelon_spec(item) for item in ref_path_list]
+    specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in ref_path_list]
     return rowechelon_paths_from_specs(
         matrices,
         [spec for spec in specs if spec is not None],
