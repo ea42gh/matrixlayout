@@ -11,7 +11,26 @@ Staircase invariant:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, List, Sequence, Tuple
+
+
+@dataclass(frozen=True)
+class RowEchelonPathSpec:
+    """Canonical row-echelon path selector.
+
+    Coordinates are 0-based matrix-entry coordinates within the targeted grid
+    block. Legacy ref-path tuple inputs are converted to this shape before any
+    staircase geometry is built.
+    """
+
+    grid: Tuple[int, int]
+    pivots: Sequence[Tuple[int, int]]
+    case: str = "hh"
+    color: str = "blue,line width=0.4mm"
+    adj: Any = 0.1
+    left_pad: Any = 0.0
+    node_offsets: Any = (0.0, 0.0)
 
 
 def _normalize_node_offsets(value: Any = (0.0, 0.0)) -> Tuple[float, float]:
@@ -33,33 +52,50 @@ def _offset_node(point: str, offsets: Tuple[float, float]) -> str:
     return f"($ {point} + ({dx:g},{dy:g}) $)"
 
 
-def _normalize_ref_path_spec(spec: Any) -> Tuple[int, int, Any, str, str, Any, Any, Any] | None:
+def _normalize_pivots(pivots: Any) -> List[Tuple[int, int]]:
+    return [(int(p[0]), int(p[1])) for p in (pivots or [])]
+
+
+def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
     if isinstance(spec, dict):
         grid = spec.get("grid")
         if not isinstance(grid, (list, tuple)) or len(grid) != 2:
             return None
-        return (
-            int(grid[0]),
-            int(grid[1]),
-            list(spec.get("pivots", spec.get("entries", [])) or []),
-            str(spec.get("case", "hh")),
-            str(spec.get("color", "blue,line width=0.4mm")),
-            spec.get("adj", 0.1),
-            spec.get("left_pad", 0.0),
-            spec.get("node_offsets", (0.0, 0.0)),
+        return RowEchelonPathSpec(
+            grid=(int(grid[0]), int(grid[1])),
+            pivots=_normalize_pivots(spec.get("pivots", spec.get("entries", []))),
+            case=str(spec.get("case", "hh")),
+            color=str(spec.get("color", "blue,line width=0.4mm")),
+            adj=spec.get("adj", 0.1),
+            left_pad=spec.get("left_pad", 0.0),
+            node_offsets=spec.get("node_offsets", (0.0, 0.0)),
         )
-    if isinstance(spec, (list, tuple)) and len(spec) >= 3:
-        return (
-            int(spec[0]),
-            int(spec[1]),
-            spec[2],
-            spec[3] if len(spec) > 3 else "hh",
-            spec[4] if len(spec) > 4 else "blue,line width=0.4mm",
-            spec[5] if len(spec) > 5 else 0.1,
-            spec[6] if len(spec) > 6 else 0.0,
-            spec[7] if len(spec) > 7 else (0.0, 0.0),
-        )
+    if isinstance(spec, RowEchelonPathSpec):
+        return spec
     return None
+
+
+def _legacy_ref_path_to_rowechelon_spec(spec: Any) -> RowEchelonPathSpec | None:
+    if not isinstance(spec, (list, tuple)) or len(spec) < 3:
+        return None
+    return RowEchelonPathSpec(
+        grid=(int(spec[0]), int(spec[1])),
+        pivots=_normalize_pivots(spec[2]),
+        case=str(spec[3]) if len(spec) > 3 else "hh",
+        color=str(spec[4]) if len(spec) > 4 else "blue,line width=0.4mm",
+        adj=spec[5] if len(spec) > 5 else 0.1,
+        left_pad=spec[6] if len(spec) > 6 else 0.0,
+        node_offsets=spec[7] if len(spec) > 7 else (0.0, 0.0),
+    )
+
+
+def _rowechelon_path_specs_from_items(items: Sequence[Any]) -> List[RowEchelonPathSpec]:
+    out: List[RowEchelonPathSpec] = []
+    for item in items:
+        normalized = _normalize_rowechelon_path_spec(item)
+        if normalized is not None:
+            out.append(normalized)
+    return out
 
 
 def rowechelon_paths_from_specs(
@@ -75,11 +111,14 @@ def rowechelon_paths_from_specs(
 
     spans = grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
     span_map = {(s.block_row, s.block_col): s for s in spans}
-    for spec in specs:
-        normalized = _normalize_ref_path_spec(spec)
-        if normalized is None:
-            continue
-        gM, gN, pivots, case, color, _adj, left_pad, raw_node_offsets = normalized
+    for normalized in _rowechelon_path_specs_from_items(specs):
+        gM, gN = normalized.grid
+        pivots = normalized.pivots
+        case = normalized.case
+        color = normalized.color
+        _adj = normalized.adj
+        left_pad = normalized.left_pad
+        raw_node_offsets = normalized.node_offsets
         node_offsets = _normalize_node_offsets(raw_node_offsets)
         span = span_map.get((gM, gN))
         if span is None:
@@ -171,8 +210,9 @@ def ref_path_list_to_rowechelon_paths(
     *,
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
+    specs = [_legacy_ref_path_to_rowechelon_spec(item) for item in ref_path_list]
     return rowechelon_paths_from_specs(
         matrices,
-        ref_path_list,
+        [spec for spec in specs if spec is not None],
         legacy_submatrix_names=legacy_submatrix_names,
     )
