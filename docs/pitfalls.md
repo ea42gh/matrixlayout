@@ -17,8 +17,12 @@ A short list of issues that commonly appear when first using matrixlayout.
 
 ## Callouts and names
 
-- Callouts attach to submatrix names; ensure names are present.
-- When using alternate submatrix naming, enable `legacy_submatrix_names=True`.
+- Prefer grid-targeted callouts such as
+  `{"grid": (block_row, block_col), "label": "...", "side": "right"}`.
+- Name-targeted callouts attach to `\SubMatrix` delimiter names; ensure the
+  target name is present if you use `"name": ...` directly.
+- Use `legacy_submatrix_names=True` only for old snippets that target legacy
+  delimiter names such as `A0`, `A1`, or `E1`.
 
 ## Label placement
 
