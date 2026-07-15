@@ -210,7 +210,12 @@ def rowechelon_paths_from_legacy_tuples(
     *,
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
-    """Convert old tuple-based GE path specs into canonical path commands."""
+    """Convert compatibility tuple GE path specs into path commands.
+
+    New renderer code should build :class:`RowEchelonPathSpec` dictionaries
+    and call :func:`rowechelon_paths_from_specs`. This helper is intentionally
+    limited to old ``ref_path_list`` tuple inputs at compatibility boundaries.
+    """
 
     specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in legacy_paths]
     return rowechelon_paths_from_specs(
