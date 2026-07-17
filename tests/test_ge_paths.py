@@ -1,7 +1,6 @@
 import re
 
 from matrixlayout.ge_paths import (
-    ref_path_list_to_rowechelon_paths,
     rowechelon_paths_from_legacy_tuples,
     rowechelon_paths_from_specs,
 )
@@ -95,15 +94,6 @@ def test_rowechelon_path_structured_spec_matches_tuple_spec_with_offsets():
     assert rowechelon_paths_from_specs(
         matrices,
         structured,
-        legacy_submatrix_names=True,
-    ) == rowechelon_paths_from_legacy_tuples(
-        matrices,
-        legacy,
-        legacy_submatrix_names=True,
-    )
-    assert ref_path_list_to_rowechelon_paths(
-        matrices,
-        legacy,
         legacy_submatrix_names=True,
     ) == rowechelon_paths_from_legacy_tuples(
         matrices,

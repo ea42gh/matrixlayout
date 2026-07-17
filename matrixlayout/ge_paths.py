@@ -223,18 +223,3 @@ def rowechelon_paths_from_legacy_tuples(
         [spec for spec in specs if spec is not None],
         legacy_submatrix_names=legacy_submatrix_names,
     )
-
-
-def ref_path_list_to_rowechelon_paths(
-    matrices: Sequence[Sequence[Any]],
-    ref_path_list: Sequence[Any],
-    *,
-    legacy_submatrix_names: bool = True,
-) -> List[str]:
-    """Compatibility alias for old ``ref_path_list`` tuple inputs."""
-
-    return rowechelon_paths_from_legacy_tuples(
-        matrices,
-        ref_path_list,
-        legacy_submatrix_names=legacy_submatrix_names,
-    )
