@@ -170,7 +170,7 @@ def test_render_qr_tex_spec_overrides_default_label_text_color():
     assert r"\textcolor{green}" in tex
 
 
-def test_render_qr_tex_accepts_annotations_alias():
+def test_render_qr_tex_accepts_annotations():
     annotations = [{"grid": (0, 2), "side": "above", "labels": ["x"]}]
 
     tex = render_qr_tex(

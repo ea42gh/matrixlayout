@@ -274,20 +274,6 @@ def test_render_ge_svg_annotations_overlay():
         assert mock_tex.call_args.kwargs.get("annotations") == annotations
 
 
-def test_render_ge_svg_accepts_annotations_alias():
-    matrices = [
-        [None, [[1, 2], [3, 4]]],
-        [[[1, 0], [0, 1]], [[1, 2], [0, 2]]],
-    ]
-    annotations = [
-        {"grid": (0, 1), "side": "left", "labels": ["$w_1^T$", "$w_2^T$"]},
-    ]
-    with patch("matrixlayout.ge.render_ge_tex") as mock_tex, patch("matrixlayout.ge._render_svg") as mock_svg:
-        mock_tex.return_value = "TEX"
-        mock_svg.return_value = "SVG"
-        render_ge_svg(matrices=matrices, annotations=annotations)
-        assert mock_tex.call_args.kwargs.get("annotations") == annotations
-
 
 def test_render_ge_svg_annotations_add_blank_rows():
     matrices = [[[1, 2], [3, 4]]]
