@@ -98,13 +98,13 @@ def _rowechelon_path_specs_from_items(items: Sequence[Any]) -> List[RowEchelonPa
     return out
 
 
-def rowechelon_paths_from_specs(
+def _rowechelon_path_commands_from_specs(
     matrices: Sequence[Sequence[Any]],
     specs: Sequence[Any],
     *,
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
-    """Convert GE row-echelon path specs into TikZ draw commands."""
+    """Build canonical GE row-echelon staircase path commands."""
 
     out: List[str] = []
     from .ge_grid_specs import grid_submatrix_spans
@@ -203,6 +203,19 @@ def rowechelon_paths_from_specs(
         out.append(cmd)
     return out
 
+def rowechelon_paths_from_specs(
+    matrices: Sequence[Sequence[Any]],
+    specs: Sequence[Any],
+    *,
+    legacy_submatrix_names: bool = True,
+) -> List[str]:
+    """Convert structured GE row-echelon path specs into TikZ draw commands."""
+
+    return _rowechelon_path_commands_from_specs(
+        matrices,
+        specs,
+        legacy_submatrix_names=legacy_submatrix_names,
+    )
 
 def _rowechelon_paths_from_legacy_tuples(
     matrices: Sequence[Sequence[Any]],
@@ -218,11 +231,9 @@ def _rowechelon_paths_from_legacy_tuples(
     """
 
     specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in legacy_paths]
-    return rowechelon_paths_from_specs(
+    return _rowechelon_path_commands_from_specs(
         matrices,
         [spec for spec in specs if spec is not None],
         legacy_submatrix_names=legacy_submatrix_names,
     )
-
-
 
