@@ -1,4 +1,4 @@
-from matrixlayout.ge import render_ge_tex, tex
+from matrixlayout.ge import render_ge_tex, _tex
 
 
 def test_render_ge_tex_inserts_rhs_partition_bar():
@@ -16,7 +16,7 @@ def test_ge_tex_normalizes_julia_style_inputs():
         def __str__(self) -> str:
             return self.s
 
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         submatrix_locs=[(SymLike(":name=Z"), (1, 1), (1, 1))],
@@ -27,3 +27,4 @@ def test_ge_tex_normalizes_julia_style_inputs():
     assert r"\SubMatrix({1-1}{1-1})[name=Z]" in tex_out
     assert r"fit=(1-1)(1-1)" in tex_out
     assert r"\node[red] at (1-1)" in tex_out
+

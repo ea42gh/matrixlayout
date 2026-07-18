@@ -1,7 +1,7 @@
 r"""Descriptor-based nicematrix decorations.
 
 This module provides *data-only* decoration descriptors intended to be rendered
-into TikZ snippets by layout routines (e.g., :func:`matrixlayout.ge.tex`).
+into TikZ snippets by layout routines (e.g., :func:`matrixlayout.ge.render_ge_tex`).
 
 Why descriptors?
 ----------------
@@ -407,3 +407,4 @@ def infer_ge_matrix_callouts(
             out.append(callout)
 
     return out
+

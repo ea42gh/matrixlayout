@@ -7,7 +7,7 @@ from matrixlayout.ge import (
     _merge_layout_string_hooks,
     _render_matrix_callouts,
     _submatrix_spans_with_outer_delims,
-    tex,
+    _tex,
 )
 from matrixlayout.ge_template import (
     append_nicematrix_option,
@@ -170,14 +170,14 @@ def test_typed_spec_coercion_helpers():
 
 
 def test_tex_outer_delims_infer_shape_from_normalized_body():
-    rendered = tex(mat_rep="1 & 2 \\ 3 & 4", mat_format="rr", outer_delims=True)
+    rendered = _tex(mat_rep="1 & 2 \\ 3 & 4", mat_format="rr", outer_delims=True)
 
     assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in rendered
 
 
 def test_tex_outer_delims_requires_inferable_shape():
     with pytest.raises(ValueError, match="Could not infer outer_delims_span"):
-        tex(mat_rep="", mat_format="r", outer_delims=True)
+        _tex(mat_rep="", mat_format="r", outer_delims=True)
 
 
 def test_ge_layout_string_hook_helper_merges_spec_first():
@@ -345,3 +345,6 @@ def test_ge_render_matrix_callouts_helper_renders_callouts_and_wraps_errors():
             sub_spans=[("name=A", "{1-1}{1-1}")],
             callout_name_map=None,
         )
+
+
+

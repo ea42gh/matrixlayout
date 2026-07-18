@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from matrixlayout.ge import tex
+from matrixlayout.ge import _tex
 
 
 def _pick_toolchain_name_or_skip() -> str:
@@ -28,7 +28,7 @@ def _pick_toolchain_name_or_skip() -> str:
 
 
 def test_ge_tex_contains_SubMatrix_when_requested():
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1 & 0 \\\\ 0 & 1",
         mat_format="cc",
         outer_delims=True,
@@ -43,9 +43,9 @@ def test_ge_tex_contains_SubMatrix_when_requested():
 def test_ge_svg_smoke():
     pytest.importorskip("jupyter_tikz")
 
-    from matrixlayout.ge import svg
+    from matrixlayout.ge import _svg
 
-    svg_out = svg(
+    svg_out = _svg(
         mat_rep="1 & 0 \\\\ 0 & 1",
         mat_format="cc",
         outer_delims=True,
@@ -56,3 +56,4 @@ def test_ge_svg_smoke():
         padding=(2, 2, 2, 2),
     )
     assert "<svg" in svg_out
+

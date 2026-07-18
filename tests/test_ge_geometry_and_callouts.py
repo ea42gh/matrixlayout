@@ -9,9 +9,9 @@ def test_ge_template_geometry_has_large_canvas():
     clipped by LaTeX before tight-cropping.
     """
 
-    from matrixlayout.ge import tex
+    from matrixlayout.ge import _tex
 
-    tex_out = tex(mat_rep="1", mat_format="r")
+    tex_out = _tex(mat_rep="1", mat_format="r")
 
     # The template should specify both width and height, plus non-zero margins.
     assert "paperwidth=90in" in tex_out
@@ -123,3 +123,4 @@ def test_render_ge_tex_left_column_labels_align_with_distinct_rows():
     assert r"\text{p1}\hspace{0.8mm} & 1 & 0" in tex
     assert r"\text{p2}\hspace{0.8mm} & 0 & 1" in tex
     assert r"\text{p1}\hspace{0.8mm} & \text{p2}" not in tex
+

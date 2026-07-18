@@ -1,11 +1,11 @@
 import pytest
 
 
-from matrixlayout.ge import tex
+from matrixlayout.ge import _tex
 
 
 def test_ge_tex_layout_merges_document_and_body_preamble_strings():
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         document_preamble="%EXPL-DOC\n",
@@ -29,7 +29,7 @@ def test_ge_tex_layout_merges_document_and_body_preamble_strings():
 
 
 def test_ge_tex_accepts_canonical_hook_names():
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         document_preamble="%EXPL-DOC\n",
@@ -51,17 +51,18 @@ def test_ge_tex_accepts_canonical_hook_names():
 
 def test_ge_tex_rejects_removed_hook_aliases():
     with pytest.raises(TypeError, match="unexpected keyword argument 'extension'"):
-        tex(mat_rep="1", mat_format="c", extension="%old")
+        _tex(mat_rep="1", mat_format="c", extension="%old")
     with pytest.raises(TypeError, match="unexpected keyword argument 'preamble'"):
-        tex(mat_rep="1", mat_format="c", preamble="%old")
+        _tex(mat_rep="1", mat_format="c", preamble="%old")
 
 
 def test_ge_tex_layout_preamble_is_validated_after_merge():
     # The GE template injects `body_preamble` into the document body. Guardrails
     # must apply even when the value comes from the layout spec.
     with pytest.raises(ValueError):
-        tex(
+        _tex(
             mat_rep="1",
             mat_format="c",
             layout={"body_preamble": r"\\geometry{margin=0pt}"},
         )
+

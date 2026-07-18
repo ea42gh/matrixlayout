@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from matrixlayout.ge import tex, svg
+from matrixlayout.ge import _tex, _svg
 from matrixlayout.specs import GEGridSpec, GELayoutSpec, PivotBox, QRGridSpec, RowEchelonPath, SubMatrixLoc, TextAt
 
 
@@ -28,7 +28,7 @@ def test_ge_tex_accepts_typed_layout_items():
         text_annotations=[TextAt("(1-1)", "x_label", "anchor=west")],
         rowechelon_paths=[RowEchelonPath(r"\draw (1-1) -- (1-1);")],
     )
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert r"\SubMatrix({1-1}{1-1})[name=A0]" in tex_out
     assert "fit=(1-1)(1-1)" in tex_out
     assert "x_label" in tex_out
@@ -50,7 +50,7 @@ def test_ge_tex_accepts_dict_layout_items():
             {"tikz": r"\draw (1-1) -- (1-1);"},
         ],
     }
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert r"\SubMatrix({1-1}{1-1})[name=A0]" in tex_out
     assert "fit=(1-1)(1-1)" in tex_out
     assert "x_label" in tex_out
@@ -61,7 +61,7 @@ def test_ge_tex_submatrix_left_right_delims():
     layout = GELayoutSpec(
         submatrix_locs=[SubMatrixLoc("name=Z0", "1-1", "1-1", left_delim="[", right_delim="]")],
     )
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert "name=Z0" in tex_out
     assert "_{" in tex_out
     assert "}^{" in tex_out
@@ -73,7 +73,7 @@ def test_ge_tex_dict_submatrix_left_right_delims():
             {"opts": "name=Z0", "start": "1-1", "end": "1-1", "left_delim": "[", "right_delim": "]"},
         ],
     }
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert "name=Z0" in tex_out
     assert "_{" in tex_out
     assert "}^{" in tex_out
@@ -85,7 +85,7 @@ def test_ge_tex_dict_rowechelon_paths_with_tikz_key():
             {"tikz": r"\draw (1-1) -- (1-1);"},
         ],
     }
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert r"\draw (1-1) -- (1-1);" in tex_out
 
 
@@ -96,7 +96,7 @@ def test_ge_tex_accepts_callouts_bool_in_layout():
         ],
         "callouts": True,
     }
-    tex_out = tex(mat_rep="1", mat_format="r", layout=layout)
+    tex_out = _tex(mat_rep="1", mat_format="r", layout=layout)
     assert "\\draw[" in tex_out
 
 
@@ -160,7 +160,7 @@ def test_ge_svg_smoke_with_typed_layout_items():
         text_annotations=[TextAt("(1-1)", r"$x_1$", "anchor=west")],
         rowechelon_paths=[RowEchelonPath(r"\draw (1-1) -- (1-1);")],
     )
-    svg_out = svg(
+    svg_out = _svg(
         mat_rep="1",
         mat_format="r",
         layout=layout,
@@ -169,3 +169,4 @@ def test_ge_svg_smoke_with_typed_layout_items():
         padding=2,
     )
     assert "<svg" in svg_out
+

@@ -1,7 +1,7 @@
 import pytest
 
 
-from matrixlayout.ge import render_ge_tex, tex
+from matrixlayout.ge import render_ge_tex, _tex
 from matrixlayout.specs import GELayoutSpec
 
 
@@ -19,7 +19,7 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
         text_annotations=[((1, 1), "x", SymLike(":red"))],
     )
 
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         layout=layout,
@@ -33,7 +33,7 @@ def test_ge_tex_accepts_layout_spec_for_julia_style_inputs():
 def test_ge_tex_accepts_layout_spec_text_annotations():
     layout = GELayoutSpec(text_annotations=[((1, 1), "new", "blue")])
 
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         layout=layout,
@@ -44,7 +44,7 @@ def test_ge_tex_accepts_layout_spec_text_annotations():
 
 
 def test_ge_tex_accepts_direct_text_annotations():
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep="1",
         mat_format="c",
         text_annotations=[((1, 1), "direct", "green")],
@@ -71,7 +71,7 @@ def test_render_ge_tex_merges_layout_spec_callouts():
 
 def test_ge_tex_layout_sets_outer_delims_without_conflict_when_not_explicit():
     # layout sets outer_delims, and tex should treat its own defaults as "unset"
-    tex_out = tex(
+    tex_out = _tex(
         mat_rep=r"1 & 2 \\ 3 & 4",
         mat_format="cc",
         layout={
@@ -85,4 +85,5 @@ def test_ge_tex_layout_sets_outer_delims_without_conflict_when_not_explicit():
 def test_ge_tex_layout_conflict_raises():
     layout = GELayoutSpec(landscape=True)
     with pytest.raises(ValueError):
-        tex(mat_rep="1", mat_format="c", landscape=False, layout=layout)
+        _tex(mat_rep="1", mat_format="c", landscape=False, layout=layout)
+

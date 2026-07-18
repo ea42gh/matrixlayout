@@ -13,7 +13,7 @@ directly by users. If you need an internal helper, prefer a public wrapper.
 
 Prefer descriptive renderer names such as `render_ge_tex` and `render_ge_svg`
 over generic aliases. The package top level intentionally does not export
-`tex` or `svg`; use `matrixlayout.ge.tex`/`matrixlayout.ge.svg` only when
+`tex` or `svg`; use `render_ge_tex`/`render_ge_svg` for supported GE rendering. The private `matrixlayout.ge._tex`/`matrixlayout.ge._svg` helpers are only for
 working with the lower-level GE template interface.
 
 ## GE
@@ -104,3 +104,5 @@ Prefer `output_dir` for new code.
 - `matrixlayout.jinja_env.render_template/render_string`: render templates/strings.
 - `matrixlayout.shortcascade.normalize_backsub_trace`: normalize shortcascade traces.
 - `matrixlayout.shortcascade.mk_shortcascade_lines`: build shortcascade LaTeX lines.
+
+

@@ -33,7 +33,7 @@ dictionaries passed to `*_tex` or `*_svg` helpers.
 The public renderers accept either plain dictionaries or typed dataclass specs:
 
 - `GEGridSpec` and `GEGridBundle` describe GE/matrix-grid inputs.
-- `GELayoutSpec` describes lower-level `tex()` layout hooks.
+- `GELayoutSpec` describes private lower-level `_tex()` layout hooks.
 - `QRGridSpec` describes QR/Gram-Schmidt layouts.
 
 Use `.from_dict(...)` when loading specs from another package or saved JSON-like
@@ -336,3 +336,4 @@ spec = {
     "evecs": [[[1, 0]], [[0, 1]]],
 }
 ```
+

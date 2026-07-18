@@ -54,3 +54,11 @@ def test_top_level_grid_bundle_api_is_symmetric():
     qr_bundle = matrixlayout.qr_grid_bundle([[1]])
     assert isinstance(qr_bundle, matrixlayout.QRGridBundle)
     assert qr_bundle.submatrix_spans
+
+def test_ge_module_generic_tex_svg_aliases_are_not_available():
+    import matrixlayout.ge as ge
+
+    assert not hasattr(ge, "tex")
+    assert not hasattr(ge, "svg")
+    assert ge.render_ge_tex
+    assert ge.render_ge_svg

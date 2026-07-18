@@ -139,7 +139,7 @@ def _render_matrix_callouts(
         raise ValueError(f"Failed to render callouts: {e}") from e
 
 
-def tex(
+def _tex(
     *,
     mat_rep: str,
     mat_format: str,
@@ -280,7 +280,7 @@ def tex(
     return render_template("ge.tex.j2", ctx)
 
 
-def svg(
+def _svg(
     *,
     mat_rep: str,
     mat_format: str,
@@ -313,7 +313,7 @@ def svg(
     render_opts: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Render the GE template to SVG (strict rendering boundary)."""
-    tex_doc = tex(
+    tex_doc = _tex(
         mat_rep=mat_rep,
         mat_format=mat_format,
         document_preamble=document_preamble,
@@ -580,7 +580,7 @@ def render_ge_tex(
         user_submatrix_locs=user_sub,
     )
 
-    return tex(
+    return _tex(
         mat_rep=parts.mat_rep,
         mat_format=parts.mat_format,
         document_preamble=document_preamble,
@@ -844,3 +844,4 @@ def render_ge_svg(
         exact_bbox=exact_bbox,
     )
     return _render_svg(tex, **opts)
+
