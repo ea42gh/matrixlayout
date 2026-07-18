@@ -1,7 +1,7 @@
 import re
 
 from matrixlayout.ge_paths import (
-    rowechelon_paths_from_legacy_tuples,
+    _rowechelon_paths_from_legacy_tuples,
     rowechelon_paths_from_specs,
 )
 
@@ -33,6 +33,12 @@ def _assert_no_cell_anchor_path(path):
     assert ".south" not in path
     assert ".east" not in path
     assert ".west" not in path
+
+
+def test_ge_paths_does_not_expose_legacy_tuple_alias():
+    import matrixlayout.ge_paths as ge_paths
+
+    assert not hasattr(ge_paths, "rowechelon_paths_from_legacy_tuples")
 
 
 def test_rowechelon_paths_use_left_bottom_staircase_for_all_cases():
@@ -95,8 +101,10 @@ def test_rowechelon_path_structured_spec_matches_tuple_spec_with_offsets():
         matrices,
         structured,
         legacy_submatrix_names=True,
-    ) == rowechelon_paths_from_legacy_tuples(
+    ) == _rowechelon_paths_from_legacy_tuples(
         matrices,
         legacy,
         legacy_submatrix_names=True,
     )
+
+

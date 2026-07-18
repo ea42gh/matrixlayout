@@ -225,16 +225,4 @@ def _rowechelon_paths_from_legacy_tuples(
     )
 
 
-def rowechelon_paths_from_legacy_tuples(
-    matrices: Sequence[Sequence[Any]],
-    legacy_paths: Sequence[Any],
-    *,
-    legacy_submatrix_names: bool = True,
-) -> List[str]:
-    """Compatibility alias for old tuple GE path specs."""
 
-    return _rowechelon_paths_from_legacy_tuples(
-        matrices,
-        legacy_paths,
-        legacy_submatrix_names=legacy_submatrix_names,
-    )
