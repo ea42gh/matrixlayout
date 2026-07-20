@@ -58,10 +58,9 @@ def parse_ge_decorations(
     grid_submatrix_spans: GridSubmatrixSpans,
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
-) -> Tuple[List[Dict[str, Any]], List[Tuple[str, str, str]], List[Dict[str, Any]], List[str]]:
+) -> Tuple[List[Dict[str, Any]], List[Tuple[str, str, str]], List[str]]:
     dec_specs: List[Dict[str, Any]] = []
     sub_locs: List[Tuple[str, str, str]] = []
-    callouts: List[Dict[str, Any]] = []
     highlights: List[Dict[str, Any]] = []
     outlines: List[Dict[str, Any]] = []
 
@@ -274,4 +273,4 @@ def parse_ge_decorations(
             codebefore.append(
                 rf"\tikz \node [draw={color}, line width={width}pt, inner sep={pad}pt, fit=({row_start}-{col_start}-medium) ({row_end}-{col_end}-medium)] {{}};"
             )
-    return dec_specs, sub_locs, callouts, codebefore
+    return dec_specs, sub_locs, codebefore

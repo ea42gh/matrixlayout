@@ -518,7 +518,7 @@ def render_ge_tex(
         raise ValueError("Could not infer matrix block sizes from `matrices`.")
 
     if decorations:
-        extra_decorators, extra_sub_locs, extra_callouts, extra_codebefore = _parse_ge_decorations(
+        extra_decorators, extra_sub_locs, extra_codebefore = _parse_ge_decorations(
             grid,
             decorations,
             block_align=block_align,
@@ -528,8 +528,6 @@ def render_ge_tex(
             decorators = list(decorators or []) + extra_decorators
         if extra_sub_locs:
             kwargs["submatrix_locs"] = list(kwargs.get("submatrix_locs", []) or []) + extra_sub_locs
-        if extra_callouts:
-            kwargs["callouts"] = list(kwargs.get("callouts", []) or []) + extra_callouts
         if extra_codebefore:
             kwargs["codebefore"] = list(kwargs.get("codebefore", []) or []) + extra_codebefore
             if "create_medium_nodes" not in kwargs:
@@ -598,7 +596,7 @@ def _parse_ge_decorations(
     *,
     block_align: Optional[str] = None,
     block_valign: Optional[str] = None,
-) -> Tuple[List[Dict[str, Any]], List[Tuple[str, str, str]], List[Dict[str, Any]], List[str]]:
+) -> Tuple[List[Dict[str, Any]], List[Tuple[str, str, str]], List[str]]:
     return _parse_ge_decorations_impl(
         matrices,
         decorations,

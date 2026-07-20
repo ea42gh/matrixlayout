@@ -81,7 +81,7 @@ def test_parse_rejects_label_specs_in_decorations():
 
 
 def test_parse_line_specs_coerces_submatrix_bounds_and_all():
-    _, sub_locs, _, _ = parse(
+    _, sub_locs, _ = parse(
         [
             {"hlines": True, "vlines": "bounds", "submatrix": ("0:1", "0:1")},
             {"hlines": "all", "rows": "0:1", "vlines": "submatrix", "cols": "0:0"},
@@ -99,7 +99,7 @@ def test_parse_callout_rejects_removed_angle_length_aliases():
 
 
 def test_parse_outline_generates_fit_code_for_selected_submatrix():
-    _, _, _, codebefore = parse(
+    _, _, codebefore = parse(
         [
             {
                 "outline": True,
@@ -118,7 +118,7 @@ def test_parse_outline_generates_fit_code_for_selected_submatrix():
 
 
 def test_parse_outline_ignores_missing_or_empty_spans():
-    _, _, _, codebefore = parse(
+    _, _, codebefore = parse(
         [
             {"grid": (9, 9), "outline": True},
             {"outline": True, "rows": [], "cols": []},
@@ -129,7 +129,7 @@ def test_parse_outline_ignores_missing_or_empty_spans():
 
 
 def test_parse_background_entries_become_single_cell_highlights():
-    _, _, _, codebefore = parse(
+    _, _, codebefore = parse(
         [{"background": "green!15", "entries": [(0, 0), (9, 9)], "padding_pt": 1}]
     )
 
@@ -137,7 +137,7 @@ def test_parse_background_entries_become_single_cell_highlights():
 
 
 def test_parse_background_submatrix_rows_and_cols_override():
-    _, _, _, codebefore = parse(
+    _, _, codebefore = parse(
         [
             {"background": "yellow", "submatrix": ("0:1", "0:1")},
             {"background": "blue", "rows": [0], "cols": [1]},
@@ -152,7 +152,7 @@ def test_parse_callable_decorator_expands_rows_cols_when_entries_missing():
     def deco(value):
         return value
 
-    dec_specs, _, _, _ = parse([{"decorator": deco, "rows": [0], "cols": [1]}])
+    dec_specs, _, _ = parse([{"decorator": deco, "rows": [0], "cols": [1]}])
 
     assert dec_specs == [{"grid": (0, 0), "entries": [(0, 1)], "decorator": deco}]
 
@@ -163,7 +163,7 @@ def test_parse_callable_decorator_rejects_noncallable():
 
 
 def test_parse_style_decoration_builds_decorator_for_selected_entries():
-    dec_specs, _, _, _ = parse([{"box": "red", "color": "blue", "bold": True, "entries": [(0, 0)]}])
+    dec_specs, _, _ = parse([{"box": "red", "color": "blue", "bold": True, "entries": [(0, 0)]}])
 
     assert len(dec_specs) == 1
     assert dec_specs[0]["grid"] == (0, 0)
@@ -176,4 +176,4 @@ def test_parse_style_decoration_builds_decorator_for_selected_entries():
 
 
 def test_parse_ignores_decoration_without_action():
-    assert parse([{"entries": [(0, 0)]}]) == ([], [], [], [])
+    assert parse([{"entries": [(0, 0)]}]) == ([], [], [])
