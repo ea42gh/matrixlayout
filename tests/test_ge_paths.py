@@ -1,9 +1,6 @@
 import re
 
-from matrixlayout.ge_paths import (
-    _rowechelon_paths_from_legacy_tuples,
-    rowechelon_paths_from_specs,
-)
+from matrixlayout.ge_paths import rowechelon_paths_from_specs
 
 
 def _path_anchor_keys(path):
@@ -68,9 +65,7 @@ def test_rowechelon_paths_single_pivot_first_column_uses_matrix_left_edge():
         [{"grid": (0, 1), "pivots": [(0, 0)], "case": "vv"}],
         legacy_submatrix_names=True,
     )
-    assert paths == [
-        r"\draw[blue,line width=0.4mm] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (3-|A0x1-left) + (0.1,0) $);"
-    ]
+    assert paths == [r"\draw[blue,line width=0.4mm] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (3-|A0x1-left) + (0.1,0) $);"]
     _assert_manhattan_path(paths[0])
 
 
@@ -85,26 +80,23 @@ def test_rowechelon_paths_single_pivot_nonfirst_column_uses_column_left_edge():
     _assert_manhattan_path(paths[0])
 
 
-def test_rowechelon_path_structured_spec_matches_tuple_spec_with_offsets():
+def test_rowechelon_path_structured_spec_applies_node_offsets():
     matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
-    structured = [
-        {
-            "grid": (0, 1),
-            "pivots": [(0, 0), (1, 1)],
-            "case": "vh",
-            "color": "red",
-            "node_offsets": (0.2, -0.05),
-        }
-    ]
-    legacy = [(0, 1, [(0, 0), (1, 1)], "vh", "red", 0.1, 0.0, (0.2, -0.05))]
-    assert rowechelon_paths_from_specs(
+    paths = rowechelon_paths_from_specs(
         matrices,
-        structured,
-        legacy_submatrix_names=True,
-    ) == _rowechelon_paths_from_legacy_tuples(
-        matrices,
-        legacy,
+        [
+            {
+                "grid": (0, 1),
+                "pivots": [(0, 0), (1, 1)],
+                "case": "vh",
+                "color": "red",
+                "node_offsets": (0.2, -0.05),
+            }
+        ],
         legacy_submatrix_names=True,
     )
-
-
+    assert paths == [
+        r"\draw[red] ($ (1-|A0x1-left) + (0.3,-0.05) $) -- ($ (2-|A0x1-left) + (0.3,-0.05) $) -- ($ (2-|5) + (0.2,-0.05) $) -- ($ (3-|5) + (0.2,-0.05) $) -- ($ (3-|8) + (0.2,-0.05) $);"
+    ]
+    _assert_no_cell_anchor_path(paths[0])
+    _assert_manhattan_path(paths[0])
