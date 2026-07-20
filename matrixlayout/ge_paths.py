@@ -75,20 +75,6 @@ def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
     return None
 
 
-def _tuple_ref_path_to_rowechelon_spec(spec: Any) -> RowEchelonPathSpec | None:
-    if not isinstance(spec, (list, tuple)) or len(spec) < 3:
-        return None
-    return RowEchelonPathSpec(
-        grid=(int(spec[0]), int(spec[1])),
-        pivots=_normalize_pivots(spec[2]),
-        case=str(spec[3]) if len(spec) > 3 else "hh",
-        color=str(spec[4]) if len(spec) > 4 else "blue,line width=0.4mm",
-        adj=spec[5] if len(spec) > 5 else 0.1,
-        left_pad=spec[6] if len(spec) > 6 else 0.0,
-        node_offsets=spec[7] if len(spec) > 7 else (0.0, 0.0),
-    )
-
-
 def _rowechelon_path_specs_from_items(items: Sequence[Any]) -> List[RowEchelonPathSpec]:
     out: List[RowEchelonPathSpec] = []
     for item in items:
@@ -216,24 +202,3 @@ def rowechelon_paths_from_specs(
         specs,
         legacy_submatrix_names=legacy_submatrix_names,
     )
-
-def _rowechelon_paths_from_legacy_tuples(
-    matrices: Sequence[Sequence[Any]],
-    legacy_paths: Sequence[Any],
-    *,
-    legacy_submatrix_names: bool = True,
-) -> List[str]:
-    """Convert compatibility tuple GE path specs into path commands.
-
-    New renderer code should build :class:`RowEchelonPathSpec` dictionaries
-    and call :func:`rowechelon_paths_from_specs`. This helper is intentionally
-    limited to old ``ref_path_list`` tuple inputs at compatibility boundaries.
-    """
-
-    specs = [_tuple_ref_path_to_rowechelon_spec(item) for item in legacy_paths]
-    return _rowechelon_path_commands_from_specs(
-        matrices,
-        [spec for spec in specs if spec is not None],
-        legacy_submatrix_names=legacy_submatrix_names,
-    )
-
