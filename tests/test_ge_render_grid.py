@@ -79,7 +79,7 @@ def test_ge_render_parts_list_nrhs_stack_separator_column_and_user_submatrix_loc
     ]
 
 
-def test_ge_render_parts_list_nrhs_current_format_without_legacy_separator():
+def test_ge_render_parts_list_nrhs_uses_stack_separator_column():
     parts = _parts(
         [[[1, 2, 3, 4, 5]]],
         n_rhs=[1, 2],
@@ -98,7 +98,7 @@ def test_ge_render_parts_ignores_invalid_nrhs_partition_width():
     assert parts.mat_format == "rr"
 
 
-def test_ge_render_parts_legacy_names_and_block_alignment():
+def test_ge_render_parts_grid_names_and_block_alignment():
     matrices = [
         [[[1]], [[1, 2], [3, 4]]],
     ]

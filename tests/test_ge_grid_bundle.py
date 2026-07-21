@@ -6,7 +6,7 @@ from matrixlayout.ge import grid_bundle, grid_submatrix_spans, render_ge_tex
 
 
 def test_ge_grid_bundle_returns_tex_and_spans_consistently():
-    # One-layer legacy 2-column layout: [[None, A0]]
+    # One-layer stack 2-column layout: [[None, A0]]
     matrices = [[None, [[1, 2], [3, 4]]]]
 
     b = grid_bundle(matrices=matrices, n_rhs=0)

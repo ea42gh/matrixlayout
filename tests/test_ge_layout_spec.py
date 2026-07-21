@@ -55,7 +55,7 @@ def test_ge_tex_accepts_direct_text_annotations():
 
 
 def test_render_ge_tex_merges_layout_spec_callouts():
-    # One GE layer in the legacy 2-column layout: [[None, A0]]
+    # One GE layer in the stack 2-column layout: [[None, A0]]
     matrices = [[None, [[1, 2], [3, 4]]]]
 
     layout = GELayoutSpec(
