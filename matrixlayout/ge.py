@@ -371,6 +371,7 @@ def render_ge_tex(
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = 0.8,
+    submatrix_name_style: Optional[str] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -574,6 +575,7 @@ def render_ge_tex(
         decorator_map=decorator_map,
         strict=bool(strict),
         legacy_format=legacy_format,
+        submatrix_name_style=submatrix_name_style,
         legacy_submatrix_names=use_legacy_names,
         user_submatrix_locs=user_sub,
     )
@@ -658,12 +660,17 @@ def resolve_ge_grid_name(
     name: Any,
     *,
     matrices: Sequence[Sequence[Any]],
+    submatrix_name_style: Optional[str] = None,
     legacy_submatrix_names: bool = False,
 ) -> Optional[Tuple[int, int]]:
     """Resolve a GE submatrix name to a (block_row, block_col) tuple."""
     if not isinstance(name, str):
         return None
-    spans = grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
+    spans = grid_submatrix_spans(
+        matrices,
+        submatrix_name_style=submatrix_name_style,
+        legacy_submatrix_names=legacy_submatrix_names,
+    )
     name_map: Dict[str, Tuple[int, int]] = {}
     for span in spans:
         name_map[span.name] = (span.block_row, span.block_col)
@@ -719,6 +726,7 @@ def grid_bundle(
         spec=spec,
         **kwargs,
     )
+    submatrix_name_style = kwargs.get("submatrix_name_style")
     legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
     use_spec = _coerce_grid_spec(spec)
     if use_spec is not None:
@@ -744,6 +752,7 @@ def grid_bundle(
         block_valign=block_valign,
         label_rows=label_rows,
         label_cols=label_cols,
+        submatrix_name_style=submatrix_name_style,
         legacy_submatrix_names=legacy_submatrix_names,
     )
     return GEGridBundle(tex=tex, submatrix_spans=spans)

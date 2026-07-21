@@ -52,6 +52,7 @@ def render_ge_tex_specs(
     block_valign: Optional[str] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
+    submatrix_name_style: Optional[str] = None,
     legacy_submatrix_names: bool = False,
     strict: bool = False,
 ) -> List[Tuple[str, str, str]]:
@@ -74,6 +75,7 @@ def render_ge_tex_specs(
         block_valign=block_valign,
         label_rows=label_rows,
         label_cols=label_cols,
+        submatrix_name_style=submatrix_name_style,
         legacy_submatrix_names=legacy_submatrix_names,
     )
     span_map = {(s.block_row, s.block_col): s for s in spans}

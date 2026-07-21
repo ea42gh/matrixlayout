@@ -304,3 +304,13 @@ def test_render_ge_svg_annotations_do_not_add_label_cols():
     tex = render_ge_tex(matrices=matrices, formatter=str, annotations=annotations)
     assert "\\text{a}" in tex
     assert "\\text{b}" in tex
+
+def test_render_ge_tex_specs_accepts_canonical_submatrix_name_style():
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    specs = render_ge_tex_specs(
+        matrices,
+        [{"grid": (0, 1), "side": "right", "labels": ["A"]}],
+        submatrix_name_style="grid",
+    )
+
+    assert specs == [("(1-4.center)", "A", "anchor=center, align=center")]

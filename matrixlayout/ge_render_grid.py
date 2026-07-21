@@ -168,9 +168,9 @@ def _submatrix_name(
     br: int,
     bc: int,
     n_block_cols: int,
-    legacy_submatrix_names: bool,
+    submatrix_name_style: str,
 ) -> str:
-    if legacy_submatrix_names:
+    if submatrix_name_style == "grid":
         return f"A{br}x{bc}"
     if n_block_cols == 2:
         base = "E" if bc == 0 else "A"
@@ -190,7 +190,7 @@ def _submatrix_locations(
     extra_cols_left: Sequence[int],
     pad_top: Sequence[Sequence[int]],
     pad_left: Sequence[Sequence[int]],
-    legacy_submatrix_names: bool,
+    submatrix_name_style: str,
 ) -> Tuple[List[Tuple[str, str, str]], Dict[Tuple[int, int], str]]:
     submatrix_locs: List[Tuple[str, str, str]] = []
     name_map: Dict[Tuple[int, int], str] = {}
@@ -207,7 +207,7 @@ def _submatrix_locations(
                 br=br,
                 bc=bc,
                 n_block_cols=n_block_cols,
-                legacy_submatrix_names=legacy_submatrix_names,
+                submatrix_name_style=submatrix_name_style,
             )
             submatrix_locs.append((f"name={name}", f"{r0}-{c0}", f"{r1}-{c1}"))
             name_map[(br, bc)] = name
@@ -234,10 +234,14 @@ def build_ge_grid_render_parts(
     decorator_map: Optional[DecoratorMap] = None,
     strict: bool = False,
     legacy_format: bool = False,
+    submatrix_name_style: Optional[str] = None,
     legacy_submatrix_names: bool = False,
     user_submatrix_locs: Optional[Sequence[Any]] = None,
 ) -> GEGridRenderParts:
     """Build the flattened matrix body, column format, block spans, and names."""
+
+    if submatrix_name_style is None:
+        submatrix_name_style = "grid" if legacy_submatrix_names else "semantic"
 
     n_block_rows = len(grid)
     n_block_cols = max((len(row) for row in grid), default=0)
@@ -448,7 +452,7 @@ def build_ge_grid_render_parts(
         extra_cols_left=extra_cols_left,
         pad_top=pad_top,
         pad_left=pad_left,
-        legacy_submatrix_names=legacy_submatrix_names,
+        submatrix_name_style=submatrix_name_style,
     )
 
     if user_submatrix_locs:
