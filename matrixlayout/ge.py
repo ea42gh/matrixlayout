@@ -73,6 +73,16 @@ from .specs import (
 LatexFormatter = Callable[[Any], str]
 
 _normalize_index_list = _ge_decorations.normalize_index_list
+_REMOVED_GE_RENDERER_FLAGS = {
+    "legacy_format": "stack_separator_column",
+    "legacy_submatrix_names": "submatrix_name_style",
+}
+
+
+def _reject_removed_ge_renderer_flags(kwargs: Mapping[str, Any]) -> None:
+    for old_name, new_name in _REMOVED_GE_RENDERER_FLAGS.items():
+        if old_name in kwargs:
+            raise ValueError(f"{old_name} is removed; use {new_name} instead.")
 
 
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
@@ -535,8 +545,7 @@ def render_ge_tex(
             if "create_medium_nodes" not in kwargs:
                 kwargs["create_medium_nodes"] = True
 
-    if "legacy_format" in kwargs:
-        raise ValueError("legacy_format is removed; use stack_separator_column instead.")
+    _reject_removed_ge_renderer_flags(kwargs)
     if stack_separator_column is None:
         stack_separator_column = False
     if document_preamble is None:
@@ -559,8 +568,6 @@ def render_ge_tex(
         kwargs["create_cell_nodes"] = True
 
     user_sub = kwargs.pop("submatrix_locs", None)
-    if "legacy_submatrix_names" in kwargs:
-        raise ValueError("legacy_submatrix_names is removed; use submatrix_name_style instead.")
     if submatrix_name_style is None:
         submatrix_name_style = "semantic"
     parts = build_ge_grid_render_parts(
