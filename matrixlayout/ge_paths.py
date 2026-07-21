@@ -89,19 +89,15 @@ def _rowechelon_path_commands_from_specs(
     specs: Sequence[Any],
     *,
     submatrix_name_style: str = "grid",
-    legacy_submatrix_names: bool = True,
 ) -> List[str]:
     """Build canonical GE row-echelon staircase path commands."""
 
     out: List[str] = []
     from .ge_grid_specs import grid_submatrix_spans
 
-    if submatrix_name_style == "grid" and not legacy_submatrix_names:
-        submatrix_name_style = "semantic"
     spans = grid_submatrix_spans(
         matrices,
         submatrix_name_style=submatrix_name_style,
-        legacy_submatrix_names=legacy_submatrix_names,
     )
     span_map = {(s.block_row, s.block_col): s for s in spans}
     for normalized in _rowechelon_path_specs_from_items(specs):
@@ -201,7 +197,6 @@ def rowechelon_paths_from_specs(
     specs: Sequence[Any],
     *,
     submatrix_name_style: str = "grid",
-    legacy_submatrix_names: bool = True,
 ) -> List[str]:
     """Convert structured GE row-echelon path specs into TikZ draw commands."""
 
@@ -209,5 +204,4 @@ def rowechelon_paths_from_specs(
         matrices,
         specs,
         submatrix_name_style=submatrix_name_style,
-        legacy_submatrix_names=legacy_submatrix_names,
     )

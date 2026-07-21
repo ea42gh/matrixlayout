@@ -51,7 +51,7 @@ def test_rowechelon_paths_use_left_bottom_staircase_for_all_cases():
         paths = rowechelon_paths_from_specs(
             matrices,
             [{"grid": (0, 1), "pivots": pivots, "case": case, "color": "red"}],
-            legacy_submatrix_names=True,
+            submatrix_name_style="grid",
         )
         assert paths == [path]
         _assert_no_cell_anchor_path(paths[0])
@@ -63,7 +63,7 @@ def test_rowechelon_paths_single_pivot_first_column_uses_matrix_left_edge():
     paths = rowechelon_paths_from_specs(
         matrices,
         [{"grid": (0, 1), "pivots": [(0, 0)], "case": "vv"}],
-        legacy_submatrix_names=True,
+        submatrix_name_style="grid",
     )
     assert paths == [r"\draw[blue,line width=0.4mm] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (3-|A0x1-left) + (0.1,0) $);"]
     _assert_manhattan_path(paths[0])
@@ -74,7 +74,7 @@ def test_rowechelon_paths_single_pivot_nonfirst_column_uses_column_left_edge():
     paths = rowechelon_paths_from_specs(
         matrices,
         [{"grid": (0, 1), "pivots": [(0, 2)], "case": "vv"}],
-        legacy_submatrix_names=True,
+        submatrix_name_style="grid",
     )
     assert paths == [r"\draw[blue,line width=0.4mm] (1-|6) -- (4-|6);"]
     _assert_manhattan_path(paths[0])
@@ -93,7 +93,7 @@ def test_rowechelon_path_structured_spec_applies_node_offsets():
                 "node_offsets": (0.2, -0.05),
             }
         ],
-        legacy_submatrix_names=True,
+        submatrix_name_style="grid",
     )
     assert paths == [
         r"\draw[red] ($ (1-|A0x1-left) + (0.3,-0.05) $) -- ($ (2-|A0x1-left) + (0.3,-0.05) $) -- ($ (2-|5) + (0.2,-0.05) $) -- ($ (3-|5) + (0.2,-0.05) $) -- ($ (3-|8) + (0.2,-0.05) $);"

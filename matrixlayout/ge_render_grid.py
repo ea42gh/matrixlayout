@@ -234,14 +234,10 @@ def build_ge_grid_render_parts(
     decorator_map: Optional[DecoratorMap] = None,
     strict: bool = False,
     legacy_format: bool = False,
-    submatrix_name_style: Optional[str] = None,
-    legacy_submatrix_names: bool = False,
+    submatrix_name_style: str = "semantic",
     user_submatrix_locs: Optional[Sequence[Any]] = None,
 ) -> GEGridRenderParts:
     """Build the flattened matrix body, column format, block spans, and names."""
-
-    if submatrix_name_style is None:
-        submatrix_name_style = "grid" if legacy_submatrix_names else "semantic"
 
     n_block_rows = len(grid)
     n_block_cols = max((len(row) for row in grid), default=0)

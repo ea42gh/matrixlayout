@@ -22,13 +22,10 @@ def grid_submatrix_spans(
     block_valign: Optional[str] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
-    submatrix_name_style: Optional[str] = None,
-    legacy_submatrix_names: bool = False,
+    submatrix_name_style: str = "semantic",
 ) -> List[SubMatrixSpan]:
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid."""
 
-    if submatrix_name_style is None:
-        submatrix_name_style = "grid" if legacy_submatrix_names else "semantic"
     if submatrix_name_style not in {"semantic", "grid"}:
         raise ValueError("submatrix_name_style must be 'semantic' or 'grid'")
 

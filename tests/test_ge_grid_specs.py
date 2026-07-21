@@ -68,14 +68,14 @@ def test_grid_highlight_specs_dict_tuple_empty_missing_and_invalid_forms():
         grid_highlight_specs(matrices, blocks=[object()])
 
 
-def test_grid_submatrix_spans_label_offsets_and_legacy_names():
+def test_grid_submatrix_spans_label_offsets_and_grid_names():
     matrices = [[None, [[1, 2], [3, 4]]]]
 
     spans = grid_submatrix_spans(
         matrices,
         label_rows=[{"grid": (0, 1), "side": "above", "labels": [["x", "y"]]}],
         label_cols=[{"grid": (0, 1), "side": "left", "labels": [["r1"], ["r2"]]}],
-        legacy_submatrix_names=True,
+        submatrix_name_style="grid",
     )
 
     assert [(span.name, span.row_start, span.col_start, span.row_end, span.col_end) for span in spans] == [

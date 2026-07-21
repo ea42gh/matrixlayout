@@ -27,7 +27,7 @@ def _parts(matrices, **kwargs):
         decorator_map=kwargs.pop("decorator_map", None),
         strict=kwargs.pop("strict", False),
         legacy_format=kwargs.pop("legacy_format", False),
-        legacy_submatrix_names=kwargs.pop("legacy_submatrix_names", False),
+        submatrix_name_style=kwargs.pop("submatrix_name_style", "semantic"),
         user_submatrix_locs=kwargs.pop("user_submatrix_locs", None),
     )
 
@@ -108,7 +108,7 @@ def test_ge_render_parts_legacy_names_and_block_alignment():
         block_valign="bottom",
         block_align_render="right",
         block_valign_render="bottom",
-        legacy_submatrix_names=True,
+        submatrix_name_style="grid",
     )
 
     assert parts.submatrix_locs == [
