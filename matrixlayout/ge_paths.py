@@ -20,7 +20,7 @@ class RowEchelonPathSpec:
     """Canonical row-echelon path selector.
 
     Coordinates are 0-based matrix-entry coordinates within the targeted grid
-    block. Legacy ref-path tuple inputs are converted to this shape before any
+    block. Callers pass this shape before any
     staircase geometry is built.
     """
 
@@ -88,6 +88,7 @@ def _rowechelon_path_commands_from_specs(
     matrices: Sequence[Sequence[Any]],
     specs: Sequence[Any],
     *,
+    submatrix_name_style: str = "grid",
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
     """Build canonical GE row-echelon staircase path commands."""
@@ -95,7 +96,13 @@ def _rowechelon_path_commands_from_specs(
     out: List[str] = []
     from .ge_grid_specs import grid_submatrix_spans
 
-    spans = grid_submatrix_spans(matrices, legacy_submatrix_names=legacy_submatrix_names)
+    if submatrix_name_style == "grid" and not legacy_submatrix_names:
+        submatrix_name_style = "semantic"
+    spans = grid_submatrix_spans(
+        matrices,
+        submatrix_name_style=submatrix_name_style,
+        legacy_submatrix_names=legacy_submatrix_names,
+    )
     span_map = {(s.block_row, s.block_col): s for s in spans}
     for normalized in _rowechelon_path_specs_from_items(specs):
         gM, gN = normalized.grid
@@ -193,6 +200,7 @@ def rowechelon_paths_from_specs(
     matrices: Sequence[Sequence[Any]],
     specs: Sequence[Any],
     *,
+    submatrix_name_style: str = "grid",
     legacy_submatrix_names: bool = True,
 ) -> List[str]:
     """Convert structured GE row-echelon path specs into TikZ draw commands."""
@@ -200,5 +208,6 @@ def rowechelon_paths_from_specs(
     return _rowechelon_path_commands_from_specs(
         matrices,
         specs,
+        submatrix_name_style=submatrix_name_style,
         legacy_submatrix_names=legacy_submatrix_names,
     )

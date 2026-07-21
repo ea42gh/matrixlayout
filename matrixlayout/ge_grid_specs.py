@@ -22,9 +22,15 @@ def grid_submatrix_spans(
     block_valign: Optional[str] = None,
     label_rows: Optional[Sequence[Any]] = None,
     label_cols: Optional[Sequence[Any]] = None,
+    submatrix_name_style: Optional[str] = None,
     legacy_submatrix_names: bool = False,
 ) -> List[SubMatrixSpan]:
     """Return the resolved ``\\SubMatrix`` spans for a GE matrix grid."""
+
+    if submatrix_name_style is None:
+        submatrix_name_style = "grid" if legacy_submatrix_names else "semantic"
+    if submatrix_name_style not in {"semantic", "grid"}:
+        raise ValueError("submatrix_name_style must be 'semantic' or 'grid'")
 
     grid: List[List[Any]] = _normalize_grid_input(matrices)
     if not grid:
@@ -130,7 +136,7 @@ def grid_submatrix_spans(
             row_end = row_start + height - 1
             col_end = col_start + width - 1
 
-            if legacy_submatrix_names:
+            if submatrix_name_style == "grid":
                 name = f"A{br}x{bc}"
             else:
                 if n_block_cols == 2:
