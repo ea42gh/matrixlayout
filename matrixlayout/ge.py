@@ -535,11 +535,10 @@ def render_ge_tex(
             if "create_medium_nodes" not in kwargs:
                 kwargs["create_medium_nodes"] = True
 
-    legacy_format = kwargs.pop("legacy_format", None)
-    if stack_separator_column is not None and legacy_format is not None:
-        raise ValueError("Use stack_separator_column= instead of legacy_format=; do not pass both.")
+    if "legacy_format" in kwargs:
+        raise ValueError("legacy_format is removed; use stack_separator_column instead.")
     if stack_separator_column is None:
-        stack_separator_column = bool(legacy_format)
+        stack_separator_column = False
     if document_preamble is None:
         document_preamble = ""
     if stack_separator_column:
@@ -560,9 +559,10 @@ def render_ge_tex(
         kwargs["create_cell_nodes"] = True
 
     user_sub = kwargs.pop("submatrix_locs", None)
-    use_legacy_names = bool(kwargs.pop("legacy_submatrix_names", False))
+    if "legacy_submatrix_names" in kwargs:
+        raise ValueError("legacy_submatrix_names is removed; use submatrix_name_style instead.")
     if submatrix_name_style is None:
-        submatrix_name_style = "grid" if use_legacy_names else "semantic"
+        submatrix_name_style = "semantic"
     parts = build_ge_grid_render_parts(
         grid=grid,
         cell_cache=cell_cache,
@@ -730,10 +730,7 @@ def grid_bundle(
         spec=spec,
         **kwargs,
     )
-    submatrix_name_style = kwargs.get("submatrix_name_style")
-    legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
-    if submatrix_name_style is None:
-        submatrix_name_style = "grid" if legacy_submatrix_names else "semantic"
+    submatrix_name_style = kwargs.get("submatrix_name_style") or "semantic"
     use_spec = _coerce_grid_spec(spec)
     if use_spec is not None:
         matrices = use_spec.matrices
