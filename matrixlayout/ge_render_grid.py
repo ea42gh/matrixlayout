@@ -124,14 +124,14 @@ def _matrix_column_format(
     outer_hspace_mm: int,
     extra_cols_left: Sequence[int],
     extra_cols_right: Sequence[int],
-    legacy_format: bool,
+    stack_separator_column: bool,
 ) -> str:
     fmt_parts: List[str] = []
     spacer = rf"@{{\hspace{{{int(outer_hspace_mm)}mm}}}}"
-    if legacy_format:
+    if stack_separator_column:
         fmt_parts.append(spacer)
 
-    sep = "I" if legacy_format else "|"
+    sep = "I" if stack_separator_column else "|"
     last_block_col = len(block_widths) - 1
     for bc, base_width in enumerate(block_widths):
         if bc > 0:
@@ -233,7 +233,7 @@ def build_ge_grid_render_parts(
     label_gap_mm: Optional[float],
     decorator_map: Optional[DecoratorMap] = None,
     strict: bool = False,
-    legacy_format: bool = False,
+    stack_separator_column: bool = False,
     submatrix_name_style: str = "semantic",
     user_submatrix_locs: Optional[Sequence[Any]] = None,
 ) -> GEGridRenderParts:
@@ -309,7 +309,7 @@ def build_ge_grid_render_parts(
         outer_hspace_mm=outer_hspace_mm,
         extra_cols_left=extra_cols_left,
         extra_cols_right=extra_cols_right,
-        legacy_format=legacy_format,
+        stack_separator_column=stack_separator_column,
     )
 
     lines: List[str] = []

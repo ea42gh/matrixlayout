@@ -534,10 +534,10 @@ def render_ge_tex(
             if "create_medium_nodes" not in kwargs:
                 kwargs["create_medium_nodes"] = True
 
-    legacy_format = bool(kwargs.pop("legacy_format", False))
+    stack_separator_column = bool(kwargs.pop("legacy_format", False))
     if document_preamble is None:
         document_preamble = ""
-    if legacy_format:
+    if stack_separator_column:
         if "\\newcolumntype{I}" not in document_preamble:
             document_preamble = document_preamble + "\n\\newcolumntype{I}{|}\n"
 
@@ -576,7 +576,7 @@ def render_ge_tex(
         label_gap_mm=label_gap_mm,
         decorator_map=decorator_map,
         strict=bool(strict),
-        legacy_format=legacy_format,
+        stack_separator_column=stack_separator_column,
         submatrix_name_style=submatrix_name_style,
         user_submatrix_locs=user_sub,
     )

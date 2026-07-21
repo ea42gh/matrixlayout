@@ -26,7 +26,7 @@ def _parts(matrices, **kwargs):
         label_gap_mm=kwargs.pop("label_gap_mm", 0.8),
         decorator_map=kwargs.pop("decorator_map", None),
         strict=kwargs.pop("strict", False),
-        legacy_format=kwargs.pop("legacy_format", False),
+        stack_separator_column=kwargs.pop("stack_separator_column", False),
         submatrix_name_style=kwargs.pop("submatrix_name_style", "semantic"),
         user_submatrix_locs=kwargs.pop("user_submatrix_locs", None),
     )
@@ -63,11 +63,11 @@ def test_ge_render_parts_labels_and_label_gap():
     assert parts.submatrix_locs == [("name=M00", "2-2", "3-4")]
 
 
-def test_ge_render_parts_list_nrhs_legacy_format_and_user_submatrix_locs():
+def test_ge_render_parts_list_nrhs_stack_separator_column_and_user_submatrix_locs():
     parts = _parts(
         [[[1, 2, 3, 4]]],
         n_rhs=[1, 1],
-        legacy_format=True,
+        stack_separator_column=True,
         cell_align="c",
         user_submatrix_locs=[("name=extra", "9-9", "10-10")],
     )
