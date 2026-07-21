@@ -105,6 +105,17 @@ def test_ge_gridspec_from_dict_shared_filtering_rules():
         raise AssertionError("expected GEGridSpec.from_dict(None) to raise")
 
 
+def test_ge_gridspec_rejects_legacy_renderer_flags():
+    for field in ("legacy_submatrix_names", "legacy_format"):
+        try:
+            GEGridSpec.from_dict({"matrices": [[1]], field: True}, allow_extra=False)
+        except ValueError as exc:
+            assert "Unknown GEGridSpec fields" in str(exc)
+            assert field in str(exc)
+        else:
+            raise AssertionError(f"expected {field} to be rejected")
+
+
 def test_validate_qr_spec_requires_matrices():
     errors = validate_qr_spec({"array_names": True})
     assert any("requires 'matrices'" in msg for msg in errors)

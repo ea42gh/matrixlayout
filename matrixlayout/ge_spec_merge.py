@@ -145,16 +145,6 @@ def merge_grid_spec_inputs(
     document_preamble = "" if merged_document_preamble is None else str(merged_document_preamble)
     fig_scale = merge_scalar_prefer_explicit("fig_scale", fig_scale, grid_spec.fig_scale)
     format_nrhs = bool(merge_scalar_default("format_nrhs", format_nrhs, grid_spec.format_nrhs, True))
-    kwargs["legacy_submatrix_names"] = bool(
-        merge_scalar_prefer_explicit(
-            "legacy_submatrix_names",
-            kwargs.get("legacy_submatrix_names"),
-            grid_spec.legacy_submatrix_names,
-        )
-    )
-    kwargs["legacy_format"] = bool(
-        merge_scalar_prefer_explicit("legacy_format", kwargs.get("legacy_format"), grid_spec.legacy_format)
-    )
     if grid_spec.body_preamble is not None:
         kwargs["body_preamble"] = merge_scalar_prefer_explicit(
             "body_preamble",

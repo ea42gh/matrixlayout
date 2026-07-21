@@ -15,9 +15,8 @@ def test_render_ge_tex_accepts_spec_object():
         matrices=matrices,
         n_rhs=0,
         outer_hspace_mm=9,
-        legacy_submatrix_names=True,
     )
-    tex_direct = matrixlayout.render_ge_tex(matrices=matrices, outer_hspace_mm=9, legacy_submatrix_names=True)
+    tex_direct = matrixlayout.render_ge_tex(matrices=matrices, outer_hspace_mm=9)
     tex_spec = matrixlayout.render_ge_tex(spec=spec)
     assert tex_direct == tex_spec
 
@@ -28,7 +27,6 @@ def test_render_ge_tex_accepts_spec_dict_with_layout():
         "matrices": matrices,
         "n_rhs": 0,
         "outer_hspace_mm": 9,
-        "legacy_submatrix_names": True,
         "layout": {"body_preamble": "%spec-preamble"},
     }
     tex = matrixlayout.render_ge_tex(spec=spec)

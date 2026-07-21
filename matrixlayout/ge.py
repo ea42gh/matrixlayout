@@ -727,7 +727,7 @@ def grid_bundle(
         cell_align = str(use_spec.cell_align)
         block_align = use_spec.block_align if use_spec.block_align is not None else block_align
         block_valign = use_spec.block_valign if use_spec.block_valign is not None else block_valign
-        legacy_submatrix_names = bool(use_spec.legacy_submatrix_names)
+        legacy_submatrix_names = bool(kwargs.get("legacy_submatrix_names", False))
         label_rows = use_spec.label_rows
         label_cols = use_spec.label_cols
     else:

@@ -272,8 +272,6 @@ class GEGridSpec:
     nice_options: Optional[str] = None
     outer_delims: Optional[bool] = None
     layout: Optional[Any] = None
-    legacy_submatrix_names: bool = False
-    legacy_format: bool = False
     label_rows: Optional[Sequence[Union[GELabelRowsSpec, Mapping[str, Any]]]] = None
     label_cols: Optional[Sequence[Union[GELabelColsSpec, Mapping[str, Any]]]] = None
     label_gap_mm: Optional[float] = 0.8
