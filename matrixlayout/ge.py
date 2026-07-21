@@ -372,6 +372,7 @@ def render_ge_tex(
     label_cols: Optional[Sequence[Any]] = None,
     label_gap_mm: Optional[float] = 0.8,
     submatrix_name_style: Optional[str] = None,
+    stack_separator_column: Optional[bool] = None,
     **kwargs: Any,
 ) -> str:
     r"""Populate the GE template from a matrix stack.
@@ -534,7 +535,11 @@ def render_ge_tex(
             if "create_medium_nodes" not in kwargs:
                 kwargs["create_medium_nodes"] = True
 
-    stack_separator_column = bool(kwargs.pop("legacy_format", False))
+    legacy_format = kwargs.pop("legacy_format", None)
+    if stack_separator_column is not None and legacy_format is not None:
+        raise ValueError("Use stack_separator_column= instead of legacy_format=; do not pass both.")
+    if stack_separator_column is None:
+        stack_separator_column = bool(legacy_format)
     if document_preamble is None:
         document_preamble = ""
     if stack_separator_column:

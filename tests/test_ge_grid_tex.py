@@ -70,3 +70,21 @@ def test_render_ge_tex_rowechelon_paths_live_in_existing_tikzpicture():
     assert path in tex
     assert r"\tikz \draw" not in tex
     assert tex.count(r"\begin{tikzpicture}") == 1
+
+def test_render_ge_tex_prefers_stack_separator_column_over_legacy_format():
+    from matrixlayout.ge import render_ge_tex
+
+    matrices = [[[1, 2, 3]]]
+    tex = render_ge_tex(matrices=matrices, n_rhs=[1, 1], stack_separator_column=True, body_preamble="")
+
+    assert "\\newcolumntype{I}{|}" in tex
+    assert "{I" in tex or "I}" in tex
+
+    with pytest.raises(ValueError, match="stack_separator_column"):
+        render_ge_tex(
+            matrices=matrices,
+            n_rhs=[1, 1],
+            stack_separator_column=True,
+            legacy_format=True,
+            body_preamble="",
+        )
