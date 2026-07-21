@@ -8,7 +8,7 @@ from jinja2 import UndefinedError
 from matrixlayout.jinja_env import JinjaConfig, get_environment, make_environment, render_string
 
 
-def test_environment_delimiters_match_legacy():
+def test_environment_uses_tex_safe_delimiters():
     env = get_environment()
     assert env.block_start_string == "{%%"
     assert env.block_end_string == "%%}"
@@ -19,7 +19,7 @@ def test_environment_delimiters_match_legacy():
     assert env.variable_end_string == "}}"
 
 
-def test_render_string_supports_legacy_blocks_and_colon_syntax():
+def test_render_string_supports_tex_safe_blocks_and_colon_syntax():
     # nicematrix.py templates commonly used a trailing ':' in for/if blocks.
     src = r'''
 Hello
