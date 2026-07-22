@@ -1,10 +1,8 @@
 from matrixlayout.qr import (
-    _filter_name_specs,
     _mat_shape,
     _callout_rules,
     _known_zero_entries,
     _label_layouts,
-    _name_specs_to_callouts,
 )
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
@@ -44,17 +42,7 @@ def test_qr_label_layouts_matches_qr_local_shape_adapter():
     assert qr_label_layouts(grid, "red", mat_shape=_mat_shape) == _label_layouts(grid, "red")
 
 
-def test_qr_name_specs_to_callouts_matches_qr_local_adapter():
-    specs = [[(0, 2), "al", r"\mathbf{A}"], [(2, 2), "br", r"\mathbf{R = S W^T A}"]]
-    kwargs = {
-        "color": "blue",
-        "label_shift_rules": [(r"\mathbf{R = S W^T A}", -1.0)],
-        "length_rules": [(r"\mathbf{A}", 8.0)],
-    }
-    assert qr_name_specs_to_callouts(specs, **kwargs) == _name_specs_to_callouts(specs, **kwargs)
-
-
-def test_filter_qr_name_specs_matches_qr_local_adapter():
+def test_filter_qr_name_specs_filters_invalid_entries():
     grid = [[None, None, [[1]], None], [None, [[1]]]]
     specs = [
         "bad",
@@ -65,9 +53,7 @@ def test_filter_qr_name_specs_matches_qr_local_adapter():
         [(4, 1), "br", "outside"],
     ]
 
-    expected = [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
-    assert filter_qr_name_specs(specs, grid=grid) == expected
-    assert _filter_name_specs(specs, grid=grid) == expected
+    assert filter_qr_name_specs(specs, grid=grid) == [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
 
 
 def test_qr_callout_rules_matches_qr_local_adapter():
@@ -127,7 +113,6 @@ def test_qr_label_layouts_handles_shape_failure():
 
     assert qr_label_layouts([[None, None, object()]], "red", mat_shape=bad_shape) == ([], [])
 
-
 def test_qr_name_specs_to_callouts_filters_invalid_and_applies_rules():
     callouts = qr_name_specs_to_callouts(
         [
@@ -147,7 +132,6 @@ def test_qr_name_specs_to_callouts_filters_invalid_and_applies_rules():
     assert callouts[0]["angle_deg"] == 40.0
     assert callouts[0]["label_shift_mm"] == (0.0, 2.5)
     assert callouts[1]["length_mm"] == 9.0
-
 
 def test_qr_default_name_specs_shape():
     specs = qr_default_name_specs()

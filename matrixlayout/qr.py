@@ -366,27 +366,6 @@ def _known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tuple[i
     return qr_known_zero_entries(matrices, mat_shape=_mat_shape)
 
 
-def _name_specs_to_callouts(
-    name_specs: Sequence[Any],
-    *,
-    color: str,
-    angle_deg: float = -35.0,
-    length_mm: float = 6.0,
-    label_shift_rules: Optional[Sequence[Tuple[str, float]]] = None,
-    length_rules: Optional[Sequence[Tuple[str, float]]] = None,
-) -> List[Dict[str, Any]]:
-    return qr_name_specs_to_callouts(
-        name_specs,
-        color=color,
-        angle_deg=angle_deg,
-        length_mm=length_mm,
-        label_shift_rules=label_shift_rules,
-        length_rules=length_rules,
-    )
-
-
-def _filter_name_specs(name_specs: Sequence[Any], *, grid: Sequence[Sequence[Any]]) -> List[Any]:
-    return filter_qr_name_specs(name_specs, grid=grid)
 
 
 def _callout_rules(*, a_rows: int, a_cols: int) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
@@ -423,7 +402,7 @@ def _qr_render_parts(
     if array_names:
         name_specs = qr_default_name_specs() if array_names is True else array_names
         if name_specs:
-            name_specs = _filter_name_specs(name_specs, grid=grid)
+            name_specs = filter_qr_name_specs(name_specs, grid=grid)
         a_rows = a_cols = 0
         if n_block_rows > 0 and n_block_cols > 2:
             try:
@@ -432,7 +411,7 @@ def _qr_render_parts(
                 a_rows = a_cols = 0
         label_shift_rules, length_rules = _callout_rules(a_rows=a_rows, a_cols=a_cols)
         if name_specs:
-            generated_callouts = _name_specs_to_callouts(
+            generated_callouts = qr_name_specs_to_callouts(
                 name_specs,
                 color=label_color,
                 angle_deg=-35.0,
