@@ -14,14 +14,14 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 from .formatting import latexify
 from .ge import grid_submatrix_spans, render_ge_tex
 from .qr_spec_merge import coerce_qr_spec as _coerce_qr_spec
-from .qr_spec_merge import filter_qr_name_specs
+from .qr_spec_merge import filter_qr_callout_specs
 from .qr_spec_merge import merge_scalar_default as _merge_scalar_default
 from .qr_spec_merge import merge_scalar as _merge_scalar
 from .qr_spec_merge import qr_callout_rules
-from .qr_spec_merge import qr_default_name_specs
+from .qr_spec_merge import qr_default_callout_specs
 from .qr_spec_merge import qr_known_zero_entries
 from .qr_spec_merge import qr_label_layouts
-from .qr_spec_merge import qr_name_specs_to_callouts
+from .qr_spec_merge import qr_callout_specs_to_callouts
 from .render import _resolve_render_svg_kwargs, render_svg
 from .specs import QRGridBundle, QRGridSpec
 
@@ -219,7 +219,7 @@ class QRGridLayout:
         name: str = "A",
         *,
         color: str = "blue",
-        name_specs: Optional[Sequence[Any]] = None,
+        callout_specs: Optional[Sequence[Any]] = None,
         line_specs: Optional[Sequence[Any]] = None,
     ) -> None:
         self.submatrix_name = name
@@ -247,7 +247,7 @@ class QRGridLayout:
                     locs.append([smat_arg, f"{{{tl[0] + 1}-{tl[1] + 1}}}{{{br[0] + 1}-{br[1] + 1}}}"])
         self.locs = locs
 
-        if name_specs is not None:
+        if callout_specs is not None:
             array_names: List[str] = []
             ar = r"\tikz \draw[<-,>=stealth,COLOR,thick] ($ (NAME.north east) + (0.02,0.02) $) -- +(40:0.6cm)    node[COLOR, above right=-3pt]{TXT};".replace(
                 "COLOR", color
@@ -268,7 +268,7 @@ class QRGridLayout:
                 "COLOR", color
             )
 
-            for (gM, gN), pos, txt in name_specs:
+            for (gM, gN), pos, txt in callout_specs:
                 nm = f"{name}{gM}x{gN}"
                 t = None
                 if pos == "a":
@@ -386,9 +386,9 @@ def _qr_render_parts(
 
     render_callouts: Optional[List[Any]] = list(callouts) if callouts else None
     if array_names:
-        name_specs = qr_default_name_specs() if array_names is True else array_names
-        if name_specs:
-            name_specs = filter_qr_name_specs(name_specs, grid=grid)
+        callout_specs = qr_default_callout_specs() if array_names is True else array_names
+        if callout_specs:
+            callout_specs = filter_qr_callout_specs(callout_specs, grid=grid)
         a_rows = a_cols = 0
         if n_block_rows > 0 and n_block_cols > 2:
             try:
@@ -396,9 +396,9 @@ def _qr_render_parts(
             except Exception:
                 a_rows = a_cols = 0
         label_shift_rules, length_rules = qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
-        if name_specs:
-            generated_callouts = qr_name_specs_to_callouts(
-                name_specs,
+        if callout_specs:
+            generated_callouts = qr_callout_specs_to_callouts(
+                callout_specs,
                 color=label_color,
                 angle_deg=-35.0,
                 length_mm=6.0,

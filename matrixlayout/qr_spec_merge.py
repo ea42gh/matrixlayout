@@ -63,7 +63,7 @@ def qr_known_zero_entries(
     return [((1, 2), entries_wta), ((1, 3), entries_wtw)]
 
 
-def qr_default_name_specs() -> List[Any]:
+def qr_default_callout_specs() -> List[Any]:
     return [
         [(0, 2), "al", r"\mathbf{A}"],
         [(0, 3), "ar", r"\mathbf{W}"],
@@ -76,16 +76,16 @@ def qr_default_name_specs() -> List[Any]:
     ]
 
 
-def filter_qr_name_specs(
-    name_specs: Sequence[Any],
+def filter_qr_callout_specs(
+    callout_specs: Sequence[Any],
     *,
     grid: Sequence[Sequence[Any]],
 ) -> List[Any]:
-    """Keep only name specs that target existing non-empty QR grid blocks."""
+    """Keep only callout specs that target existing non-empty QR grid blocks."""
     n_block_rows = len(grid)
     n_block_cols = max((len(row) for row in grid), default=0)
     filtered_specs: List[Any] = []
-    for spec in name_specs:
+    for spec in callout_specs:
         if not (isinstance(spec, (list, tuple)) and len(spec) >= 1):
             continue
         target_grid = spec[0]
@@ -159,8 +159,8 @@ def qr_label_layouts(
     return label_rows, label_cols
 
 
-def qr_name_specs_to_callouts(
-    name_specs: Sequence[Any],
+def qr_callout_specs_to_callouts(
+    callout_specs: Sequence[Any],
     *,
     color: str,
     angle_deg: float = -35.0,
@@ -177,7 +177,7 @@ def qr_name_specs_to_callouts(
         "br": ("right", "bottom"),
     }
     out: List[Dict[str, Any]] = []
-    for spec in name_specs:
+    for spec in callout_specs:
         if not isinstance(spec, (list, tuple)) or len(spec) < 3:
             continue
         grid = spec[0]

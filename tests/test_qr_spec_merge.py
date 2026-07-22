@@ -4,14 +4,14 @@ from matrixlayout.qr import (
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
     coerce_qr_spec,
-    filter_qr_name_specs,
+    filter_qr_callout_specs,
     merge_scalar_default,
     merge_scalar,
     qr_callout_rules,
-    qr_default_name_specs,
+    qr_default_callout_specs,
     qr_known_zero_entries,
     qr_label_layouts,
-    qr_name_specs_to_callouts,
+    qr_callout_specs_to_callouts,
 )
 from matrixlayout.specs import QRGridSpec
 
@@ -28,7 +28,7 @@ def test_qr_known_zero_entries_handles_short_malformed_and_zero_shapes():
 
 
 
-def test_filter_qr_name_specs_filters_invalid_entries():
+def test_filter_qr_callout_specs_filters_invalid_entries():
     grid = [[None, None, [[1]], None], [None, [[1]]]]
     specs = [
         "bad",
@@ -39,7 +39,7 @@ def test_filter_qr_name_specs_filters_invalid_entries():
         [(4, 1), "br", "outside"],
     ]
 
-    assert filter_qr_name_specs(specs, grid=grid) == [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
+    assert filter_qr_callout_specs(specs, grid=grid) == [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
 
 
 
@@ -96,8 +96,8 @@ def test_qr_label_layouts_handles_shape_failure():
 
     assert qr_label_layouts([[None, None, object()]], "red", mat_shape=bad_shape) == ([], [])
 
-def test_qr_name_specs_to_callouts_filters_invalid_and_applies_rules():
-    callouts = qr_name_specs_to_callouts(
+def test_qr_callout_specs_to_callouts_filters_invalid_and_applies_rules():
+    callouts = qr_callout_specs_to_callouts(
         [
             "bad",
             [(0,), "al", "bad-grid"],
@@ -116,8 +116,8 @@ def test_qr_name_specs_to_callouts_filters_invalid_and_applies_rules():
     assert callouts[0]["label_shift_mm"] == (0.0, 2.5)
     assert callouts[1]["length_mm"] == 9.0
 
-def test_qr_default_name_specs_shape():
-    specs = qr_default_name_specs()
+def test_qr_default_callout_specs_shape():
+    specs = qr_default_callout_specs()
 
     assert specs
     assert all(len(spec) == 3 for spec in specs)

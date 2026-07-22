@@ -128,7 +128,7 @@ def test_qr_grid_layout_submatrix_locs_names_and_tex_repr():
         name="Q",
         color="purple",
         line_specs=[((0, 1), [1], 1), ((1, 0), 1, [1])],
-        name_specs=[
+        callout_specs=[
             ((0, 1), "a", "top"),
             ((0, 1), "al", "top-left"),
             ((0, 1), "ar", "top-right"),
