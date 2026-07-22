@@ -105,7 +105,7 @@ def test_ge_gridspec_from_dict_shared_filtering_rules():
         raise AssertionError("expected GEGridSpec.from_dict(None) to raise")
 
 
-def test_ge_gridspec_rejects_legacy_renderer_flags():
+def test_ge_gridspec_rejects_removed_renderer_flags():
     for field in ("legacy_submatrix_names", "legacy_format"):
         try:
             GEGridSpec.from_dict({"matrices": [[1]], field: True}, allow_extra=False)

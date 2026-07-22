@@ -71,7 +71,7 @@ def test_render_ge_tex_rowechelon_paths_live_in_existing_tikzpicture():
     assert r"\tikz \draw" not in tex
     assert tex.count(r"\begin{tikzpicture}") == 1
 
-def test_render_ge_tex_uses_stack_separator_column_and_rejects_legacy_format():
+def test_render_ge_tex_uses_stack_separator_column_and_rejects_removed_format_flag():
     from matrixlayout.ge import render_ge_tex
 
     matrices = [[[1, 2, 3]]]
@@ -88,7 +88,7 @@ def test_render_ge_tex_uses_stack_separator_column_and_rejects_legacy_format():
             body_preamble="",
         )
 
-def test_render_ge_tex_rejects_legacy_submatrix_names():
+def test_render_ge_tex_rejects_removed_submatrix_name_flag():
     from matrixlayout.ge import render_ge_tex
 
     with pytest.raises(ValueError, match="legacy_submatrix_names is removed"):
