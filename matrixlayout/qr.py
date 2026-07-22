@@ -362,20 +362,6 @@ def _make_decorator(
     return lambda a: x.format(a=a)
 
 
-def _known_zero_entries(matrices: Sequence[Sequence[Any]]) -> List[Tuple[Tuple[int, int], List[Tuple[int, int]]]]:
-    return qr_known_zero_entries(matrices, mat_shape=_mat_shape)
-
-
-
-
-def _callout_rules(*, a_rows: int, a_cols: int) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
-    return qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
-
-
-def _label_layouts(grid: Sequence[Sequence[Any]], label_text_color: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    return qr_label_layouts(grid, label_text_color, mat_shape=_mat_shape)
-
-
 def _qr_render_parts(
     grid: Sequence[Sequence[Any]],
     *,
@@ -393,10 +379,10 @@ def _qr_render_parts(
 
     qr_decorators: List[Dict[str, Any]] = list(decorators or [])
     brown = _make_decorator(text_color=known_zero_color, bf=True)
-    for (gM, gN), entries in _known_zero_entries(grid):
+    for (gM, gN), entries in qr_known_zero_entries(grid, mat_shape=_mat_shape):
         qr_decorators.append({"grid": (gM, gN), "entries": entries, "decorator": brown})
 
-    label_rows, label_cols = _label_layouts(grid, label_text_color)
+    label_rows, label_cols = qr_label_layouts(grid, label_text_color, mat_shape=_mat_shape)
 
     render_callouts: Optional[List[Any]] = list(callouts) if callouts else None
     if array_names:
@@ -409,7 +395,7 @@ def _qr_render_parts(
                 a_rows, a_cols = _mat_shape(grid[0][2])
             except Exception:
                 a_rows = a_cols = 0
-        label_shift_rules, length_rules = _callout_rules(a_rows=a_rows, a_cols=a_cols)
+        label_shift_rules, length_rules = qr_callout_rules(a_rows=a_rows, a_cols=a_cols)
         if name_specs:
             generated_callouts = qr_name_specs_to_callouts(
                 name_specs,
@@ -589,7 +575,7 @@ def qr_grid_bundle(
         raise ValueError("qr_grid_bundle requires `matrices`")
 
     grid = _as_grid(matrices)
-    label_rows, label_cols = _label_layouts(grid, label_text_color)
+    label_rows, label_cols = qr_label_layouts(grid, label_text_color, mat_shape=_mat_shape)
     spans = grid_submatrix_spans(
         grid,
         label_rows=label_rows or None,

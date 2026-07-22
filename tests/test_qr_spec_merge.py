@@ -1,8 +1,5 @@
 from matrixlayout.qr import (
     _mat_shape,
-    _callout_rules,
-    _known_zero_entries,
-    _label_layouts,
 )
 from matrixlayout.qr import render_qr_tex
 from matrixlayout.qr_spec_merge import (
@@ -19,13 +16,6 @@ from matrixlayout.qr_spec_merge import (
 from matrixlayout.specs import QRGridSpec
 
 
-def test_qr_known_zero_entries_matches_qr_local_shape_adapter():
-    grid = [
-        [None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]],
-        [None, [[1, 0], [0, 1]], [[1, 0], [2, 3]], [[1, 0], [0, 1]]],
-    ]
-    assert qr_known_zero_entries(grid, mat_shape=_mat_shape) == _known_zero_entries(grid)
-
 
 def test_qr_known_zero_entries_handles_short_malformed_and_zero_shapes():
     assert qr_known_zero_entries([], mat_shape=_mat_shape) == []
@@ -36,10 +26,6 @@ def test_qr_known_zero_entries_handles_short_malformed_and_zero_shapes():
         mat_shape=_mat_shape,
     ) == []
 
-
-def test_qr_label_layouts_matches_qr_local_shape_adapter():
-    grid = [[None, None, [[1, 2], [3, 4]], [[1, 0], [0, 1]]], [None, [[1, 0], [0, 1]]]]
-    assert qr_label_layouts(grid, "red", mat_shape=_mat_shape) == _label_layouts(grid, "red")
 
 
 def test_filter_qr_name_specs_filters_invalid_entries():
@@ -55,9 +41,6 @@ def test_filter_qr_name_specs_filters_invalid_entries():
 
     assert filter_qr_name_specs(specs, grid=grid) == [[(0, 2), "al", "A"], [(1, 1), "br", "B"]]
 
-
-def test_qr_callout_rules_matches_qr_local_adapter():
-    assert qr_callout_rules(a_rows=2, a_cols=2) == _callout_rules(a_rows=2, a_cols=2)
 
 
 def test_qr_callout_rules_adjust_compact_a_block():
