@@ -220,7 +220,7 @@ Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`
 
 The `decorations` list accepts one-line dicts. Each dict must include `grid=(row,col)`
 unless the grid has a single matrix, in which case `grid` defaults to `(0,0)`,
-and one of: `background`, `hlines`/`vlines`, `label`, or entry styling (`box`, `color`, `bold`).
+and one of: `background`, `hlines`/`vlines`, `outline`, or entry styling (`box`, `color`, `bold`). Use `callouts` for arrow labels; decoration specs do not accept labels.
 Row/col selection supports ranges, lists, or slices via `rows`/`cols` or `submatrix`.
 
 Quick reference:
@@ -234,7 +234,6 @@ Quick reference:
 | `background` | Block highlight color |
 | `hlines`, `vlines` | Separator lines |
 | `box`, `color`, `bold` | Entry styling |
-| `label` | Callout label |
 
 See `decorators.md` for full syntax and examples.
 - `document_preamble`, `body_preamble`, `nice_options`: true LaTeX preamble
@@ -287,7 +286,7 @@ spec = {
 - Wrong `grid` index: `grid` is `(block_row, block_col)`, not entry coordinates.
 - Mixing `label` and `labels`: use `labels` for row/col lists, `label` for callouts.
 - Forgetting `side`: labels and callouts require a `side` (`left/right/above/below`).
-- Misusing `decorations` when `annotations` or `callouts` are intended.
+- Misusing `decorations` when `annotations` or `callouts` are intended; labels belong in `annotations` or `callouts`, not `decorations`.
 
 ## Specs vs decorations
 

@@ -177,3 +177,10 @@ def test_parse_style_decoration_builds_decorator_for_selected_entries():
 
 def test_parse_ignores_decoration_without_action():
     assert parse([{"entries": [(0, 0)]}]) == ([], [], [])
+
+
+def test_specs_docs_do_not_advertise_labels_as_decorations():
+    text = __import__('pathlib').Path('docs/specs.md').read_text(encoding='utf-8')
+
+    assert 'label | Callout label' not in text
+    assert 'decoration specs do not accept labels' in text
