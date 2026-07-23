@@ -17,11 +17,11 @@ A short list of issues that commonly appear when first using matrixlayout.
 
 ## Callouts and names
 
-- Prefer grid-targeted callouts such as
+- Use grid-targeted callouts such as
   `{"grid": (block_row, block_col), "label": "...", "side": "right"}`.
-- Name-targeted callouts attach to `\SubMatrix` delimiter names; ensure the
-  target name is present if you use `"name": ...` directly.
-- Prefer grid-targeted callouts over delimiter-name callouts. Legacy delimiter names such as `A0`, `A1`, or `E1` are renderer-compatibility details and should not appear in new specs.
+- Avoid generated delimiter names such as `A0`, `A1`, or `E1` in new specs.
+  Name-targeted callouts are only for low-level code that already owns the
+  concrete `\SubMatrix` name.
 
 ## Label placement
 

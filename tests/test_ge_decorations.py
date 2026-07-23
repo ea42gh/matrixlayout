@@ -184,3 +184,15 @@ def test_specs_docs_do_not_advertise_labels_as_decorations():
 
     assert 'label | Callout label' not in text
     assert 'decoration specs do not accept labels' in text
+
+
+def test_specs_docs_prefer_grid_callouts_over_generated_names():
+    specs = __import__('pathlib').Path('docs/specs.md').read_text(encoding='utf-8')
+    pitfalls = __import__('pathlib').Path('docs/pitfalls.md').read_text(encoding='utf-8')
+    api = __import__('pathlib').Path('docs/api.md').read_text(encoding='utf-8')
+
+    assert 'Name-targeted callouts such as' not in specs
+    assert 'Grid renderers should use `grid=(block_row, block_col)`' in specs
+    assert 'do not use generated names such as `A0` or `E1`' in specs
+    assert 'Avoid generated delimiter names such as `A0`, `A1`, or `E1`' in pitfalls
+    assert 'prefer `grid=(block_row, block_col)` in new specs' in api

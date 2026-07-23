@@ -185,9 +185,10 @@ CalloutSpec:
 }
 ```
 
-Name-targeted callouts such as `{"name": "A0", ...}` are still accepted when
-you already know the generated `\SubMatrix` delimiter name. For grid renderers,
-prefer `grid=(block_row, block_col)`.
+Grid renderers should use `grid=(block_row, block_col)` for callouts. Name-targeted
+callouts are a low-level escape hatch for code that already has concrete
+`\SubMatrix` delimiter names; do not use generated names such as `A0` or `E1`
+in new renderer specs.
 
 Defaults are applied when fields are omitted (e.g., `n_rhs=0`, `decorators=None`,
 `formatter=latexify`). See `matrixlayout.formatting` for decorator helpers.

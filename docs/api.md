@@ -25,7 +25,7 @@ working with the lower-level GE template interface.
 - `matrixlayout.ge.grid_line_specs(**opts)`: compute `submatrix_locs` entries for hlines/vlines.
 - `matrixlayout.ge.grid_highlight_specs(**opts)`: compute `codebefore` entries for block highlights.
 - `matrixlayout.ge.render_ge_tex_specs(annotations)`: convert row/column label annotations into `label_rows`/`label_cols`.
-- `matrixlayout.ge.resolve_ge_grid_name(name, **opts)`: resolve matrix names (e.g., `A0`, `E1`) to grid positions.
+- `matrixlayout.ge.resolve_ge_grid_name(name, **opts)`: resolve generated delimiter names to grid positions for diagnostics and low-level interop; prefer `grid=(block_row, block_col)` in new specs.
 - `matrixlayout.ge.decorations_help()`: return help text for `decorations` spec syntax.
 
 Common options: `annotations` (row/column labels), `callouts` (arrow labels attached
