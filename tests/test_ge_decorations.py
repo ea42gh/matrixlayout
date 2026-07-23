@@ -194,5 +194,11 @@ def test_specs_docs_prefer_grid_callouts_over_generated_names():
     assert 'Name-targeted callouts such as' not in specs
     assert 'Grid renderers should use `grid=(block_row, block_col)`' in specs
     assert 'do not use generated names such as `A0` or `E1`' in specs
+    ge_notebook = __import__('pathlib').Path('docs/notebooks/01_ge_grids.ipynb').read_text(encoding='utf-8')
+    template_notebook = __import__('pathlib').Path('docs/notebooks/06_rendering_templates.ipynb').read_text(encoding='utf-8')
+
     assert 'Avoid generated delimiter names such as `A0`, `A1`, or `E1`' in pitfalls
     assert 'prefer `grid=(block_row, block_col)` in new specs' in api
+    assert 'Resolve legacy matrix names' not in ge_notebook
+    assert 'New GE renderer specs should use `grid=(block_row, block_col)` directly' in ge_notebook
+    assert 'normal GE renderer specs should use grid-targeted callouts instead' in template_notebook
