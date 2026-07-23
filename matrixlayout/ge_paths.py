@@ -28,8 +28,6 @@ class RowEchelonPathSpec:
     pivots: Sequence[Tuple[int, int]]
     case: str = "hh"
     color: str = "blue,line width=0.4mm"
-    adj: Any = 0.1
-    left_pad: Any = 0.0
     path_offsets: Any = (0.0, 0.0)
 
 
@@ -61,15 +59,15 @@ def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
         grid = spec.get("grid")
         if not isinstance(grid, (list, tuple)) or len(grid) != 2:
             return None
-        if "node_offsets" in spec:
-            raise ValueError("node_offsets is removed; use path_offsets instead")
+        removed = {"node_offsets", "adj", "left_pad"} & set(spec)
+        if removed:
+            names = ", ".join(sorted(removed))
+            raise ValueError(f"{names} is removed; use path_offsets instead")
         return RowEchelonPathSpec(
             grid=(int(grid[0]), int(grid[1])),
             pivots=_normalize_pivots(spec.get("pivots", spec.get("entries", []))),
             case=str(spec.get("case", "hh")),
             color=str(spec.get("color", "blue,line width=0.4mm")),
-            adj=spec.get("adj", 0.1),
-            left_pad=spec.get("left_pad", 0.0),
             path_offsets=spec.get("path_offsets", (0.0, 0.0)),
         )
     if isinstance(spec, RowEchelonPathSpec):
@@ -107,8 +105,6 @@ def _rowechelon_path_commands_from_specs(
         pivots = normalized.pivots
         case = normalized.case
         color = normalized.color
-        _adj = normalized.adj
-        left_pad = normalized.left_pad
         raw_path_offsets = normalized.path_offsets
         path_offsets = _normalize_path_offsets(raw_path_offsets)
         span = span_map.get((gM, gN))
@@ -128,8 +124,6 @@ def _rowechelon_path_commands_from_specs(
             shape: Tuple[int, int] = shape,
             tlr: int = tlr,
             tlc: int = tlc,
-            adj: float = float(_adj),
-            left_pad: float = left_pad,
             path_offsets: Tuple[float, float] = path_offsets,
             left_delim_node: str = span.left_delim_node,
         ) -> str:
@@ -139,7 +133,7 @@ def _rowechelon_path_commands_from_specs(
                 row_i = min(int(i) - 1, max(shape[0] - 1, 0))
                 row = row_i + tlr + 2
             if j == 0:
-                dx = adj - float(left_pad) + path_offsets[0]
+                dx = 0.1 + path_offsets[0]
                 dy = path_offsets[1]
                 p = f"({row}-|{left_delim_node})"
                 if dx or dy:

@@ -99,6 +99,24 @@ def test_rowechelon_path_rejects_removed_node_offsets_keyword():
         )
 
 
+def test_rowechelon_path_rejects_removed_adj_and_left_pad_keywords():
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    for key in ("adj", "left_pad"):
+        with pytest.raises(ValueError, match=f"{key}.*path_offsets"):
+            rowechelon_paths_from_specs(
+                matrices,
+                [
+                    {
+                        "grid": (0, 1),
+                        "pivots": [(0, 0)],
+                        "case": "vv",
+                        key: 0.2,
+                    }
+                ],
+                submatrix_name_style="grid",
+            )
+
+
 def test_rowechelon_path_structured_spec_applies_path_offsets():
     matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
     paths = rowechelon_paths_from_specs(
