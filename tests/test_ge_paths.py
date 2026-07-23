@@ -1,5 +1,7 @@
 import re
 
+import pytest
+
 from matrixlayout.ge_paths import rowechelon_paths_from_specs
 
 
@@ -80,7 +82,24 @@ def test_rowechelon_paths_single_pivot_nonfirst_column_uses_column_left_edge():
     _assert_manhattan_path(paths[0])
 
 
-def test_rowechelon_path_structured_spec_applies_node_offsets():
+def test_rowechelon_path_rejects_removed_node_offsets_keyword():
+    matrices = [[None, [[1, 2], [3, 4]]]]
+    with pytest.raises(ValueError, match="node_offsets.*path_offsets"):
+        rowechelon_paths_from_specs(
+            matrices,
+            [
+                {
+                    "grid": (0, 1),
+                    "pivots": [(0, 0)],
+                    "case": "vv",
+                    "node_offsets": (0.2, -0.05),
+                }
+            ],
+            submatrix_name_style="grid",
+        )
+
+
+def test_rowechelon_path_structured_spec_applies_path_offsets():
     matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
     paths = rowechelon_paths_from_specs(
         matrices,
@@ -90,7 +109,7 @@ def test_rowechelon_path_structured_spec_applies_node_offsets():
                 "pivots": [(0, 0), (1, 1)],
                 "case": "vh",
                 "color": "red",
-                "node_offsets": (0.2, -0.05),
+                "path_offsets": (0.2, -0.05),
             }
         ],
         submatrix_name_style="grid",

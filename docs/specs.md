@@ -272,7 +272,7 @@ spec = {
         {"grid": (0, 1), "label": r"$A$", "side": "right", "angle_deg": -35, "length_mm": 8},
     ],
     "rowechelon_paths": [
-        r"\draw[blue,line width=0.4mm] (1-1) -- (2-1) -- (2-2);",
+        {"grid": (0, 1), "pivots": [(0, 0), (1, 1)], "case": "hh", "path_offsets": (0.2, -0.05)},
     ],
 }
 ```
