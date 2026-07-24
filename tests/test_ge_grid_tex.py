@@ -93,3 +93,9 @@ def test_render_ge_tex_rejects_removed_submatrix_name_flag():
 
     with pytest.raises(ValueError, match="legacy_submatrix_names is removed"):
         render_ge_tex(matrices=[[[1]]], legacy_submatrix_names=True, body_preamble="")
+
+def test_render_ge_tex_rejects_removed_label_targets_alias():
+    from matrixlayout.ge import render_ge_tex
+
+    with pytest.raises(ValueError, match="label_targets is removed"):
+        render_ge_tex(matrices=[[[1]]], label_targets=[], body_preamble="")

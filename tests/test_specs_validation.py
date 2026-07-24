@@ -106,7 +106,7 @@ def test_ge_gridspec_from_dict_shared_filtering_rules():
 
 
 def test_ge_gridspec_rejects_removed_renderer_flags():
-    for field in ("legacy_submatrix_names", "legacy_format"):
+    for field in ("legacy_submatrix_names", "legacy_format", "label_targets"):
         try:
             GEGridSpec.from_dict({"matrices": [[1]], field: True}, allow_extra=False)
         except ValueError as exc:

@@ -76,6 +76,7 @@ _normalize_index_list = _ge_decorations.normalize_index_list
 _REMOVED_GE_RENDERER_FLAGS = {
     "legacy_format": "stack_separator_column",
     "legacy_submatrix_names": "submatrix_name_style",
+    "label_targets": "annotations",
 }
 
 
@@ -819,8 +820,6 @@ def render_ge_svg(
     str
         SVG text.
     """
-    if "label_targets" in kwargs:
-        raise ValueError("label_targets is removed; use annotations instead.")
 
     annotations = _resolve_annotations(annotations=annotations)
 
