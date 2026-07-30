@@ -83,13 +83,13 @@ def test_render_delim_callouts_resolves_grid():
 
 
 def test_render_delim_callouts_rejects_removed_grid_aliases():
-    with pytest.raises(ValueError, match="expected grid"):
+    with pytest.raises(ValueError, match="Removed callout target alias"):
         render_delim_callouts(
             [{"grid_pos": (2, 1), "label": "B", "side": "right"}],
             available_names=["A2"],
             name_map={(2, 1): "A2"},
         )
-    with pytest.raises(ValueError, match="expected grid"):
+    with pytest.raises(ValueError, match="Removed callout target alias"):
         render_delim_callouts(
             [{"block_row": 2, "block_col": 1, "label": "B", "side": "right"}],
             available_names=["A2"],
