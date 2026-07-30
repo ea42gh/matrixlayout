@@ -12,9 +12,11 @@ prefixed with `_` or live in modules that are not intended to be called
 directly by users. If you need an internal helper, prefer a public wrapper.
 
 Prefer descriptive renderer names such as `render_ge_tex` and `render_ge_svg`
-over generic aliases. The package top level intentionally does not export
-`tex` or `svg`; use `render_ge_tex`/`render_ge_svg` for supported GE rendering. The private `matrixlayout.ge._tex`/`matrixlayout.ge._svg` helpers are only for
-working with the lower-level GE template interface.
+over generic `tex`/`svg` aliases. The package top level intentionally does
+not export `tex` or `svg`; use `render_ge_tex`/`render_ge_svg` for
+supported GE rendering. The private `matrixlayout.ge._tex` and
+`matrixlayout.ge._svg` helpers are only for working with the lower-level GE
+template interface.
 
 ## GE
 
