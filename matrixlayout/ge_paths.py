@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Sequence, Tuple
 
+_REMOVED_ROWECH_PATH_KEYS = frozenset({"node_offsets", "adj", "left_pad"})
+
 
 @dataclass(frozen=True)
 class RowEchelonPathSpec:
@@ -59,7 +61,7 @@ def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
         grid = spec.get("grid")
         if not isinstance(grid, (list, tuple)) or len(grid) != 2:
             return None
-        removed = {"node_offsets", "adj", "left_pad"} & set(spec)
+        removed = _REMOVED_ROWECH_PATH_KEYS & set(spec)
         if removed:
             names = ", ".join(sorted(removed))
             raise ValueError(f"{names} is removed; use path_offsets instead")
