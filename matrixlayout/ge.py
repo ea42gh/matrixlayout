@@ -81,9 +81,13 @@ _REMOVED_GE_RENDERER_FLAGS = {
 
 
 def _reject_removed_ge_renderer_flags(kwargs: Mapping[str, Any]) -> None:
-    for old_name, new_name in _REMOVED_GE_RENDERER_FLAGS.items():
-        if old_name in kwargs:
-            raise ValueError(f"{old_name} is removed; use {new_name} instead.")
+    messages = [
+        f"{old_name} is removed; use {new_name} instead."
+        for old_name, new_name in _REMOVED_GE_RENDERER_FLAGS.items()
+        if old_name in kwargs
+    ]
+    if messages:
+        raise ValueError(" ".join(messages))
 
 
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:

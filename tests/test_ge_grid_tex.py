@@ -99,3 +99,19 @@ def test_render_ge_tex_rejects_removed_label_targets_alias():
 
     with pytest.raises(ValueError, match="label_targets is removed"):
         render_ge_tex(matrices=[[[1]]], label_targets=[], body_preamble="")
+def test_render_ge_tex_rejects_all_removed_renderer_flags():
+    from matrixlayout.ge import render_ge_tex
+
+    with pytest.raises(ValueError) as excinfo:
+        render_ge_tex(
+            matrices=[[[1]]],
+            legacy_format=True,
+            legacy_submatrix_names=True,
+            label_targets=[],
+            body_preamble="",
+        )
+
+    msg = str(excinfo.value)
+    assert "legacy_format is removed; use stack_separator_column instead" in msg
+    assert "legacy_submatrix_names is removed; use submatrix_name_style instead" in msg
+    assert "label_targets is removed; use annotations instead" in msg
