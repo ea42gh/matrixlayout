@@ -81,6 +81,8 @@ class DelimCallout:
 
 CalloutLike = Union[DelimCallout, DelimCalloutDict, Mapping[str, Any]]
 
+_REMOVED_CALLOUT_ALIAS_KEYS = frozenset({"angle", "length", "label_shift_x_mm", "label_shift_y_mm"})
+
 
 def _coerce_side(value: Any) -> Side:
     side = str(value).strip().lower()
@@ -103,7 +105,7 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
         return obj
     if isinstance(obj, Mapping):
         d = dict(obj)
-        removed = {"angle", "length", "label_shift_x_mm", "label_shift_y_mm"} & set(d)
+        removed = _REMOVED_CALLOUT_ALIAS_KEYS & set(d)
         if removed:
             names = ", ".join(sorted(removed))
             raise ValueError(
