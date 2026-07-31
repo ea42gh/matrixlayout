@@ -64,8 +64,8 @@ The eigen/SVD template uses `body_preamble` for body-local TeX setup such as
 Matrix-block column spacing is controlled with millimeter kwargs:
 `mmLambda` for `\Lambda`, `mmSigma` for `\Sigma`, `mmS` for ordinary eigenvector
 matrix `S`, `mmQ` for `Q`, `mmV` for `V`, and `mmU` for `U`. When omitted,
-`mmSigma` defaults to `mmLambda`, while `mmQ`, `mmV`, and `mmU` default to
-`mmS`.
+`mmSigma` defaults to `mmLambda`; `mmS`, `mmQ`, `mmV`, and `mmU` each default
+to `4`.
 Use `output_dir` to preserve rendered artifacts from `render_eig_svg`.
 Prefer `output_dir` for new code.
 

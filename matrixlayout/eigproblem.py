@@ -464,9 +464,9 @@ def render_eig_tex(
     mmLambda: int = 8,
     mmSigma: Optional[int] = None,
     mmS: int = 4,
-    mmU: Optional[int] = None,
-    mmV: Optional[int] = None,
-    mmQ: Optional[int] = None,
+    mmU: int = 4,
+    mmV: int = 4,
+    mmQ: int = 4,
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,
@@ -492,8 +492,8 @@ def render_eig_tex(
     mmLambda, mmSigma, mmS, mmU, mmV, mmQ:
         Column spacing (mm) for matrix blocks. ``mmLambda`` controls Lambda,
         ``mmSigma`` controls Sigma, ``mmU`` controls U, ``mmV`` controls V, and
-        ``mmQ`` controls Q. ``mmS`` is the compatibility default for S/Q/U/V
-        when a matrix-specific spacing is omitted.
+        ``mmQ`` controls Q, and ``mmS`` controls the ordinary eigenvector
+        matrix ``S``.
     fig_scale:
         If provided, wraps the content in ``\\scalebox{<fig_scale>}{% ... }``.
         This matches the template convention.
@@ -523,9 +523,6 @@ def render_eig_tex(
     case = norm_str(case) or ""
     color = norm_str(color) or ""
     mmSigma = mmLambda if mmSigma is None else mmSigma
-    mmU = mmS if mmU is None else mmU
-    mmV = mmS if mmV is None else mmV
-    mmQ = mmS if mmQ is None else mmQ
     lambdas_distinct = list(eig["lambda"])
     multiplicities = list(eig["ma"])
     n = int(sum(multiplicities))
@@ -695,9 +692,9 @@ def render_eig_svg(
     mmLambda: int = 8,
     mmSigma: Optional[int] = None,
     mmS: int = 4,
-    mmU: Optional[int] = None,
-    mmV: Optional[int] = None,
-    mmQ: Optional[int] = None,
+    mmU: int = 4,
+    mmV: int = 4,
+    mmQ: int = 4,
     fig_scale: Optional[Union[int, float]] = None,
     body_preamble: str = r" \NiceMatrixOptions{cell-space-limits = 1pt}" + "\n",
     sz: Optional[Tuple[int, int]] = None,

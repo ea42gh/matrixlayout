@@ -81,6 +81,19 @@ def test_render_eig_tex_uses_matrix_specific_spacing_for_q_case():
     assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" not in tex
 
 
+def test_render_eig_tex_mmS_does_not_control_q_spacing():
+    tex = matrixlayout.render_eig_tex(
+        _sample_eig(),
+        case="Q",
+        formatter=str,
+        fig_scale=None,
+        mmS=12,
+    )
+
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{12mm}}r}" not in tex
+
+
 def test_render_eig_tex_case_SVD_includes_sigma_and_U():
     tex = matrixlayout.render_eig_tex(_sample_eig(), case="SVD", formatter=str, fig_scale=1.2, sz=(2, 2))
     assert r"\sigma" in tex
@@ -108,6 +121,20 @@ def test_render_eig_tex_uses_matrix_specific_spacing_for_svd_case():
     assert r"\begin{pNiceArray}{r@{\hspace{5mm}}r}" in tex
     assert r"\begin{pNiceArray}{c@{\hspace{11mm}}c}" not in tex
     assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" not in tex
+
+
+def test_render_eig_tex_mmS_does_not_control_svd_matrix_spacing():
+    tex = matrixlayout.render_eig_tex(
+        _sample_eig(),
+        case="SVD",
+        formatter=str,
+        fig_scale=None,
+        sz=(2, 2),
+        mmS=12,
+    )
+
+    assert r"\begin{pNiceArray}{r@{\hspace{4mm}}r}" in tex
+    assert r"\begin{pNiceArray}{r@{\hspace{12mm}}r}" not in tex
 
 
 def test_render_eig_tex_svd_uses_spec_size_when_sz_missing():
