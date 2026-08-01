@@ -1,7 +1,7 @@
 import pytest
 
 
-from matrixlayout.ge import _tex
+from matrixlayout.ge import _tex, render_ge_tex
 
 
 def test_ge_tex_layout_merges_document_and_body_preamble_strings():
@@ -56,6 +56,12 @@ def test_ge_tex_rejects_removed_hook_aliases():
         _tex(mat_rep="1", mat_format="c", preamble="%old")
 
 
+def test_render_ge_tex_rejects_removed_hook_aliases():
+    with pytest.raises(TypeError, match="Removed TeX hook keyword"):
+        render_ge_tex(matrices=[[[1]]], preamble="%old")
+    with pytest.raises(TypeError, match="Removed TeX hook keyword"):
+        render_ge_tex(matrices=[[[1]]], extension="%old")
+
 def test_ge_tex_layout_preamble_is_validated_after_merge():
     # The GE template injects `body_preamble` into the document body. Guardrails
     # must apply even when the value comes from the layout spec.
@@ -65,4 +71,3 @@ def test_ge_tex_layout_preamble_is_validated_after_merge():
             mat_format="c",
             layout={"body_preamble": r"\\geometry{margin=0pt}"},
         )
-

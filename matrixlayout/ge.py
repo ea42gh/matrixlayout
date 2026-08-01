@@ -73,6 +73,18 @@ from .specs import (
 LatexFormatter = Callable[[Any], str]
 
 _normalize_index_list = _ge_decorations.normalize_index_list
+_REMOVED_GE_TEX_HOOKS = frozenset({"preamble", "extension"})
+
+
+def _reject_removed_tex_hook_kwargs(kwargs: Mapping[str, Any]) -> None:
+    removed = _REMOVED_GE_TEX_HOOKS & set(kwargs)
+    if removed:
+        names = ", ".join(sorted(removed))
+        raise TypeError(
+            f"Removed TeX hook keyword(s): {names}. "
+            "Use body_preamble= for document-body setup and document_preamble= for true LaTeX preamble insertion."
+        )
+
 _REMOVED_GE_RENDERER_FLAGS = {
     "legacy_format": "stack_separator_column",
     "legacy_submatrix_names": "submatrix_name_style",
@@ -434,6 +446,7 @@ def render_ge_tex(
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
         tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
+    _reject_removed_tex_hook_kwargs(kwargs)
     grid_spec = _coerce_grid_spec(spec)
     if body_preamble is not None:
         kwargs["body_preamble"] = body_preamble
@@ -862,4 +875,3 @@ def render_ge_svg(
         exact_bbox=exact_bbox,
     )
     return _render_svg(tex, **opts)
-
