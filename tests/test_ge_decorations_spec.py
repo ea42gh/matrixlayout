@@ -1,3 +1,5 @@
+import pytest
+
 from matrixlayout.ge import render_ge_tex
 from matrixlayout.ge_decorations import normalize_index_list
 from matrixlayout.formatting import decorator_bg, decorator_box, sel_col, sel_entry
@@ -157,6 +159,16 @@ def test_render_ge_tex_decorations_lines_and_callout():
     assert r"\mathbf{A}" in tex
 
 
+def test_render_ge_tex_rejects_label_specs_in_decorations():
+    matrices = [[[1, 2], [3, 4]]]
+
+    with pytest.raises(TypeError, match="decorations no longer accepts label specs"):
+        render_ge_tex(
+            matrices=matrices,
+            decorations=[{"grid": (0, 0), "label": r"\mathbf{A}", "side": "right"}],
+            formatter=str,
+        )
+
 def test_render_ge_tex_decorations_lines_submatrix_shorthand():
     matrices = [[[1, 2, 3, 4], [5, 6, 7, 8]]]
     decorations = [
@@ -198,3 +210,4 @@ def test_render_ge_tex_decorations_rows_cols_selection():
     tex = render_ge_tex(matrices=matrices, decorations=decorations, formatter=str)
     assert r"\color{red}{2}" in tex
     assert r"\color{red}{3}" in tex
+

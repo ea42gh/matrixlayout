@@ -150,7 +150,6 @@ def qr_label_layouts(
         v_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{v_{i+1}}}}}$" for i in range(n_cols)]
         w_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{i+1}}}}}$" for i in range(n_cols)]
         wt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{w_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
-        qt_labels = [rf"$\textcolor{{{label_text_color}}}{{\mathbf{{q_{{{i+1}}}^T}}}}$" for i in range(n_cols)]
         if n_block_rows > 0 and n_block_cols > 2:
             label_rows.append({"grid": (0, 2), "side": "above", "labels": v_labels})
         if n_block_rows > 0 and n_block_cols > 3:
@@ -215,3 +214,4 @@ def qr_callout_specs_to_callouts(
             callout["label_shift_mm"] = label_shift_mm
         out.append(callout)
     return out
+
