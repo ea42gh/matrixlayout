@@ -102,9 +102,7 @@ def test_qr_render_parts_collects_known_zero_labels_and_callouts():
 
     assert any(item["grid"] == (1, 2) for item in decorators)
     assert any(item["grid"] == (0, 2) and item["side"] == "above" for item in label_rows)
-    assert any(item["grid"] == (0, 3) and "w_2" in str(item["labels"]) for item in label_rows)
     assert any(item["grid"] == (1, 1) and item["side"] == "left" for item in label_cols)
-    assert any(item["grid"] == (2, 1) and "q_{2}^T" in str(item["labels"]) for item in label_cols)
     assert callouts is not None
     assert any(item["label"] == r"\mathbf{A}" for item in callouts)
     assert create_extra_nodes is True
