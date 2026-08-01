@@ -13,8 +13,16 @@ def resolve_annotations(
     *,
     annotations: Optional[Sequence[Mapping[str, Any]]],
 ) -> Optional[Sequence[Mapping[str, Any]]]:
-    """Return the canonical label/callout annotation specs."""
+    """Return canonical row/column label annotation specs."""
 
+    if not annotations:
+        return annotations
+    for idx, item in enumerate(annotations):
+        if isinstance(item, Mapping) and "label" in item and "labels" not in item:
+            raise TypeError(
+                f"annotations[{idx}] uses singular 'label'. "
+                "Use annotations=[{labels=...}] for row/column labels or callouts=[{label=...}] for matrix arrow labels."
+            )
     return annotations
 
 

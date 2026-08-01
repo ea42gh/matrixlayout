@@ -77,7 +77,7 @@ callouts = [
 ## Precedence and merging
 
 - When a spec and explicit kwargs are both provided, explicit kwargs win.
-- `annotations` are merged into `label_rows`/`label_cols`.
+- `annotations` are merged into `label_rows`/`label_cols`; they require plural `labels`. Singular `label` is reserved for `callouts` and is rejected in annotations.
 - Use `annotations` for row/column labels and `callouts` for arrow labels.
 - When `strict=False`, extra/unknown fields in a spec dict are ignored instead of erroring.
 
@@ -337,4 +337,3 @@ spec = {
     "evecs": [[[1, 0]], [[0, 1]]],
 }
 ```
-

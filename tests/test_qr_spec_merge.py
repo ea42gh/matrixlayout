@@ -1,3 +1,5 @@
+import pytest
+
 from matrixlayout.qr import (
     _mat_shape,
 )
@@ -135,6 +137,14 @@ def test_render_qr_tex_spec_overrides_default_label_text_color():
     tex = render_qr_tex(spec=spec, array_names=False)
 
     assert r"\textcolor{green}" in tex
+
+
+def test_render_qr_tex_rejects_singular_label_in_annotations():
+    with pytest.raises(TypeError, match=r"annotations\[0\].*callouts"):
+        render_qr_tex(
+            matrices=[[[1]], [[1]], [[1]], [[1]]],
+            annotations=[{"grid": (0, 0), "label": "A", "side": "right"}],
+        )
 
 
 def test_render_qr_tex_accepts_annotations():

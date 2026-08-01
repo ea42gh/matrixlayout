@@ -617,6 +617,11 @@ def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
             strict=strict,
         )
     )
+    annotations = mapping.get("annotations")
+    if annotations is not None and (isinstance(annotations, (str, bytes)) or not isinstance(annotations, Sequence)):
+        errors.append("annotations must be a sequence of mappings")
+    elif annotations is not None:
+        errors.extend(_validate_annotation_specs(annotations, grid=grid, strict=strict, field="annotations"))
     errors.extend(_validate_ge_decorations(mapping.get("decorations"), grid=grid, strict=strict))
     return errors
 

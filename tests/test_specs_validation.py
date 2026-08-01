@@ -41,6 +41,17 @@ def test_validate_ge_spec_rejects_label_rows_cols_payload_aliases():
     assert any("label_cols[0] must include 'labels'" in msg for msg in errors)
 
 
+def test_validate_ge_spec_rejects_annotation_callout_label_alias():
+    spec = {
+        "matrices": [[[[1]]]],
+        "annotations": [{"grid": (0, 0), "label": "A", "side": "right"}],
+    }
+
+    errors = validate_ge_spec(spec, strict=True)
+
+    assert any("annotations[0] has unknown field" in msg and "label" in msg for msg in errors)
+    assert any("annotations[0] must include 'labels'" in msg for msg in errors)
+
 def test_validate_ge_spec_checks_nested_decorations():
     spec = {
         "matrices": [[[[1]], [[2]]]],
@@ -182,6 +193,17 @@ def test_validate_qr_spec_rejects_string_callouts():
 
     assert any("callouts must be a sequence of mappings" in msg for msg in errors)
 
+
+def test_validate_qr_spec_rejects_annotation_callout_label_alias():
+    spec = {
+        "matrices": [[[[1]]]],
+        "annotations": [{"grid": (0, 0), "label": "A", "side": "right"}],
+    }
+
+    errors = validate_qr_spec(spec, strict=True)
+
+    assert any("annotations[0] has unknown field" in msg and "label" in msg for msg in errors)
+    assert any("annotations[0] must include 'labels'" in msg for msg in errors)
 
 def test_validate_qr_spec_rejects_decoration_actions_as_annotations():
     spec = {
