@@ -86,6 +86,74 @@ def _rowechelon_path_specs_from_items(items: Sequence[Any]) -> List[RowEchelonPa
     return out
 
 
+def _pivot_rule_point(
+    i: int,
+    j: int,
+    *,
+    shape: Tuple[int, int],
+    top_left_row: int,
+    top_left_col: int,
+    path_offsets: Tuple[float, float],
+    left_delim_node: str,
+) -> str:
+    if i <= 0:
+        row = top_left_row + 1
+    else:
+        row_i = min(int(i) - 1, max(shape[0] - 1, 0))
+        row = row_i + top_left_row + 2
+    if j == 0:
+        dx = 0.1 + path_offsets[0]
+        dy = path_offsets[1]
+        p = f"({row}-|{left_delim_node})"
+        if dx or dy:
+            return f"($ {p} + ({dx:g},{dy:g}) $)"
+        return p
+    if j >= shape[1]:
+        col = top_left_col + shape[1] + 1
+        return _offset_node(f"({row}-|{col})", path_offsets)
+
+    col_j = min(max(int(j), 0), max(shape[1] - 1, 0))
+    col = col_j + top_left_col + 1
+    return _offset_node(f"({row}-|{col})", path_offsets)
+
+
+def _staircase_points(
+    pivots: Sequence[Tuple[int, int]],
+    *,
+    case: str,
+    shape: Tuple[int, int],
+) -> List[Tuple[int, int]]:
+    cur = pivots[0]
+    points = [cur] if (case == "vv") or (case == "vh") else []
+    for nxt in pivots[1:]:
+        if cur[0] != nxt[0]:
+            cur = (cur[0] + 1, cur[1])
+            points.append(cur)
+        if nxt[1] != cur[1]:
+            cur = (cur[0], nxt[1])
+            points.append(cur)
+        if cur != nxt:
+            points.append(nxt)
+        cur = nxt
+
+    if len(points) == 0 and case == "hv":
+        points = [(pivots[0][0] + 1, pivots[0][0]), (shape[0], pivots[0][1])]
+
+    if (case == "hh") or (case == "vh"):
+        if cur[0] != shape[0]:
+            cur = (cur[0] + 1, cur[1])
+            points.append(cur)
+        points.append((cur[0], shape[1]))
+    else:
+        points.append((shape[0], cur[1]))
+
+    compact: List[Tuple[int, int]] = []
+    for p in points:
+        if not compact or compact[-1] != p:
+            compact.append(p)
+    return compact
+
+
 def _rowechelon_path_commands_from_specs(
     matrices: Sequence[Sequence[Any]],
     specs: Sequence[Any],
@@ -116,79 +184,27 @@ def _rowechelon_path_commands_from_specs(
         if not pivots:
             continue
 
-        tlr = span.row_start - 1
-        tlc = span.col_start - 1
-
-        def coords(
-            i: int,
-            j: int,
-            *,
-            shape: Tuple[int, int] = shape,
-            tlr: int = tlr,
-            tlc: int = tlc,
-            path_offsets: Tuple[float, float] = path_offsets,
-            left_delim_node: str = span.left_delim_node,
-        ) -> str:
-            if i <= 0:
-                row = tlr + 1
-            else:
-                row_i = min(int(i) - 1, max(shape[0] - 1, 0))
-                row = row_i + tlr + 2
-            if j == 0:
-                dx = 0.1 + path_offsets[0]
-                dy = path_offsets[1]
-                p = f"({row}-|{left_delim_node})"
-                if dx or dy:
-                    return f"($ {p} + ({dx:g},{dy:g}) $)"
-                return p
-            elif j >= shape[1]:
-                col = tlc + shape[1] + 1
-                p = f"({row}-|{col})"
-            else:
-                col_j = min(max(int(j), 0), max(shape[1] - 1, 0))
-                col = col_j + tlc + 1
-                p = f"({row}-|{col})"
-
-            return _offset_node(p, path_offsets)
-
-        cur = pivots[0]
-        ll = [cur] if (case == "vv") or (case == "vh") else []
-        for nxt in pivots[1:]:
-            if cur[0] != nxt[0]:
-                cur = (cur[0] + 1, cur[1])
-                ll.append(cur)
-            if nxt[1] != cur[1]:
-                cur = (cur[0], nxt[1])
-                ll.append(cur)
-            if cur != nxt:
-                ll.append(nxt)
-            cur = nxt
-
-        if len(ll) == 0 and case == "hv":
-            ll = [(pivots[0][0] + 1, pivots[0][0]), (shape[0], pivots[0][1])]
-
-        if (case == "hh") or (case == "vh"):
-            if cur[0] != shape[0]:
-                cur = (cur[0] + 1, cur[1])
-                ll.append(cur)
-            ll.append((cur[0], shape[1]))
-        else:
-            ll.append((shape[0], cur[1]))
-
-        compact: List[Tuple[int, int]] = []
-        for p in ll:
-            if not compact or compact[-1] != p:
-                compact.append(p)
+        top_left_row = span.row_start - 1
+        top_left_col = span.col_start - 1
+        compact = _staircase_points(pivots, case=case, shape=shape)
 
         rendered_points: List[str] = []
         for p in compact:
-            rendered = coords(*p)
+            rendered = _pivot_rule_point(
+                *p,
+                shape=shape,
+                top_left_row=top_left_row,
+                top_left_col=top_left_col,
+                path_offsets=path_offsets,
+                left_delim_node=span.left_delim_node,
+            )
             if not rendered_points or rendered_points[-1] != rendered:
                 rendered_points.append(rendered)
 
         cmd = "\\draw[" + color + "] " + " -- ".join(rendered_points) + ";"
         out.append(cmd)
     return out
+
 
 def rowechelon_paths_from_specs(
     matrices: Sequence[Sequence[Any]],
