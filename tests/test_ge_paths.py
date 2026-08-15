@@ -34,10 +34,10 @@ def _assert_no_cell_anchor_path(path):
     assert ".west" not in path
 
 
-def test_ge_paths_does_not_expose_legacy_tuple_alias():
+def test_ge_paths_exports_only_canonical_helper():
     import matrixlayout.ge_paths as ge_paths
 
-    assert not hasattr(ge_paths, "rowechelon_paths_from_legacy_tuples")
+    assert set(ge_paths.__all__) == {"rowechelon_paths_from_specs"}
 
 
 def test_rowechelon_paths_use_left_bottom_staircase_for_all_cases():

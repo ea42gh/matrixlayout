@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Sequence, Tuple
 
+__all__ = ["rowechelon_paths_from_specs"]
+
 _REMOVED_ROWECH_PATH_KEYS = frozenset({"node_offsets", "adj", "left_pad"})
 
 
