@@ -74,6 +74,7 @@ LatexFormatter = Callable[[Any], str]
 
 _normalize_index_list = _ge_decorations.normalize_index_list
 _REMOVED_GE_TEX_HOOKS = frozenset({"preamble", "extension"})
+_REMOVED_GE_ARTIFACT_KWARGS = frozenset({"tmp_dir", "keep_file"})
 
 
 def _reject_removed_tex_hook_kwargs(kwargs: Mapping[str, Any]) -> None:
@@ -90,6 +91,13 @@ _REMOVED_GE_RENDERER_FLAGS = {
     "legacy_submatrix_names": "submatrix_name_style",
     "label_targets": "annotations",
 }
+
+
+def _reject_removed_artifact_kwargs(kwargs: Mapping[str, Any]) -> None:
+    removed = _REMOVED_GE_ARTIFACT_KWARGS & set(kwargs)
+    if removed:
+        names = ", ".join(sorted(removed))
+        raise TypeError(f"Removed artifact keyword(s): {names}. Use output_dir/output_stem instead.")
 
 
 def _reject_removed_ge_renderer_flags(kwargs: Mapping[str, Any]) -> None:
@@ -838,6 +846,7 @@ def render_ge_svg(
         SVG text.
     """
 
+    _reject_removed_artifact_kwargs(kwargs)
     annotations = _resolve_annotations(annotations=annotations)
 
     tex = render_ge_tex(
