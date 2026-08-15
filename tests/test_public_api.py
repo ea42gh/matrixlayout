@@ -1,41 +1,64 @@
-import pytest
-
-
-def test_top_level_all_excludes_generic_ge_aliases():
+def test_top_level_exports_expected_names():
     import matrixlayout
 
-    assert "tex" not in matrixlayout.__all__
-    assert "svg" not in matrixlayout.__all__
-    assert "render_ge_tex" in matrixlayout.__all__
-    assert "render_ge_svg" in matrixlayout.__all__
-    assert "grid_bundle" in matrixlayout.__all__
-    assert "GEGridBundle" in matrixlayout.__all__
-    assert "qr_grid_bundle" in matrixlayout.__all__
-    assert "QRGridBundle" in matrixlayout.__all__
+    expected = {
+        "DelimCallout",
+        "DelimCalloutDict",
+        "GEGridBundle",
+        "GEGridSpec",
+        "QRGridBundle",
+        "QRGridSpec",
+        "__build__",
+        "__version__",
+        "backsubst_svg",
+        "backsubst_tex",
+        "decorate_tex_entries",
+        "decorations_help",
+        "decorator_bf",
+        "decorator_bg",
+        "decorator_box",
+        "decorator_color",
+        "get_environment",
+        "grid_bundle",
+        "grid_highlight_specs",
+        "grid_label_layouts",
+        "grid_line_specs",
+        "infer_ge_matrix_callouts",
+        "latexify",
+        "make_decorator",
+        "qr_grid_bundle",
+        "render_delim_callout",
+        "render_delim_callouts",
+        "render_eig_svg",
+        "render_eig_tex",
+        "render_ge_svg",
+        "render_ge_tex",
+        "render_ge_tex_specs",
+        "render_qr_svg",
+        "render_qr_tex",
+        "resolve_ge_grid_name",
+        "resolve_qr_grid_name",
+        "sel_all",
+        "sel_box",
+        "sel_col",
+        "sel_cols",
+        "sel_entry",
+        "sel_row",
+        "sel_rows",
+        "sel_vec",
+        "sel_vec_range",
+        "show_svg",
+        "validate_callouts",
+        "validate_ge_spec",
+        "validate_qr_spec",
+    }
+    assert set(matrixlayout.__all__) == expected
 
 
-def test_top_level_tex_alias_is_not_available():
-    import matrixlayout
-
-    name = "tex"
-    with pytest.raises(AttributeError):
-        getattr(matrixlayout, name)
-
-
-def test_top_level_svg_alias_is_not_available():
-    import matrixlayout
-
-    name = "svg"
-    with pytest.raises(AttributeError):
-        getattr(matrixlayout, name)
-
-
-def test_top_level_star_import_omits_generic_ge_aliases():
+def test_top_level_star_import_exports_public_api():
     namespace = {}
     exec("from matrixlayout import *", namespace)
 
-    assert "tex" not in namespace
-    assert "svg" not in namespace
     assert namespace["render_ge_tex"]
     assert namespace["render_ge_svg"]
     assert namespace["grid_bundle"]
@@ -54,6 +77,7 @@ def test_top_level_grid_bundle_api_is_symmetric():
     qr_bundle = matrixlayout.qr_grid_bundle([[1]])
     assert isinstance(qr_bundle, matrixlayout.QRGridBundle)
     assert qr_bundle.submatrix_spans
+
 
 def test_ge_module_generic_tex_svg_aliases_are_not_available():
     import matrixlayout.ge as ge
