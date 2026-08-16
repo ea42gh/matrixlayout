@@ -106,3 +106,4 @@ If rendering fails:
 - Inspect the TeX by calling `*_tex` instead of `*_svg`.
 - Set `output_dir` and re-run to capture artifacts for inspection.
 - Try a different `toolchain_name` to isolate toolchain-specific issues.
+

@@ -40,7 +40,7 @@ _RENDER_OPTION_KEYS = frozenset(
 _MIN_JUPYTER_TIKZ_VERSION = (0, 5, 8)
 DEFAULT_TOOLCHAIN_NAME = "pdftex_dvisvgm"
 _PATCHED_JUPYTER_TIKZ_SOURCE = (
-    "git+https://github.com/ea42gh/jupyter-tikz.git@f15578bac1fce0d9c80be791eda9c3c189d36ee1"
+    "git+https://github.com/ea42gh/jupyter-tikz.git@83ef5874089f42e6fe5b3b1395ebcc515ee0f2a2"
 )
 
 
@@ -285,3 +285,4 @@ def render_svg(
         if not keep_on_success:
             shutil.rmtree(tmp, ignore_errors=True)
         return svg_text
+

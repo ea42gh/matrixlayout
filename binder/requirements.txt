@@ -1,5 +1,6 @@
-jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@f15578bac1fce0d9c80be791eda9c3c189d36ee1
+jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@83ef5874089f42e6fe5b3b1395ebcc515ee0f2a2
 -e .[render]
 ipython
 nbconvert
 sympy>=1.12
+

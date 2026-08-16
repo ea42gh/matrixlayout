@@ -1,8 +1,11 @@
 import re
-from pathlib import Path
 from importlib import resources
+from pathlib import Path
 
 import matrixlayout
+
+
+PINNED_JUPYTER_TIKZ_SOURCE = "git+https://github.com/ea42gh/jupyter-tikz.git@83ef5874089f42e6fe5b3b1395ebcc515ee0f2a2"
 
 
 def _pyproject_has_dynamic_version() -> bool:
@@ -30,7 +33,7 @@ def test_package_version_is_nonempty():
 def test_render_extra_requires_patched_jupyter_tikz():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
 
-    assert '"jupyter-tikz @ git+https://github.com/ea42gh/jupyter-tikz.git@f15578ba' in text
+    assert f'"jupyter-tikz @ {PINNED_JUPYTER_TIKZ_SOURCE}' in text
     assert '"jupyter-tikz>=' not in text
 
 
@@ -38,9 +41,8 @@ def test_binder_uses_same_patched_jupyter_tikz_source():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
     binder_requirements = Path("binder/requirements.txt").read_text(encoding="utf-8")
 
-    source = "git+https://github.com/ea42gh/jupyter-tikz.git@f15578bac1fce0d9c80be791eda9c3c189d36ee1"
-    assert source in pyproject
-    assert source in binder_requirements
+    assert PINNED_JUPYTER_TIKZ_SOURCE in pyproject
+    assert PINNED_JUPYTER_TIKZ_SOURCE in binder_requirements
 
 
 def test_docs_warn_against_pypi_jupyter_tikz_renderer():
