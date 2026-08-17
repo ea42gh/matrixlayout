@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 import pytest
 
 from matrixlayout.ge import (

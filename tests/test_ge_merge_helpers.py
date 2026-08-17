@@ -1,3 +1,5 @@
+# mypy: disable-error-code=union-attr
+
 from matrixlayout.specs import GEGridSpec
 from matrixlayout.ge import (
     _merge_grid_spec_inputs,

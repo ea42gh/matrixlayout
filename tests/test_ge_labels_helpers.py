@@ -1,3 +1,5 @@
+# mypy: disable-error-code="arg-type,index,list-item"
+
 from matrixlayout.ge_labels import blank_label_specs
 from matrixlayout.ge_labels import build_label_maps
 from matrixlayout.ge_labels import compute_label_extras

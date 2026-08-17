@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 import pytest
 
 from matrixlayout.backsubst_helpers import apply_line_decorators

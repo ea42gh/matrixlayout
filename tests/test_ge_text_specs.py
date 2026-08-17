@@ -1,3 +1,5 @@
+# mypy: disable-error-code="arg-type,index,list-item"
+
 from unittest.mock import patch
 
 import pytest

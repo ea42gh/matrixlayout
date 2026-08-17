@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 import re
 
 import pytest

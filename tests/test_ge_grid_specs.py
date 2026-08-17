@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 import pytest
 
 from matrixlayout.ge import grid_highlight_specs, grid_line_specs, grid_submatrix_spans

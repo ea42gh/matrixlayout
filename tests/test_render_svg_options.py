@@ -1,3 +1,5 @@
+# mypy: disable-error-code="arg-type,call-arg"
+
 import types
 import sys
 from pathlib import Path

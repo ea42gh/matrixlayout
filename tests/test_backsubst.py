@@ -1,3 +1,5 @@
+# mypy: disable-error-code=list-item
+
 import shutil
 
 import pytest

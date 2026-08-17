@@ -1,3 +1,5 @@
+# mypy: disable-error-code="truthy-function,var-annotated"
+
 def test_top_level_exports_expected_names():
     import matrixlayout
 

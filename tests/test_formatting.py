@@ -1,3 +1,5 @@
+# mypy: disable-error-code="arg-type,attr-defined,list-item"
+
 import pytest
 
 from matrixlayout.formatting import latexify

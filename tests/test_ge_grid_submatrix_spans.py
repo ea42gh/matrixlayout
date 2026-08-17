@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 from matrixlayout.ge import grid_submatrix_spans
 
 

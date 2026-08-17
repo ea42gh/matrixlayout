@@ -1,3 +1,5 @@
+# mypy: disable-error-code=union-attr
+
 import pytest
 
 from matrixlayout.qr import (

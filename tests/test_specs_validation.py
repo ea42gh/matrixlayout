@@ -1,3 +1,5 @@
+# mypy: disable-error-code=arg-type
+
 from matrixlayout import validate_ge_spec, validate_qr_spec
 from matrixlayout.specs import GEGridSpec, QRGridSpec
 
