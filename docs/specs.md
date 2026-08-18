@@ -278,6 +278,11 @@ spec = {
 }
 ```
 
+Row-echelon paths use the restored staircase rule: vertical segments follow the
+left edge of pivot columns, horizontal segments follow the bottom edge of pivot
+rows, and generated paths use NiceMatrix projected rule coordinates such as
+`(row-|col)` rather than cell-anchor points.
+
 ## Common patterns
 
 - Use `pivot_locs` for explicit pivot boxes rather than manual TikZ rectangles.

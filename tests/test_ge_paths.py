@@ -119,6 +119,14 @@ def test_rowechelon_path_rejects_removed_adj_and_left_pad_keywords():
             )
 
 
+def test_specs_docs_describe_rowechelon_staircase_policy():
+    text = __import__("pathlib").Path("docs/specs.md").read_text(encoding="utf-8")
+    normalized = " ".join(text.split())
+
+    assert "vertical segments follow the left edge of pivot columns" in normalized
+    assert "horizontal segments follow the bottom edge of pivot rows" in normalized
+    assert "NiceMatrix projected rule coordinates" in normalized
+
 def test_rowechelon_path_structured_spec_applies_path_offsets():
     matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
     paths = rowechelon_paths_from_specs(
