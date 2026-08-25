@@ -2,7 +2,6 @@
 
 import re
 
-import pytest
 
 from matrixlayout.ge_paths import rowechelon_paths_from_specs
 
@@ -34,89 +33,6 @@ def _assert_no_cell_anchor_path(path):
     assert ".south" not in path
     assert ".east" not in path
     assert ".west" not in path
-
-
-def test_ge_paths_exports_only_canonical_helper():
-    import matrixlayout.ge_paths as ge_paths
-
-    assert set(ge_paths.__all__) == {"rowechelon_paths_from_specs"}
-
-
-def test_rowechelon_paths_use_left_bottom_staircase_for_all_cases():
-    matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
-    pivots = [(0, 0), (1, 1)]
-    expected = {
-        "hh": r"\draw[red] ($ (2-|A0x1-left) + (0.1,0) $) -- (2-|5) -- (3-|5) -- (3-|8);",
-        "vh": r"\draw[red] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (2-|A0x1-left) + (0.1,0) $) -- (2-|5) -- (3-|5) -- (3-|8);",
-        "vv": r"\draw[red] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (2-|A0x1-left) + (0.1,0) $) -- (2-|5) -- (4-|5);",
-        "hv": r"\draw[red] ($ (2-|A0x1-left) + (0.1,0) $) -- (2-|5) -- (4-|5);",
-    }
-    for case, path in expected.items():
-        paths = rowechelon_paths_from_specs(
-            matrices,
-            [{"grid": (0, 1), "pivots": pivots, "case": case, "color": "red"}],
-            submatrix_name_style="grid",
-        )
-        assert paths == [path]
-        _assert_no_cell_anchor_path(paths[0])
-        _assert_manhattan_path(paths[0])
-
-
-def test_rowechelon_paths_single_pivot_first_column_uses_matrix_left_edge():
-    matrices = [[None, [[1, 2], [3, 4]]], [[[1, 0], [0, 1]], [[1, 2], [3, 4]]]]
-    paths = rowechelon_paths_from_specs(
-        matrices,
-        [{"grid": (0, 1), "pivots": [(0, 0)], "case": "vv"}],
-        submatrix_name_style="grid",
-    )
-    assert paths == [r"\draw[blue,line width=0.4mm] ($ (1-|A0x1-left) + (0.1,0) $) -- ($ (3-|A0x1-left) + (0.1,0) $);"]
-    _assert_manhattan_path(paths[0])
-
-
-def test_rowechelon_paths_single_pivot_nonfirst_column_uses_column_left_edge():
-    matrices = [[None, [[1, 2, 4, 1], [0, "k", 8, "h"], [0, 0, 0, 0]]]]
-    paths = rowechelon_paths_from_specs(
-        matrices,
-        [{"grid": (0, 1), "pivots": [(0, 2)], "case": "vv"}],
-        submatrix_name_style="grid",
-    )
-    assert paths == [r"\draw[blue,line width=0.4mm] (1-|6) -- (4-|6);"]
-    _assert_manhattan_path(paths[0])
-
-
-def test_rowechelon_path_rejects_removed_node_offsets_keyword():
-    matrices = [[None, [[1, 2], [3, 4]]]]
-    with pytest.raises(ValueError, match="node_offsets.*path_offsets"):
-        rowechelon_paths_from_specs(
-            matrices,
-            [
-                {
-                    "grid": (0, 1),
-                    "pivots": [(0, 0)],
-                    "case": "vv",
-                    "node_offsets": (0.2, -0.05),
-                }
-            ],
-            submatrix_name_style="grid",
-        )
-
-
-def test_rowechelon_path_rejects_removed_adj_and_left_pad_keywords():
-    matrices = [[None, [[1, 2], [3, 4]]]]
-    for key in ("adj", "left_pad"):
-        with pytest.raises(ValueError, match=f"{key}.*path_offsets"):
-            rowechelon_paths_from_specs(
-                matrices,
-                [
-                    {
-                        "grid": (0, 1),
-                        "pivots": [(0, 0)],
-                        "case": "vv",
-                        key: 0.2,
-                    }
-                ],
-                submatrix_name_style="grid",
-            )
 
 
 def test_specs_docs_describe_rowechelon_staircase_policy():

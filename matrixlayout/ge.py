@@ -73,43 +73,6 @@ from .specs import (
 LatexFormatter = Callable[[Any], str]
 
 _normalize_index_list = _ge_decorations.normalize_index_list
-_REMOVED_GE_TEX_HOOKS = frozenset({"preamble", "extension"})
-_REMOVED_GE_ARTIFACT_KWARGS = frozenset({"tmp_dir", "keep_file"})
-
-
-def _reject_removed_tex_hook_kwargs(kwargs: Mapping[str, Any]) -> None:
-    removed = _REMOVED_GE_TEX_HOOKS & set(kwargs)
-    if removed:
-        names = ", ".join(sorted(removed))
-        raise TypeError(
-            f"Removed TeX hook keyword(s): {names}. "
-            "Use body_preamble= for document-body setup and document_preamble= for true LaTeX preamble insertion."
-        )
-
-_REMOVED_GE_RENDERER_FLAGS = {
-    "legacy_format": "stack_separator_column",
-    "legacy_submatrix_names": "submatrix_name_style",
-    "label_targets": "annotations",
-}
-
-
-def _reject_removed_artifact_kwargs(kwargs: Mapping[str, Any]) -> None:
-    removed = _REMOVED_GE_ARTIFACT_KWARGS & set(kwargs)
-    if removed:
-        names = ", ".join(sorted(removed))
-        raise TypeError(f"Removed artifact keyword(s): {names}. Use output_dir/output_stem instead.")
-
-
-def _reject_removed_ge_renderer_flags(kwargs: Mapping[str, Any]) -> None:
-    messages = [
-        f"{old_name} is removed; use {new_name} instead."
-        for old_name, new_name in _REMOVED_GE_RENDERER_FLAGS.items()
-        if old_name in kwargs
-    ]
-    if messages:
-        raise ValueError(" ".join(messages))
-
-
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
     if fig_scale is None:
         return "", ""
@@ -454,7 +417,6 @@ def render_ge_tex(
         decorators = [{"grid": (0, 1), "entries": [(0, 0)], "decorator": box}]
         tex = render_ge_tex(matrices=matrices, decorators=decorators)
     """
-    _reject_removed_tex_hook_kwargs(kwargs)
     grid_spec = _coerce_grid_spec(spec)
     if body_preamble is not None:
         kwargs["body_preamble"] = body_preamble
@@ -571,7 +533,6 @@ def render_ge_tex(
             if "create_medium_nodes" not in kwargs:
                 kwargs["create_medium_nodes"] = True
 
-    _reject_removed_ge_renderer_flags(kwargs)
     if stack_separator_column is None:
         stack_separator_column = False
     if document_preamble is None:
@@ -846,7 +807,6 @@ def render_ge_svg(
         SVG text.
     """
 
-    _reject_removed_artifact_kwargs(kwargs)
     annotations = _resolve_annotations(annotations=annotations)
 
     tex = render_ge_tex(

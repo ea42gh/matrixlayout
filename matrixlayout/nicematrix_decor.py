@@ -81,8 +81,6 @@ class DelimCallout:
 
 CalloutLike = Union[DelimCallout, DelimCalloutDict, Mapping[str, Any]]
 
-_REMOVED_CALLOUT_ALIAS_KEYS = frozenset({"angle", "length", "label_shift_x_mm", "label_shift_y_mm"})
-_REMOVED_CALLOUT_TARGET_ALIAS_KEYS = frozenset({"grid_pos", "block_row", "block_col"})
 
 
 def _coerce_side(value: Any) -> Side:
@@ -106,13 +104,6 @@ def _coerce_callout(obj: CalloutLike) -> DelimCallout:
         return obj
     if isinstance(obj, Mapping):
         d = dict(obj)
-        removed = _REMOVED_CALLOUT_ALIAS_KEYS & set(d)
-        if removed:
-            names = ", ".join(sorted(removed))
-            raise ValueError(
-                f"Removed callout option alias(es): {names}. "
-                "Use angle_deg=, length_mm=, and label_shift_mm=(x_mm, y_mm) instead."
-            )
         try:
             label_shift_mm = _coerce_label_shift_mm(d.get("label_shift_mm", (0.0, 0.0)))
             return DelimCallout(
@@ -314,10 +305,6 @@ def _resolve_callout_name(
         r, c = obj["grid"]
         field = "grid"
     else:
-        removed = _REMOVED_CALLOUT_TARGET_ALIAS_KEYS & set(obj)
-        if removed:
-            names = ", ".join(sorted(removed))
-            raise ValueError(f"Removed callout target alias(es): {names}. Use grid=(block_row, block_col) instead.")
         raise ValueError("Callout is missing 'name' (expected grid)")
     key = (int(r), int(c))
     if key not in name_map:

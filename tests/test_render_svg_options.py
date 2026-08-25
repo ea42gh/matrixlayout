@@ -402,19 +402,6 @@ def test_render_ge_svg_rejects_unknown_render_opts(monkeypatch):
         ml_ge.render_ge_svg(matrices=[[None, [[1]]]], render_opts={"toolchain": "tc"})
 
 
-def test_render_ge_svg_rejects_removed_artifact_keywords(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        ml_ge,
-        "_render_svg",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not render")),
-    )
-
-    with pytest.raises(TypeError, match="tmp_dir.*output_dir.*output_stem"):
-        ml_ge.render_ge_svg(matrices=[[None, [[1]]]], tmp_dir=tmp_path)
-    with pytest.raises(TypeError, match="keep_file.*output_dir.*output_stem"):
-        ml_ge.render_ge_svg(matrices=[[None, [[1]]]], keep_file=tmp_path)
-
-
 def test_render_qr_svg_merges_render_opts(monkeypatch):
     recorded = {}
 

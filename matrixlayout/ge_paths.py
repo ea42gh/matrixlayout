@@ -16,7 +16,6 @@ from typing import Any, List, Sequence, Tuple
 
 __all__ = ["rowechelon_paths_from_specs"]
 
-_REMOVED_ROWECH_PATH_KEYS = frozenset({"node_offsets", "adj", "left_pad"})
 
 
 @dataclass(frozen=True)
@@ -63,10 +62,6 @@ def _normalize_rowechelon_path_spec(spec: Any) -> RowEchelonPathSpec | None:
         grid = spec.get("grid")
         if not isinstance(grid, (list, tuple)) or len(grid) != 2:
             return None
-        removed = _REMOVED_ROWECH_PATH_KEYS & set(spec)
-        if removed:
-            names = ", ".join(sorted(removed))
-            raise ValueError(f"{names} is removed; use path_offsets instead")
         return RowEchelonPathSpec(
             grid=(int(grid[0]), int(grid[1])),
             pivots=_normalize_pivots(spec.get("pivots", spec.get("entries", []))),

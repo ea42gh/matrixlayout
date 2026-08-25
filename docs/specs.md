@@ -240,7 +240,7 @@ See `decorators.md` for full syntax and examples.
 - `document_preamble`, `body_preamble`, `nice_options`: true LaTeX preamble
   insertion, document-body setup before the math environment, and nicematrix
   options. Renderer specs use these canonical hook names; removed aliases such
-  as `preamble` and `extension` are rejected.
+  Use `document_preamble` for true LaTeX preamble insertion and `body_preamble` for document-body setup.
 - `pivot_locs`: pivot box locations (`(i-j)(k-l)` spans).
 - `rowechelon_paths`: polyline specs for row echelon outlines.
 - `callouts`: arrow labels attached to matrix blocks.

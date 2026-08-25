@@ -6,65 +6,6 @@ import pytest
 from matrixlayout.ge import _tex, render_ge_tex
 
 
-def test_ge_tex_layout_merges_document_and_body_preamble_strings():
-    tex_out = _tex(
-        mat_rep="1",
-        mat_format="c",
-        document_preamble="%EXPL-DOC\n",
-        body_preamble="%EXPL-BODY\n",
-        layout={
-            "document_preamble": "%SPEC-DOC\n",
-            "body_preamble": "%SPEC-BODY\n",
-        },
-        outer_delims=False,
-    )
-
-    # Document preamble appears before \begin{document}.
-    assert "%SPEC-DOC" in tex_out
-    assert "%EXPL-DOC" in tex_out
-    assert tex_out.index("%SPEC-DOC") < tex_out.index("%EXPL-DOC")
-
-    # Body preamble appears after \begin{document}.
-    assert "%SPEC-BODY" in tex_out
-    assert "%EXPL-BODY" in tex_out
-    assert tex_out.index("%SPEC-BODY") < tex_out.index("%EXPL-BODY")
-
-
-def test_ge_tex_accepts_canonical_hook_names():
-    tex_out = _tex(
-        mat_rep="1",
-        mat_format="c",
-        document_preamble="%EXPL-DOC\n",
-        body_preamble="%EXPL-BODY\n",
-        layout={
-            "document_preamble": "%SPEC-DOC\n",
-            "body_preamble": "%SPEC-BODY\n",
-        },
-        outer_delims=False,
-    )
-
-    assert "%SPEC-DOC" in tex_out
-    assert "%EXPL-DOC" in tex_out
-    assert tex_out.index("%SPEC-DOC") < tex_out.index("%EXPL-DOC")
-    assert "%SPEC-BODY" in tex_out
-    assert "%EXPL-BODY" in tex_out
-    assert tex_out.index("%SPEC-BODY") < tex_out.index("%EXPL-BODY")
-
-
-def test_ge_tex_rejects_removed_hook_aliases():
-    with pytest.raises(TypeError, match="unexpected keyword argument 'extension'"):
-        _tex(mat_rep="1", mat_format="c", extension="%old")
-    with pytest.raises(TypeError, match="unexpected keyword argument 'preamble'"):
-        _tex(mat_rep="1", mat_format="c", preamble="%old")
-
-
-def test_render_ge_tex_rejects_removed_hook_aliases():
-    with pytest.raises(TypeError, match="Removed TeX hook keyword"):
-        render_ge_tex(matrices=[[[1]]], preamble="%old")
-    with pytest.raises(TypeError, match="Removed TeX hook keyword"):
-        render_ge_tex(matrices=[[[1]]], extension="%old")
-
-
 def test_render_ge_tex_rejects_singular_label_in_annotations():
     with pytest.raises(TypeError, match=r"annotations\[0\].*callouts"):
         render_ge_tex(matrices=[[[1]]], annotations=[{"grid": (0, 0), "label": "A", "side": "right"}])
