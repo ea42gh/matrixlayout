@@ -79,7 +79,7 @@ def parse_ge_decorations(
             key = (int(grid[0]), int(grid[1]))
 
         if "label" in item:
-            raise TypeError("decorations no longer accepts label specs; use top-level callouts instead.")
+            raise TypeError("decorations entries do not accept label; use top-level callouts instead.")
 
         if "hlines" in item or "vlines" in item:
             mat = matrices[key[0]][key[1]]

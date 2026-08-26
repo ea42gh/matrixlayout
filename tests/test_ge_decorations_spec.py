@@ -162,7 +162,7 @@ def test_render_ge_tex_decorations_lines_and_callout():
 def test_render_ge_tex_rejects_label_specs_in_decorations():
     matrices = [[[1, 2], [3, 4]]]
 
-    with pytest.raises(TypeError, match="decorations no longer accepts label specs"):
+    with pytest.raises(TypeError, match="decorations entries do not accept label"):
         render_ge_tex(
             matrices=matrices,
             decorations=[{"grid": (0, 0), "label": r"\mathbf{A}", "side": "right"}],
