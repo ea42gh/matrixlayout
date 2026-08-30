@@ -552,6 +552,76 @@ def _validate_grid_matrices(mats: Sequence[Sequence[Any]]) -> List[str]:
     return errors
 
 
+def _validate_ge_coordinate_specs(
+    specs: Optional[Sequence[Any]],
+    *,
+    field: str,
+    grid: Optional[Tuple[int, int]],
+    mats: Any,
+    strict: bool,
+) -> List[str]:
+    """Validate structured GE targets before they become TikZ node names."""
+    errors: List[str] = []
+    if specs is None:
+        return errors
+    if isinstance(specs, (str, bytes)) or not isinstance(specs, Sequence):
+        return [f"{field} must be a sequence"]
+
+    allowed_keys = {
+        "grid", "entries", "pivots", "case", "color", "path_offsets",
+        "fit_target", "style", "tikz",
+    }
+    valid_cases = {"hh", "hv", "vh", "vv"}
+    for idx, item in enumerate(specs):
+        if not isinstance(item, Mapping):
+            # Raw legacy tuples/strings are handled by the renderer adapters.
+            continue
+        if "tikz" in item:
+            continue
+        name = f"{field}[{idx}]"
+        if strict:
+            extra = set(item) - allowed_keys
+            if extra:
+                errors.append(f"{name} has unknown field(s): {sorted(extra)}")
+        if "grid" not in item:
+            errors.append(f"{name} requires grid=(row, col)")
+            continue
+        grid_errors = _validate_grid_coord(item["grid"], field=f"{name}.grid", grid=grid)
+        errors.extend(grid_errors)
+        if grid is None or grid_errors:
+            continue
+        block_row, block_col = int(item["grid"][0]), int(item["grid"][1])
+        try:
+            shape = _matrix_shape(mats[block_row][block_col])
+        except (IndexError, TypeError):
+            shape = None
+        if shape is None:
+            errors.append(f"{name}.grid targets an empty or non-matrix block")
+            continue
+
+        coords = item.get("entries", item.get("pivots"))
+        if coords is not None:
+            if isinstance(coords, (str, bytes)) or not isinstance(coords, Sequence):
+                errors.append(f"{name}.entries/pivots must be a sequence")
+            else:
+                for coord_idx, coord in enumerate(coords):
+                    coord_field = f"{name}.entries[{coord_idx}]"
+                    if not _is_grid_coord(coord):
+                        errors.append(f"{coord_field} must be a (row, col) coordinate")
+                        continue
+                    try:
+                        row, col = int(coord[0]), int(coord[1])
+                    except Exception:
+                        errors.append(f"{coord_field} must contain integer row/col values")
+                        continue
+                    if row < 0 or row >= shape[0] or col < 0 or col >= shape[1]:
+                        errors.append(
+                            f"{coord_field} {row, col} is outside matrix shape {shape}"
+                        )
+        if "case" in item and str(item["case"]).lower() not in valid_cases:
+            errors.append(f"{name}.case must be one of {tuple(sorted(valid_cases))}")
+    return errors
+
 def _spec_mapping(spec: Any, *, name: str) -> Tuple[Optional[Mapping[str, Any]], List[str]]:
     if isinstance(spec, Mapping):
         return spec, []
@@ -623,6 +693,24 @@ def validate_ge_spec(spec: Any, *, strict: bool = True) -> List[str]:
     elif annotations is not None:
         errors.extend(_validate_annotation_specs(annotations, grid=grid, strict=strict, field="annotations"))
     errors.extend(_validate_ge_decorations(mapping.get("decorations"), grid=grid, strict=strict))
+    errors.extend(
+        _validate_ge_coordinate_specs(
+            mapping.get("pivot_locs"),
+            field="pivot_locs",
+            grid=grid,
+            mats=mats,
+            strict=strict,
+        )
+    )
+    errors.extend(
+        _validate_ge_coordinate_specs(
+            mapping.get("rowechelon_paths"),
+            field="rowechelon_paths",
+            grid=grid,
+            mats=mats,
+            strict=strict,
+        )
+    )
     return errors
 
 
