@@ -15,7 +15,7 @@ import pytest
 
 normalize_svg = pytest.importorskip("jupyter_tikz.svg_normalize").normalize_svg
 
-_DEFS_RE = re.compile(r"\s*<defs>.*?</defs>\s*", flags=re.DOTALL)
+_DEFS_RE = re.compile(r"\s*<defs[\s\S]*?</defs>\s*", flags=re.DOTALL)
 _HREF_RE = re.compile(r"\s+(?:xlink:)?href=['\"]#[^'\"]+['\"]")
 _ID_RE = re.compile(r"\s+id=['\"][^'\"]+['\"]")
 _SPACE_RE = re.compile(r"\s+")
