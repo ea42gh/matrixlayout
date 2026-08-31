@@ -73,6 +73,29 @@ from .specs import (
 LatexFormatter = Callable[[Any], str]
 
 _normalize_index_list = _ge_decorations.normalize_index_list
+
+
+def _validate_n_rhs(n_rhs: Any, *, width: int) -> None:
+    """Validate the RHS partition before it reaches TeX column formatting."""
+    if isinstance(n_rhs, bool):
+        raise ValueError("n_rhs must be a nonnegative integer or a sequence of them")
+
+    if isinstance(n_rhs, (list, tuple)):
+        values = list(n_rhs)
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
+            raise ValueError("n_rhs entries must be nonnegative integers")
+        if any(value < 0 for value in values):
+            raise ValueError("n_rhs entries must be nonnegative integers")
+        if sum(values) > width:
+            raise ValueError(f"sum(n_rhs)={sum(values)} exceeds the final matrix width {width}")
+        return
+
+    if not isinstance(n_rhs, int) or n_rhs < 0:
+        raise ValueError("n_rhs must be a nonnegative integer or a sequence of them")
+    if n_rhs > width:
+        raise ValueError(f"n_rhs={n_rhs} exceeds the final matrix width {width}")
+
+
 def _figure_scale_wrappers(fig_scale: Optional[Union[float, int, str]]) -> Tuple[str, str]:
     if fig_scale is None:
         return "", ""
@@ -516,6 +539,8 @@ def render_ge_tex(
 
     if any(w <= 0 for w in block_widths) or any(h <= 0 for h in block_heights):
         raise ValueError("Could not infer matrix block sizes from `matrices`.")
+
+    _validate_n_rhs(n_rhs, width=block_widths[-1])
 
     if decorations:
         extra_decorators, extra_sub_locs, extra_codebefore = _parse_ge_decorations(

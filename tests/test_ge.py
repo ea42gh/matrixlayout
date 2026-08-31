@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from matrixlayout.ge import _tex
+from matrixlayout.ge import _tex, render_ge_tex
 
 
 def _pick_toolchain_name_or_skip() -> str:
@@ -37,6 +37,17 @@ def test_ge_tex_contains_SubMatrix_when_requested():
     )
     assert r"\begin{NiceArray}" in tex_out
     assert r"\SubMatrix({1-1}{2-2})[name=A0x0]" in tex_out
+
+@pytest.mark.parametrize("n_rhs", [-1, 3, [1, 2], [1, -1], [1, "b"], True])
+def test_render_ge_tex_rejects_invalid_n_rhs(n_rhs):
+    with pytest.raises(ValueError, match="n_rhs"):
+        render_ge_tex(matrices=[[[1, 2]]], n_rhs=n_rhs)
+
+
+def test_render_ge_tex_accepts_zero_and_full_width_n_rhs():
+    render_ge_tex(matrices=[[[1, 2]]], n_rhs=0)
+    render_ge_tex(matrices=[[[1, 2]]], n_rhs=2)
+    render_ge_tex(matrices=[[[1, 2]]], n_rhs=[1, 1])
 
 
 @pytest.mark.render
