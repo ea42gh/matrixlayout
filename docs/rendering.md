@@ -8,7 +8,7 @@ Install the render extra when SVG output is needed:
 python -m pip install "matrixlayout[render]"
 ```
 
-The extra pins `jupyter-tikz` to the maintained `ea42gh/jupyter-tikz` revision
+The extra installs `jupyter-tikz` from the maintained `ea42gh/jupyter-tikz` source
 used in CI and Binder. Current PyPI releases do not provide the artifact-aware
 renderer that matrixlayout uses for reliable diagnostics. If an incompatible
 renderer is installed, matrixlayout raises an explicit version/capability error

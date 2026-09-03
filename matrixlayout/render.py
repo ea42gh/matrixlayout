@@ -39,8 +39,8 @@ _RENDER_OPTION_KEYS = frozenset(
 )
 _MIN_JUPYTER_TIKZ_VERSION = (0, 5, 8)
 DEFAULT_TOOLCHAIN_NAME = "pdftex_dvisvgm"
-_PATCHED_JUPYTER_TIKZ_SOURCE = (
-    "git+https://github.com/ea42gh/jupyter-tikz.git@83ef5874089f42e6fe5b3b1395ebcc515ee0f2a2"
+_JUPYTER_TIKZ_SOURCE = (
+    "git+https://github.com/ea42gh/jupyter-tikz.git"
 )
 
 
@@ -107,14 +107,14 @@ def validate_jupyter_tikz_renderer(jupyter_tikz: Any) -> None:
         raise RuntimeError(
             "matrixlayout rendering requires the patched jupyter-tikz renderer "
             f">= 0.5.8; found {found!r}. Install the render extra or use: "
-            f"pip install '{_PATCHED_JUPYTER_TIKZ_SOURCE}'"
+            f"pip install '{_JUPYTER_TIKZ_SOURCE}'"
         )
 
     if not hasattr(jupyter_tikz, "render_svg_with_artifacts"):
         raise RuntimeError(
             "matrixlayout rendering requires jupyter_tikz.render_svg_with_artifacts. "
             "The PyPI jupyter-tikz package does not provide this API; use the "
-            f"patched renderer source: pip install '{_PATCHED_JUPYTER_TIKZ_SOURCE}'"
+            f"maintained renderer source: pip install '{_JUPYTER_TIKZ_SOURCE}'"
         )
 
 
