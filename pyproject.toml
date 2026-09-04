@@ -7,7 +7,7 @@ name = "matrixlayout"
 dynamic = ["version"]
 description = "Layout-only TeX generators for matrix-themed figures with delegated SVG rendering."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
   "jinja2>=3.1",
@@ -42,7 +42,7 @@ matrixlayout = ["templates/*.j2"]
 version = {attr = "matrixlayout.__about__.__version__"}
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 line-length = 120
 extend-exclude = ["docs/notebooks/*.ipynb", "matrixlayout_demo.ipynb"]
 
@@ -50,7 +50,7 @@ extend-exclude = ["docs/notebooks/*.ipynb", "matrixlayout_demo.ipynb"]
 select = ["E9", "F", "B", "C4"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 exclude = ["^build/", "^dist/", "^render_smoke.py$"]
 ignore_missing_imports = true
 check_untyped_defs = true

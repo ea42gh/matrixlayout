@@ -38,7 +38,7 @@ the artifact-rendering API required by matrixlayout and is rejected at runtime.
 
 | Component | Minimum | Notes |
 | --- | --- | --- |
-| Python | 3.10 | Tested with 3.10–3.13. |
+| Python | 3.12 | Tested with 3.12–3.13. |
 | jupyter-tikz | ea42gh/jupyter-tikz `>=0.5.8` | Required for `render_svg_with_artifacts`; do not substitute PyPI `jupyter-tikz`. |
 | TeX toolchain | TeX Live 2022+ | Needed for SVG rendering. |
 

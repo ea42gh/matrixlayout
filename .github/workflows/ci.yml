@@ -22,8 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.10"
-          - "3.11"
           - "3.12"
           - "3.13"
 
@@ -43,7 +41,7 @@ jobs:
         run: python -m pytest
 
       - name: Run coverage gate
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         run: python -m pytest --cov=matrixlayout --cov-report=term-missing
 
   lint:
@@ -55,7 +53,7 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install static quality dependencies
         run: python -m pip install -e .[dev]
@@ -75,7 +73,7 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Build wheel and sdist
         run: |
@@ -99,7 +97,7 @@ jobs:
           PY
 
   render-smoke:
-    name: Render smoke - Python 3.11
+    name: Render smoke - Python 3.12
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -108,7 +106,7 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install TeX and SVG toolchain
         run: |
@@ -136,7 +134,7 @@ jobs:
         run: python render_smoke.py
 
   notebook-smoke:
-    name: Demo notebook smoke - Python 3.11
+    name: Demo notebook smoke - Python 3.12
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -145,7 +143,7 @@ jobs:
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install TeX and SVG toolchain
         run: |
